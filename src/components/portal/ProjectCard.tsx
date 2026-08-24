@@ -5,7 +5,7 @@ import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import Link from '@mui/material/Link';
 import type { ChipProps } from '@mui/material/Chip';
-import type { SoftwareProject } from '../../types';
+import { PROJECT_STATUS_LABELS, type SoftwareProject } from '../../types';
 
 const STATUS_COLOR: Record<SoftwareProject['status'], ChipProps['color']> = {
   Planning: 'default',
@@ -16,15 +16,6 @@ const STATUS_COLOR: Record<SoftwareProject['status'], ChipProps['color']> = {
   Completed: 'default',
 };
 
-const STATUS_LABELS: Record<SoftwareProject['status'], string> = {
-  Planning: 'Planning',
-  InProgress: 'In Progress',
-  Live: 'Live',
-  Maintenance: 'Maintenance',
-  OnHold: 'On Hold',
-  Completed: 'Completed',
-};
-
 export function ProjectCard({ project }: { project: SoftwareProject }) {
   return (
     <Card>
@@ -32,7 +23,7 @@ export function ProjectCard({ project }: { project: SoftwareProject }) {
         <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1.5 }}>
           <Typography sx={{ fontWeight: 700, color: 'text.primary' }}>{project.name}</Typography>
           <Chip
-            label={STATUS_LABELS[project.status]}
+            label={PROJECT_STATUS_LABELS[project.status]}
             color={STATUS_COLOR[project.status]}
             size="small"
             sx={{ flexShrink: 0 }}

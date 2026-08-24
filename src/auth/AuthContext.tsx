@@ -6,7 +6,7 @@ import type { MeResponse } from '../types';
 interface AuthContextValue {
   user: MeResponse | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<MeResponse>;
   logout: () => void;
 }
 
@@ -41,7 +41,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     const response = await apiLogin(email, password);
     localStorage.setItem(TOKEN_KEY, response.token);
-    setUser({ email: response.email, companyName: response.companyName, contactName: null });
+    const loggedInUser: MeResponse = {
+      email: response.email,
+      companyName: response.companyName,
+      contactName: null,
+      isAdmin: response.isAdmin,
+    };
+    setUser(loggedInUser);
+    return loggedInUser;
   };
 
   return (

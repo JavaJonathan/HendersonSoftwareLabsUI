@@ -22,7 +22,7 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const from = (location.state as { from?: string } | null)?.from ?? '/portal';
+  const from = (location.state as { from?: string } | null)?.from;
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -30,11 +30,13 @@ export function LoginPage() {
     setSubmitting(true);
 
     try {
-      await login(email, password);
-      navigate(from, { replace: true });
+      const loggedInUser = await login(email, password);
+      navigate(from ?? (loggedInUser.isAdmin ? '/admin' : '/portal'), { replace: true });
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setError('Invalid email or password.');
+      } else if (err instanceof ApiError && err.status === 423) {
+        setError(err.message);
       } else {
         setError('Something went wrong. Please try again.');
       }

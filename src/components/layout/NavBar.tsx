@@ -95,35 +95,10 @@ export function NavBar() {
                 {link.label}
               </Link>
             ))}
-            <Link
-              component={RouterLink}
-              to="/login"
-              underline="none"
-              color="text.primary"
-              sx={{
-                fontSize: 15,
-                fontWeight: 500,
-                position: 'relative',
-                '&::after': {
-                  content: '""',
-                  position: 'absolute',
-                  left: 0,
-                  bottom: -4,
-                  height: 2,
-                  width: 0,
-                  bgcolor: 'primary.main',
-                  borderRadius: 1,
-                  transition: 'width 0.25s ease',
-                },
-                '&:hover::after': { width: '100%' },
-              }}
-            >
-              Client Portal
-            </Link>
           </Stack>
 
-          <Button variant="contained" color="primary" href="#contact">
-            Book a Call
+          <Button component={RouterLink} to="/login" variant="contained" color="primary">
+            Client Login
           </Button>
         </Toolbar>
       </Container>
