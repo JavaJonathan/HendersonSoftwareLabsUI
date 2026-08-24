@@ -6,22 +6,14 @@ import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Paper from '@mui/material/Paper';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import VerifiedOutlinedIcon from '@mui/icons-material/VerifiedOutlined';
-import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
 import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
 
-const TRUST_ITEMS = [
-  { label: 'Trusted by established small businesses', icon: ShieldOutlinedIcon },
-  { label: 'Secure, reliable, and scalable', icon: VerifiedOutlinedIcon },
-  { label: 'Fast turnaround, real results', icon: AccessTimeOutlinedIcon },
-];
-
 export function Hero() {
   return (
-    <Container maxWidth="lg" sx={{ pt: { xs: 6, md: 7 }, pb: { xs: 3, md: 4 } }}>
-      <Box sx={{ display: 'grid', gap: 5, gridTemplateColumns: { xs: '1fr', md: '1.1fr 0.9fr' }, alignItems: 'center' }}>
+    <Container maxWidth="lg" sx={{ pt: { xs: 4, md: 5 }, pb: { xs: 3, md: 4 } }}>
+      <Box sx={{ display: 'grid', gap: 5, gridTemplateColumns: { xs: '1fr', md: '1.1fr 0.9fr' }, alignItems: 'flex-start' }}>
         <Box>
           <Chip
             label="On-Demand Software Engineering"
@@ -45,17 +37,6 @@ export function Hero() {
             <Button variant="outlined" size="large" color="inherit" href="#what-we-do" endIcon={<ArrowForwardIcon />}>
               See Services
             </Button>
-          </Stack>
-
-          <Stack direction="row" spacing={3} sx={{ mt: 4, flexWrap: 'wrap' }} useFlexGap>
-            {TRUST_ITEMS.map(({ label, icon: Icon }) => (
-              <Stack key={label} direction="row" spacing={1} sx={{ alignItems: 'center' }}>
-                <Icon sx={{ fontSize: 18, color: 'text.secondary' }} />
-                <Typography variant="body2" color="text.secondary">
-                  {label}
-                </Typography>
-              </Stack>
-            ))}
           </Stack>
         </Box>
 
