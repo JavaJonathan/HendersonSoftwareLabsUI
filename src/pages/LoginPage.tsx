@@ -10,6 +10,7 @@ import Alert from '@mui/material/Alert';
 import Link from '@mui/material/Link';
 import { useAuth } from '../auth/AuthContext';
 import { ApiError } from '../api/client';
+import { Reveal } from '../components/motion/Reveal';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -44,6 +45,7 @@ export function LoginPage() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', px: 2 }}>
+      <Reveal y={16}>
       <Box sx={{ width: '100%', maxWidth: 400 }}>
         <Stack sx={{ mb: 4, alignItems: 'center' }}>
           <Link component={RouterLink} to="/" underline="none" sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
@@ -105,6 +107,7 @@ export function LoginPage() {
           </Stack>
         </Paper>
       </Box>
+      </Reveal>
     </Box>
   );
 }

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
@@ -14,8 +15,26 @@ const NAV_LINKS = [
 ];
 
 export function NavBar() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
-    <AppBar position="static" color="transparent" sx={{ bgcolor: 'background.paper' }}>
+    <AppBar
+      position="sticky"
+      color="transparent"
+      sx={{
+        top: 0,
+        bgcolor: scrolled ? 'rgba(255,255,255,0.82)' : 'background.paper',
+        backdropFilter: scrolled ? 'saturate(180%) blur(10px)' : 'none',
+        boxShadow: scrolled ? '0 1px 0 rgba(15,23,42,0.06)' : 'none',
+      }}
+    >
       <Container maxWidth="lg">
         <Toolbar disableGutters sx={{ py: 1 }}>
           <Stack
@@ -37,6 +56,8 @@ export function NavBar() {
                 justifyContent: 'center',
                 fontWeight: 800,
                 fontSize: 18,
+                transition: 'transform 0.3s ease',
+                '.MuiStack-root:hover &': { transform: 'rotate(-6deg) scale(1.06)' },
               }}
             >
               H
@@ -53,7 +74,23 @@ export function NavBar() {
                 href={link.href}
                 underline="none"
                 color="text.primary"
-                sx={{ fontSize: 15, fontWeight: 500 }}
+                sx={{
+                  fontSize: 15,
+                  fontWeight: 500,
+                  position: 'relative',
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    left: 0,
+                    bottom: -4,
+                    height: 2,
+                    width: 0,
+                    bgcolor: 'primary.main',
+                    borderRadius: 1,
+                    transition: 'width 0.25s ease',
+                  },
+                  '&:hover::after': { width: '100%' },
+                }}
               >
                 {link.label}
               </Link>
@@ -63,7 +100,23 @@ export function NavBar() {
               to="/login"
               underline="none"
               color="text.primary"
-              sx={{ fontSize: 15, fontWeight: 500 }}
+              sx={{
+                fontSize: 15,
+                fontWeight: 500,
+                position: 'relative',
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  left: 0,
+                  bottom: -4,
+                  height: 2,
+                  width: 0,
+                  bgcolor: 'primary.main',
+                  borderRadius: 1,
+                  transition: 'width 0.25s ease',
+                },
+                '&:hover::after': { width: '100%' },
+              }}
             >
               Client Portal
             </Link>

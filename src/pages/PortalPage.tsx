@@ -9,6 +9,7 @@ import Paper from '@mui/material/Paper';
 import { useAuth } from '../auth/AuthContext';
 import { getMyProjects } from '../api/portal';
 import { ProjectCard } from '../components/portal/ProjectCard';
+import { Reveal } from '../components/motion/Reveal';
 import type { SoftwareProject } from '../types';
 
 export function PortalPage() {
@@ -71,8 +72,10 @@ export function PortalPage() {
 
           {status === 'ready' && projects.length > 0 && (
             <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' } }}>
-              {projects.map((project) => (
-                <ProjectCard key={project.id} project={project} />
+              {projects.map((project, index) => (
+                <Reveal key={project.id} delay={index * 0.08} y={16}>
+                  <ProjectCard project={project} />
+                </Reveal>
               ))}
             </Box>
           )}
