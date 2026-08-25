@@ -21,6 +21,7 @@ import { getClients } from '../api/admin';
 import { Reveal } from '../components/motion/Reveal';
 import { CreateClientDialog } from '../components/admin/CreateClientDialog';
 import hslIcon from '../assets/branding/icon-dark.png';
+import { useScrolled } from '../hooks/useScrolled';
 import type { AdminClient } from '../types';
 
 export function AdminPage() {
@@ -29,6 +30,7 @@ export function AdminPage() {
   const [clients, setClients] = useState<AdminClient[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const scrolled = useScrolled();
 
   function loadClients() {
     setStatus('loading');
@@ -46,7 +48,16 @@ export function AdminPage() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc' }}>
-      <AppBar position="static" color="transparent" sx={{ bgcolor: 'background.paper' }}>
+      <AppBar
+        position="sticky"
+        color="transparent"
+        sx={{
+          top: 0,
+          bgcolor: scrolled ? 'rgba(255,255,255,0.82)' : 'background.paper',
+          backdropFilter: scrolled ? 'saturate(180%) blur(10px)' : 'none',
+          boxShadow: scrolled ? '0 1px 0 rgba(15,23,42,0.06)' : 'none',
+        }}
+      >
         <Container maxWidth="lg">
           <Toolbar disableGutters sx={{ py: 1 }}>
             <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexGrow: 1 }}>
@@ -66,19 +77,21 @@ export function AdminPage() {
       </AppBar>
 
       <Container maxWidth="lg" sx={{ py: 6 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
-          <Box>
-            <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary' }}>
-              Clients
-            </Typography>
-            <Typography sx={{ mt: 0.5, color: 'text.secondary' }}>
-              Create client accounts and assign them software.
-            </Typography>
+        <Reveal>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+            <Box>
+              <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                Clients
+              </Typography>
+              <Typography sx={{ mt: 0.5, color: 'text.secondary' }}>
+                Create client accounts and assign them software.
+              </Typography>
+            </Box>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
+              New Client
+            </Button>
           </Box>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
-            New Client
-          </Button>
-        </Box>
+        </Reveal>
 
         <Box sx={{ mt: 4 }}>
           {status === 'loading' && <Typography color="text.secondary">Loading clients…</Typography>}
@@ -99,10 +112,20 @@ export function AdminPage() {
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableCell sx={{ fontWeight: 700 }}>Company</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Email</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Contact</TableCell>
-                      <TableCell sx={{ fontWeight: 700 }}>Projects</TableCell>
+                      {['Company', 'Email', 'Contact', 'Projects'].map((label) => (
+                        <TableCell
+                          key={label}
+                          sx={{
+                            fontWeight: 700,
+                            fontSize: 12,
+                            letterSpacing: 0.6,
+                            textTransform: 'uppercase',
+                            color: 'text.secondary',
+                          }}
+                        >
+                          {label}
+                        </TableCell>
+                      ))}
                     </TableRow>
                   </TableHead>
                   <TableBody>

@@ -17,6 +17,7 @@ import { ProjectCard } from '../components/portal/ProjectCard';
 import { Reveal } from '../components/motion/Reveal';
 import { CreateProjectDialog } from '../components/admin/CreateProjectDialog';
 import hslIcon from '../assets/branding/icon-dark.png';
+import { useScrolled } from '../hooks/useScrolled';
 import type { AdminClient, SoftwareProject } from '../types';
 
 export function AdminClientDetailPage() {
@@ -26,6 +27,7 @@ export function AdminClientDetailPage() {
   const [projects, setProjects] = useState<SoftwareProject[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const scrolled = useScrolled();
 
   function loadData() {
     if (!clientId) return;
@@ -45,7 +47,16 @@ export function AdminClientDetailPage() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc' }}>
-      <AppBar position="static" color="transparent" sx={{ bgcolor: 'background.paper' }}>
+      <AppBar
+        position="sticky"
+        color="transparent"
+        sx={{
+          top: 0,
+          bgcolor: scrolled ? 'rgba(255,255,255,0.82)' : 'background.paper',
+          backdropFilter: scrolled ? 'saturate(180%) blur(10px)' : 'none',
+          boxShadow: scrolled ? '0 1px 0 rgba(15,23,42,0.06)' : 'none',
+        }}
+      >
         <Container maxWidth="lg">
           <Toolbar disableGutters sx={{ py: 1 }}>
             <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexGrow: 1 }}>
@@ -76,20 +87,22 @@ export function AdminClientDetailPage() {
           Clients
         </Link>
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
-          <Box>
-            <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary' }}>
-              {client?.companyName ?? 'Client'}
-            </Typography>
-            <Typography sx={{ mt: 0.5, color: 'text.secondary' }}>
-              {client?.email}
-              {client?.contactName ? ` · ${client.contactName}` : ''}
-            </Typography>
+        <Reveal>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+            <Box>
+              <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                {client?.companyName ?? 'Client'}
+              </Typography>
+              <Typography sx={{ mt: 0.5, color: 'text.secondary' }}>
+                {client?.email}
+                {client?.contactName ? ` · ${client.contactName}` : ''}
+              </Typography>
+            </Box>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)} disabled={!clientId}>
+              Add Project
+            </Button>
           </Box>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)} disabled={!clientId}>
-            Add Project
-          </Button>
-        </Box>
+        </Reveal>
 
         <Box sx={{ mt: 4 }}>
           {status === 'loading' && <Typography color="text.secondary">Loading projects…</Typography>}

@@ -12,12 +12,14 @@ import { getMyProjects } from '../api/portal';
 import { ProjectCard } from '../components/portal/ProjectCard';
 import { Reveal } from '../components/motion/Reveal';
 import hslIcon from '../assets/branding/icon-dark.png';
+import { useScrolled } from '../hooks/useScrolled';
 import type { SoftwareProject } from '../types';
 
 export function PortalPage() {
   const { user, logout } = useAuth();
   const [projects, setProjects] = useState<SoftwareProject[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const scrolled = useScrolled();
 
   useEffect(() => {
     getMyProjects()
@@ -30,7 +32,16 @@ export function PortalPage() {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc' }}>
-      <AppBar position="static" color="transparent" sx={{ bgcolor: 'background.paper' }}>
+      <AppBar
+        position="sticky"
+        color="transparent"
+        sx={{
+          top: 0,
+          bgcolor: scrolled ? 'rgba(255,255,255,0.82)' : 'background.paper',
+          backdropFilter: scrolled ? 'saturate(180%) blur(10px)' : 'none',
+          boxShadow: scrolled ? '0 1px 0 rgba(15,23,42,0.06)' : 'none',
+        }}
+      >
         <Container maxWidth="lg">
           <Toolbar disableGutters sx={{ py: 1 }}>
             <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexGrow: 1 }}>
@@ -50,12 +61,14 @@ export function PortalPage() {
       </AppBar>
 
       <Container maxWidth="lg" sx={{ py: 6 }}>
-        <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary' }}>
-          Your Software
-        </Typography>
-        <Typography sx={{ mt: 0.5, color: 'text.secondary' }}>
-          Everything we've built for {user?.companyName}.
-        </Typography>
+        <Reveal>
+          <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary' }}>
+            Your Software
+          </Typography>
+          <Typography sx={{ mt: 0.5, color: 'text.secondary' }}>
+            Everything we've built for {user?.companyName}.
+          </Typography>
+        </Reveal>
 
         <Box sx={{ mt: 4 }}>
           {status === 'loading' && <Typography color="text.secondary">Loading your projects…</Typography>}

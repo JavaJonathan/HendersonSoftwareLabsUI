@@ -14,6 +14,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
 import { createClient } from '../../api/admin';
 import { ApiError } from '../../api/client';
+import { Reveal } from '../motion/Reveal';
 import type { CreateClientResult } from '../../types';
 
 interface CreateClientDialogProps {
@@ -85,33 +86,35 @@ export function CreateClientDialog({ open, onClose, onCreated }: CreateClientDia
         <>
           <DialogTitle>Client Created</DialogTitle>
           <DialogContent>
-            <Typography variant="body2" color="text.secondary">
-              {result.companyName} ({result.email})
-            </Typography>
+            <Reveal y={12}>
+              <Typography variant="body2" color="text.secondary">
+                {result.companyName} ({result.email})
+              </Typography>
 
-            <TextField
-              label="Generated Password"
-              value={result.generatedPassword}
-              fullWidth
-              margin="normal"
-              slotProps={{
-                input: {
-                  readOnly: true,
-                  sx: { fontFamily: 'monospace' },
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton onClick={handleCopy} edge="end">
-                        {copied ? <CheckIcon color="success" /> : <ContentCopyIcon />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                },
-              }}
-            />
+              <TextField
+                label="Generated Password"
+                value={result.generatedPassword}
+                fullWidth
+                margin="normal"
+                slotProps={{
+                  input: {
+                    readOnly: true,
+                    sx: { fontFamily: 'monospace' },
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={handleCopy} edge="end">
+                          {copied ? <CheckIcon color="success" /> : <ContentCopyIcon />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
 
-            <Alert severity="warning" sx={{ mt: 1 }}>
-              This password won't be shown again. Copy it now and relay it to the client directly.
-            </Alert>
+              <Alert severity="warning" sx={{ mt: 1 }}>
+                This password won't be shown again. Copy it now and relay it to the client directly.
+              </Alert>
+            </Reveal>
           </DialogContent>
           <DialogActions>
             <Button variant="contained" onClick={resetAndClose}>

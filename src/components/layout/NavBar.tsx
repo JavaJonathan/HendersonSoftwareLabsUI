@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
@@ -9,6 +8,7 @@ import Button from '@mui/material/Button';
 import Link from '@mui/material/Link';
 import Container from '@mui/material/Container';
 import hslIcon from '../../assets/branding/icon-dark.png';
+import { useScrolled } from '../../hooks/useScrolled';
 
 const NAV_LINKS = [
   { label: 'Services', href: '#what-we-do' },
@@ -16,14 +16,7 @@ const NAV_LINKS = [
 ];
 
 export function NavBar() {
-  const [scrolled, setScrolled] = useState(false);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  const scrolled = useScrolled();
 
   return (
     <AppBar

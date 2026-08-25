@@ -7,6 +7,7 @@ import { motion } from 'framer-motion';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import RocketLaunchOutlinedIcon from '@mui/icons-material/RocketLaunchOutlined';
 import { Reveal } from '../motion/Reveal';
+import { GradientBackdrop } from '../motion/GradientBackdrop';
 
 export function CtaBanner() {
   return (
@@ -22,22 +23,7 @@ export function CtaBanner() {
             overflow: 'hidden',
           }}
         >
-          <Box
-            component={motion.div}
-            animate={{ x: [0, 30, 0], y: [0, -14, 0] }}
-            transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
-            aria-hidden
-            sx={{
-              position: 'absolute',
-              top: -100,
-              right: -60,
-              width: 320,
-              height: 320,
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(37,99,235,0.35) 0%, rgba(37,99,235,0) 70%)',
-              pointerEvents: 'none',
-            }}
-          />
+          <GradientBackdrop variant="dark" />
 
           <Stack
             direction={{ xs: 'column', md: 'row' }}

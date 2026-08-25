@@ -8,10 +8,13 @@ import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import Link from '@mui/material/Link';
+import { motion } from 'framer-motion';
 import { useAuth } from '../auth/AuthContext';
 import { ApiError } from '../api/client';
 import { Reveal } from '../components/motion/Reveal';
+import { GradientBackdrop } from '../components/motion/GradientBackdrop';
 import hslIcon from '../assets/branding/icon-dark.png';
+import wordmarkLight from '../assets/branding/wordmark-light.png';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -47,55 +50,100 @@ export function LoginPage() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', px: 2 }}>
-      <Reveal y={16}>
-      <Box sx={{ width: '100%', maxWidth: 400 }}>
-        <Stack sx={{ mb: 4, alignItems: 'center' }}>
-          <Link component={RouterLink} to="/" underline="none" sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-            <Box component="img" src={hslIcon} alt="Henderson Software Labs" sx={{ height: 34, width: 'auto' }} />
-            <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
-              Henderson Software Labs
+    <Box sx={{ minHeight: '100vh', display: 'flex' }}>
+      <Box
+        sx={{
+          display: { xs: 'none', md: 'flex' },
+          flex: '1 1 50%',
+          position: 'relative',
+          overflow: 'hidden',
+          bgcolor: '#0b1734',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 6,
+        }}
+      >
+        <GradientBackdrop variant="dark" />
+        <Reveal>
+          <Box sx={{ position: 'relative', textAlign: 'center', maxWidth: 440 }}>
+            <Box
+              component={motion.div}
+              animate={{ y: [0, -8, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <Box
+                component="img"
+                src={wordmarkLight}
+                alt="Henderson Software Labs"
+                sx={{ width: { md: 300, lg: 360 }, height: 'auto', mx: 'auto' }}
+              />
+            </Box>
+            <Typography sx={{ mt: 4, color: 'rgba(255,255,255,0.75)', fontSize: 18 }}>
+              All the software we've built for you, in one place.
             </Typography>
-          </Link>
-        </Stack>
-
-        <Paper variant="outlined" sx={{ p: 4, borderRadius: 3 }}>
-          <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary' }}>
-            Client Login
-          </Typography>
-          <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>
-            Sign in to view the software we've built for you.
-          </Typography>
-
-          <Stack component="form" spacing={2.5} sx={{ mt: 3 }} onSubmit={handleSubmit}>
-            <TextField
-              label="Email"
-              type="email"
-              required
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              fullWidth
-            />
-            <TextField
-              label="Password"
-              type="password"
-              required
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              fullWidth
-            />
-
-            {error && <Alert severity="error">{error}</Alert>}
-
-            <Button type="submit" variant="contained" size="large" disabled={submitting} fullWidth>
-              {submitting ? 'Signing in…' : 'Sign In'}
-            </Button>
-          </Stack>
-        </Paper>
+          </Box>
+        </Reveal>
       </Box>
-      </Reveal>
+
+      <Box
+        sx={{
+          flex: '1 1 50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          px: 2,
+          bgcolor: '#f8fafc',
+        }}
+      >
+        <Reveal y={16}>
+          <Box sx={{ width: '100%', maxWidth: 400 }}>
+            <Stack sx={{ mb: 4, alignItems: 'center' }}>
+              <Link component={RouterLink} to="/" underline="none" sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                <Box component="img" src={hslIcon} alt="Henderson Software Labs" sx={{ height: 34, width: 'auto' }} />
+                <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                  Henderson Software Labs
+                </Typography>
+              </Link>
+            </Stack>
+
+            <Paper variant="outlined" sx={{ p: 4, borderRadius: 3 }}>
+              <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                Client Login
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>
+                Sign in to view the software we've built for you.
+              </Typography>
+
+              <Stack component="form" spacing={2.5} sx={{ mt: 3 }} onSubmit={handleSubmit}>
+                <TextField
+                  label="Email"
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  fullWidth
+                />
+                <TextField
+                  label="Password"
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  fullWidth
+                />
+
+                {error && <Alert severity="error">{error}</Alert>}
+
+                <Button type="submit" variant="contained" size="large" disabled={submitting} fullWidth>
+                  {submitting ? 'Signing in…' : 'Sign In'}
+                </Button>
+              </Stack>
+            </Paper>
+          </Box>
+        </Reveal>
+      </Box>
     </Box>
   );
 }
