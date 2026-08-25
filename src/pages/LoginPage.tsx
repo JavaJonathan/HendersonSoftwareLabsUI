@@ -10,9 +10,10 @@ import Alert from '@mui/material/Alert';
 import Link from '@mui/material/Link';
 import { motion } from 'framer-motion';
 import { useAuth } from '../auth/AuthContext';
-import { ApiError } from '../api/client';
+import { ApiError, getApiErrorMessage } from '../api/client';
 import { Reveal } from '../components/motion/Reveal';
 import { GradientBackdrop } from '../components/motion/GradientBackdrop';
+import { SURFACE_SUBTLE, SURFACE_DARK } from '../theme';
 import hslIcon from '../assets/branding/icon-dark.png';
 import wordmarkLight from '../assets/branding/wordmark-light.png';
 
@@ -39,10 +40,8 @@ export function LoginPage() {
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
         setError('Invalid email or password.');
-      } else if (err instanceof ApiError && err.status === 423) {
-        setError(err.message);
       } else {
-        setError('Something went wrong. Please try again.');
+        setError(getApiErrorMessage(err, 'Something went wrong. Please try again.'));
       }
     } finally {
       setSubmitting(false);
@@ -57,7 +56,7 @@ export function LoginPage() {
           flex: '1 1 50%',
           position: 'relative',
           overflow: 'hidden',
-          bgcolor: '#0b1734',
+          bgcolor: SURFACE_DARK,
           alignItems: 'center',
           justifyContent: 'center',
           p: 6,
@@ -92,7 +91,7 @@ export function LoginPage() {
           alignItems: 'center',
           justifyContent: 'center',
           px: 2,
-          bgcolor: '#f8fafc',
+          bgcolor: SURFACE_SUBTLE,
         }}
       >
         <Reveal y={16}>

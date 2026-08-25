@@ -3,6 +3,12 @@ import { createTheme } from '@mui/material/styles';
 const headingFont = '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif';
 const bodyFont = '"Inter", "Segoe UI", system-ui, sans-serif';
 
+/** Muted page-shell background used behind every authenticated/form page. */
+export const SURFACE_SUBTLE = '#f8fafc';
+
+/** Dark brand surface used for hero-style panels on a dark background (CTA banner, footer, login branding panel). */
+export const SURFACE_DARK = '#0b1734';
+
 export const theme = createTheme({
   palette: {
     primary: {

@@ -2,39 +2,32 @@ import { useEffect, useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
-import Paper from '@mui/material/Paper';
 import Link from '@mui/material/Link';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddIcon from '@mui/icons-material/Add';
-import { useAuth } from '../auth/AuthContext';
-import { getClientProjects, getClients } from '../api/admin';
-import { ProjectCard } from '../components/portal/ProjectCard';
+import { getClient, getClientProjects } from '../api/admin';
+import { ProjectGrid } from '../components/portal/ProjectGrid';
 import { Reveal } from '../components/motion/Reveal';
+import { AuthedAppBar } from '../components/layout/AuthedAppBar';
+import { SURFACE_SUBTLE } from '../theme';
 import { CreateProjectDialog } from '../components/admin/CreateProjectDialog';
-import hslIcon from '../assets/branding/icon-dark.png';
-import { useScrolled } from '../hooks/useScrolled';
 import type { AdminClient, SoftwareProject } from '../types';
 
 export function AdminClientDetailPage() {
   const { clientId } = useParams<{ clientId: string }>();
-  const { logout } = useAuth();
   const [client, setClient] = useState<AdminClient | null>(null);
   const [projects, setProjects] = useState<SoftwareProject[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const scrolled = useScrolled();
 
   function loadData() {
     if (!clientId) return;
     setStatus('loading');
-    Promise.all([getClients(), getClientProjects(clientId)])
-      .then(([clients, clientProjects]) => {
-        setClient(clients.find((c) => c.id === clientId) ?? null);
+    Promise.all([getClient(clientId), getClientProjects(clientId)])
+      .then(([clientData, clientProjects]) => {
+        setClient(clientData);
         setProjects(clientProjects);
         setStatus('ready');
       })
@@ -46,34 +39,8 @@ export function AdminClientDetailPage() {
   }, [clientId]);
 
   return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#f8fafc' }}>
-      <AppBar
-        position="sticky"
-        color="transparent"
-        sx={{
-          top: 0,
-          bgcolor: scrolled ? 'rgba(255,255,255,0.82)' : 'background.paper',
-          backdropFilter: scrolled ? 'saturate(180%) blur(10px)' : 'none',
-          boxShadow: scrolled ? '0 1px 0 rgba(15,23,42,0.06)' : 'none',
-        }}
-      >
-        <Container maxWidth="lg">
-          <Toolbar disableGutters sx={{ py: 1 }}>
-            <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexGrow: 1 }}>
-              <Box component="img" src={hslIcon} alt="Henderson Software Labs" sx={{ height: 30, width: 'auto' }} />
-              <Box>
-                <Typography sx={{ fontWeight: 700, color: 'text.primary' }}>Henderson Software Labs</Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Admin
-                </Typography>
-              </Box>
-            </Stack>
-            <Button variant="outlined" color="inherit" onClick={logout}>
-              Log Out
-            </Button>
-          </Toolbar>
-        </Container>
-      </AppBar>
+    <Box sx={{ minHeight: '100vh', bgcolor: SURFACE_SUBTLE }}>
+      <AuthedAppBar subtitle="Admin" />
 
       <Container maxWidth="lg" sx={{ py: 6 }}>
         <Link
@@ -104,29 +71,12 @@ export function AdminClientDetailPage() {
           </Box>
         </Reveal>
 
-        <Box sx={{ mt: 4 }}>
-          {status === 'loading' && <Typography color="text.secondary">Loading projects…</Typography>}
-
-          {status === 'error' && (
-            <Typography color="error">Something went wrong loading this client. Please try again later.</Typography>
-          )}
-
-          {status === 'ready' && projects.length === 0 && (
-            <Paper variant="outlined" sx={{ p: 6, textAlign: 'center', color: 'text.secondary', borderStyle: 'dashed' }}>
-              No software assigned to this client yet.
-            </Paper>
-          )}
-
-          {status === 'ready' && projects.length > 0 && (
-            <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' } }}>
-              {projects.map((project, index) => (
-                <Reveal key={project.id} delay={index * 0.08} y={16}>
-                  <ProjectCard project={project} />
-                </Reveal>
-              ))}
-            </Box>
-          )}
-        </Box>
+        <ProjectGrid
+          status={status}
+          projects={projects}
+          errorMessage="Something went wrong loading this client. Please try again later."
+          emptyMessage="No software assigned to this client yet."
+        />
       </Container>
 
       {clientId && (

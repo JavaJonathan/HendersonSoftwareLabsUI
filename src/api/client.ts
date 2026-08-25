@@ -41,3 +41,11 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 
   return response.json() as Promise<T>;
 }
+
+/** Shared fallback for submit-handler catch blocks: use the server's message when there is one. */
+export function getApiErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof ApiError && err.message) {
+    return err.message;
+  }
+  return fallback;
+}

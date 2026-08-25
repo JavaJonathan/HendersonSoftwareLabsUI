@@ -5,6 +5,10 @@ export function getClients() {
   return apiFetch<AdminClient[]>('/api/admin/clients');
 }
 
+export function getClient(clientId: string) {
+  return apiFetch<AdminClient>(`/api/admin/clients/${clientId}`);
+}
+
 export function createClient(payload: CreateClientPayload) {
   return apiFetch<CreateClientResult>('/api/admin/clients', {
     method: 'POST',

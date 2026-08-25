@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './auth/AuthContext';
 import { ProtectedRoute } from './auth/ProtectedRoute';
-import { AdminRoute } from './auth/AdminRoute';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { PortalPage } from './pages/PortalPage';
@@ -28,17 +27,17 @@ function App() {
           <Route
             path="/admin"
             element={
-              <AdminRoute>
+              <ProtectedRoute requireAdmin>
                 <AdminPage />
-              </AdminRoute>
+              </ProtectedRoute>
             }
           />
           <Route
             path="/admin/clients/:clientId"
             element={
-              <AdminRoute>
+              <ProtectedRoute requireAdmin>
                 <AdminClientDetailPage />
-              </AdminRoute>
+              </ProtectedRoute>
             }
           />
         </Routes>

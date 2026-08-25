@@ -3,6 +3,7 @@ import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import wordmark from '../../assets/branding/wordmark-light.png';
+import { SURFACE_DARK } from '../../theme';
 
 const COLUMNS = [
   {
@@ -21,7 +22,7 @@ const COLUMNS = [
 
 export function Footer() {
   return (
-    <Box component="footer" sx={{ bgcolor: '#0b1120', color: 'rgba(255,255,255,0.7)' }}>
+    <Box component="footer" sx={{ bgcolor: SURFACE_DARK, color: 'rgba(255,255,255,0.7)' }}>
       <Container maxWidth="lg" sx={{ py: 6 }}>
         <Box
           sx={{

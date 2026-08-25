@@ -8,6 +8,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import RocketLaunchOutlinedIcon from '@mui/icons-material/RocketLaunchOutlined';
 import { Reveal } from '../motion/Reveal';
 import { GradientBackdrop } from '../motion/GradientBackdrop';
+import { SURFACE_DARK } from '../../theme';
 
 export function CtaBanner() {
   return (
@@ -16,7 +17,7 @@ export function CtaBanner() {
         <Box
           sx={{
             position: 'relative',
-            bgcolor: '#0b1734',
+            bgcolor: SURFACE_DARK,
             borderRadius: 4,
             px: { xs: 4, md: 6 },
             py: { xs: 5, md: 6 },

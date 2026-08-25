@@ -13,26 +13,24 @@ import PauseCircleOutlinedIcon from '@mui/icons-material/PauseCircleOutlined';
 import DoneAllOutlinedIcon from '@mui/icons-material/DoneAllOutlined';
 import { PROJECT_STATUS_LABELS, type SoftwareProject } from '../../types';
 
-const STATUS_COLOR: Record<SoftwareProject['status'], ChipProps['color']> = {
-  Planning: 'default',
-  InProgress: 'warning',
-  Live: 'success',
-  Maintenance: 'info',
-  OnHold: 'error',
-  Completed: 'default',
-};
+interface StatusMeta {
+  color: ChipProps['color'];
+  icon: typeof CheckCircleOutlinedIcon;
+  bg: string;
+  fg: string;
+}
 
-const STATUS_ICON: Record<SoftwareProject['status'], { icon: typeof CheckCircleOutlinedIcon; bg: string; fg: string }> = {
-  Planning: { icon: PlaylistAddCheckOutlinedIcon, bg: '#f1f5f9', fg: '#64748b' },
-  InProgress: { icon: AutorenewOutlinedIcon, bg: '#fef3c7', fg: '#d97706' },
-  Live: { icon: CheckCircleOutlinedIcon, bg: '#dcfce7', fg: '#16a34a' },
-  Maintenance: { icon: ConstructionOutlinedIcon, bg: '#dbeafe', fg: '#2563eb' },
-  OnHold: { icon: PauseCircleOutlinedIcon, bg: '#fee2e2', fg: '#dc2626' },
-  Completed: { icon: DoneAllOutlinedIcon, bg: '#f1f5f9', fg: '#64748b' },
+const STATUS_META: Record<SoftwareProject['status'], StatusMeta> = {
+  Planning: { color: 'default', icon: PlaylistAddCheckOutlinedIcon, bg: '#f1f5f9', fg: '#64748b' },
+  InProgress: { color: 'warning', icon: AutorenewOutlinedIcon, bg: '#fef3c7', fg: '#d97706' },
+  Live: { color: 'success', icon: CheckCircleOutlinedIcon, bg: '#dcfce7', fg: '#16a34a' },
+  Maintenance: { color: 'info', icon: ConstructionOutlinedIcon, bg: '#dbeafe', fg: '#2563eb' },
+  OnHold: { color: 'error', icon: PauseCircleOutlinedIcon, bg: '#fee2e2', fg: '#dc2626' },
+  Completed: { color: 'default', icon: DoneAllOutlinedIcon, bg: '#f1f5f9', fg: '#64748b' },
 };
 
 export function ProjectCard({ project }: { project: SoftwareProject }) {
-  const { icon: StatusIcon, bg, fg } = STATUS_ICON[project.status];
+  const { color, icon: StatusIcon, bg, fg } = STATUS_META[project.status];
 
   return (
     <Card>
@@ -57,7 +55,7 @@ export function ProjectCard({ project }: { project: SoftwareProject }) {
           <Typography sx={{ fontWeight: 700, color: 'text.primary' }}>{project.name}</Typography>
           <Chip
             label={PROJECT_STATUS_LABELS[project.status]}
-            color={STATUS_COLOR[project.status]}
+            color={color}
             size="small"
             sx={{ flexShrink: 0 }}
           />

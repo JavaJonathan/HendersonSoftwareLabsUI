@@ -13,7 +13,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
 import { createClient } from '../../api/admin';
-import { ApiError } from '../../api/client';
+import { getApiErrorMessage } from '../../api/client';
 import { Reveal } from '../motion/Reveal';
 import type { CreateClientResult } from '../../types';
 
@@ -56,11 +56,7 @@ export function CreateClientDialog({ open, onClose, onCreated }: CreateClientDia
       setResult(created);
       onCreated();
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message || 'Failed to create client.');
-      } else {
-        setError('Something went wrong. Please try again.');
-      }
+      setError(getApiErrorMessage(err, 'Something went wrong. Please try again.'));
     } finally {
       setSubmitting(false);
     }

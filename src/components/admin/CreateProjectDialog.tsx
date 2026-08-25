@@ -9,7 +9,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import { createProject } from '../../api/admin';
-import { ApiError } from '../../api/client';
+import { getApiErrorMessage } from '../../api/client';
 import { PROJECT_STATUSES, PROJECT_STATUS_LABELS, type SoftwareProject } from '../../types';
 
 interface CreateProjectDialogProps {
@@ -46,11 +46,7 @@ export function CreateProjectDialog({ open, clientId, onClose, onCreated }: Crea
       onCreated();
       resetAndClose();
     } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.message || 'Failed to create project.');
-      } else {
-        setError('Something went wrong. Please try again.');
-      }
+      setError(getApiErrorMessage(err, 'Something went wrong. Please try again.'));
     } finally {
       setSubmitting(false);
     }
