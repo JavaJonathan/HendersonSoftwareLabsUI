@@ -1,23 +1,47 @@
+import { useEffect } from 'react';
 import Box from '@mui/material/Box';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useSpring } from 'framer-motion';
 
 interface GradientBackdropProps {
   variant?: 'light' | 'dark';
+  /** Adds a subtle whole-backdrop shift toward the cursor, layered on top of the drift animation. */
+  interactive?: boolean;
 }
 
-export function GradientBackdrop({ variant = 'light' }: GradientBackdropProps) {
+export function GradientBackdrop({ variant = 'light', interactive = false }: GradientBackdropProps) {
   const primaryOpacity = variant === 'dark' ? 0.35 : 0.16;
   const secondaryOpacity = variant === 'dark' ? 0.22 : 0.1;
 
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const springX = useSpring(mouseX, { stiffness: 40, damping: 20 });
+  const springY = useSpring(mouseY, { stiffness: 40, damping: 20 });
+
+  useEffect(() => {
+    if (!interactive) return;
+
+    function handlePointerMove(event: PointerEvent) {
+      const normalizedX = (event.clientX / window.innerWidth - 0.5) * 2;
+      const normalizedY = (event.clientY / window.innerHeight - 0.5) * 2;
+      mouseX.set(normalizedX * 18);
+      mouseY.set(normalizedY * 18);
+    }
+
+    window.addEventListener('pointermove', handlePointerMove);
+    return () => window.removeEventListener('pointermove', handlePointerMove);
+  }, [interactive, mouseX, mouseY]);
+
   return (
-    <Box
+    <motion.div
       aria-hidden
-      sx={{
+      style={{
         position: 'absolute',
         inset: 0,
         zIndex: -1,
         pointerEvents: 'none',
         overflow: 'hidden',
+        x: interactive ? springX : 0,
+        y: interactive ? springY : 0,
       }}
     >
       <Box
@@ -50,6 +74,6 @@ export function GradientBackdrop({ variant = 'light' }: GradientBackdropProps) {
           filter: 'blur(10px)',
         }}
       />
-    </Box>
+    </motion.div>
   );
 }

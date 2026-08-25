@@ -11,12 +11,13 @@ import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
 import { Reveal } from '../motion/Reveal';
 import { GradientBackdrop } from '../motion/GradientBackdrop';
+import { MagneticWrap } from '../motion/MagneticWrap';
 import { useCountUp } from '../../hooks/useCountUp';
 
 export function Hero() {
   return (
     <Box sx={{ position: 'relative', overflow: 'hidden' }}>
-      <GradientBackdrop />
+      <GradientBackdrop interactive />
 
       <Container maxWidth="lg" sx={{ pt: { xs: 4, md: 5 }, pb: { xs: 3, md: 4 }, position: 'relative' }}>
         <Box sx={{ display: 'grid', gap: 5, gridTemplateColumns: { xs: '1fr', md: '1.1fr 0.9fr' }, alignItems: 'flex-start' }}>
@@ -48,9 +49,11 @@ export function Hero() {
 
             <Reveal delay={0.24}>
               <Stack direction="row" spacing={2} sx={{ mt: 4, flexWrap: 'wrap' }} useFlexGap>
-                <Button variant="contained" size="large" href="#contact" endIcon={<ArrowForwardIcon />}>
-                  Book a Call
-                </Button>
+                <MagneticWrap>
+                  <Button variant="contained" size="large" href="#contact" endIcon={<ArrowForwardIcon />}>
+                    Book a Call
+                  </Button>
+                </MagneticWrap>
                 <Button variant="outlined" size="large" color="inherit" href="#what-we-do" endIcon={<ArrowForwardIcon />}>
                   See Services
                 </Button>

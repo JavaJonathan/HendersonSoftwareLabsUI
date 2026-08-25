@@ -49,7 +49,10 @@ export function NavBar() {
                 '.MuiStack-root:hover &': { transform: 'rotate(-6deg) scale(1.06)' },
               }}
             />
-            <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 700, color: 'text.primary', display: { xs: 'none', sm: 'block' } }}
+            >
               Henderson Software Labs
             </Typography>
           </Stack>

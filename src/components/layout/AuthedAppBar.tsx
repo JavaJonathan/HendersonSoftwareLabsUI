@@ -30,7 +30,11 @@ export function AuthedAppBar({ subtitle }: { subtitle: string }) {
           <Stack direction="row" spacing={1.25} sx={{ alignItems: 'center', flexGrow: 1 }}>
             <Box component="img" src={hslIcon} alt="Henderson Software Labs" sx={{ height: 30, width: 'auto' }} />
             <Box>
-              <Typography sx={{ fontWeight: 700, color: 'text.primary' }}>Henderson Software Labs</Typography>
+              <Typography
+                sx={{ fontWeight: 700, color: 'text.primary', display: { xs: 'none', sm: 'block' } }}
+              >
+                Henderson Software Labs
+              </Typography>
               <Typography variant="body2" color="text.secondary">
                 {subtitle}
               </Typography>
