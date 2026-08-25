@@ -11,6 +11,7 @@ import Link from '@mui/material/Link';
 import { useAuth } from '../auth/AuthContext';
 import { ApiError } from '../api/client';
 import { Reveal } from '../components/motion/Reveal';
+import hslIcon from '../assets/branding/icon-dark.png';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -51,22 +52,7 @@ export function LoginPage() {
       <Box sx={{ width: '100%', maxWidth: 400 }}>
         <Stack sx={{ mb: 4, alignItems: 'center' }}>
           <Link component={RouterLink} to="/" underline="none" sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-            <Box
-              sx={{
-                width: 34,
-                height: 34,
-                borderRadius: '10px',
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 800,
-                fontSize: 18,
-              }}
-            >
-              H
-            </Box>
+            <Box component="img" src={hslIcon} alt="Henderson Software Labs" sx={{ height: 34, width: 'auto' }} />
             <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
               Henderson Software Labs
             </Typography>

@@ -8,6 +8,7 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Link from '@mui/material/Link';
 import Container from '@mui/material/Container';
+import hslIcon from '../../assets/branding/icon-dark.png';
 
 const NAV_LINKS = [
   { label: 'Services', href: '#what-we-do' },
@@ -45,23 +46,16 @@ export function NavBar() {
             sx={{ textDecoration: 'none', color: 'inherit', flexGrow: 1, alignItems: 'center' }}
           >
             <Box
+              component="img"
+              src={hslIcon}
+              alt="Henderson Software Labs"
               sx={{
-                width: 34,
                 height: 34,
-                borderRadius: '10px',
-                bgcolor: 'primary.main',
-                color: 'primary.contrastText',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontWeight: 800,
-                fontSize: 18,
+                width: 'auto',
                 transition: 'transform 0.3s ease',
                 '.MuiStack-root:hover &': { transform: 'rotate(-6deg) scale(1.06)' },
               }}
-            >
-              H
-            </Box>
+            />
             <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
               Henderson Software Labs
             </Typography>

@@ -2,6 +2,7 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
+import wordmark from '../../assets/branding/wordmark-light.png';
 
 const COLUMNS = [
   {
@@ -30,10 +31,8 @@ export function Footer() {
           }}
         >
           <Box>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: 'white' }}>
-              Henderson Software Labs
-            </Typography>
-            <Typography variant="body2" sx={{ mt: 1.5, maxWidth: 260, color: 'rgba(255,255,255,0.55)' }}>
+            <Box component="img" src={wordmark} alt="Henderson Software Labs" sx={{ height: 32, width: 'auto' }} />
+            <Typography variant="body2" sx={{ mt: 2, maxWidth: 260, color: 'rgba(255,255,255,0.55)' }}>
               Custom software and automation for small businesses.
             </Typography>
             <Typography variant="caption" sx={{ mt: 3, display: 'block', color: 'rgba(255,255,255,0.4)' }}>
