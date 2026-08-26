@@ -43,6 +43,17 @@ There is **no self-service signup**. Client accounts exist only because an admin
 
 **Data isolation is enforced server-side, not just hidden in the UI** — `PortalPage.tsx` can only ever render the logged-in client's own projects because the backend's `/api/portal/projects` endpoint filters by the caller's JWT claim; there's no client-side-only gate to bypass.
 
+## Production Deployment
+
+Hosted on **AWS Amplify** (app `henderson-software-labs-ui`, id `d2qschmehrzw1m`), connected to this repo's `master` branch — a push triggers an automatic build (`amplify.yml` in this repo) and deploy, no manual step. Live at `https://hendersonsoftwarelabs.com` and `https://www.hendersonsoftwarelabs.com` (the original `https://master.d2qschmehrzw1m.amplifyapp.com` still resolves too). The backend is a separate repo/deployment (`HendersonSoftwareLabsAPI`, on EC2) — see its `CLAUDE.md` for that infrastructure.
+
+**`VITE_API_BASE_URL`** is set as an Amplify branch environment variable (not committed here) pointing at `https://api.hendersonsoftwarelabs.com`.
+
+## Known Amplify gotchas (from setting this up)
+
+- Amplify's console **always requires a service role** to proceed past branch setup, even for a pure static site with "Enable full-stack deploys" unchecked. If the "Create a new role" button appears to do nothing, it's likely a blocked popup — create one manually via IAM instead (trust `amplify.amazonaws.com`, attach the AWS-managed `AdministratorAccess-Amplify` policy) and select it from the dropdown.
+- The console's "Add branch" wizard does not necessarily default the branch-name dropdown to `master`/`main` — double-check it before finishing, or you'll end up with an unrelated branch connected instead.
+
 ## Known gotchas (from this project's history)
 
 - MUI icon component names don't always match intuitive guesses and differ between MUI major versions (e.g. `CheckCircleOutline` doesn't exist in the installed version, it's `CheckCircleOutlined`). Before importing an icon that isn't already used elsewhere in this codebase, verify it exists: `ls node_modules/@mui/icons-material | grep -i <name>`.

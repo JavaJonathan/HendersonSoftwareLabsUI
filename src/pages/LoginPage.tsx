@@ -14,8 +14,8 @@ import { ApiError, getApiErrorMessage } from '../api/client';
 import { Reveal } from '../components/motion/Reveal';
 import { GradientBackdrop } from '../components/motion/GradientBackdrop';
 import { SURFACE_SUBTLE, SURFACE_DARK } from '../theme';
-import hslIcon from '../assets/branding/icon-dark.png';
 import wordmarkLight from '../assets/branding/wordmark-light.png';
+import wordmarkDark from '../assets/branding/wordmark-dark.png';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -64,7 +64,7 @@ export function LoginPage() {
       >
         <GradientBackdrop variant="dark" />
         <Reveal>
-          <Box sx={{ position: 'relative', textAlign: 'center', maxWidth: 440 }}>
+          <Box sx={{ position: 'relative', textAlign: 'center', maxWidth: 640 }}>
             <Box
               component={motion.div}
               animate={{ y: [0, -8, 0] }}
@@ -74,11 +74,14 @@ export function LoginPage() {
                 component="img"
                 src={wordmarkLight}
                 alt="Henderson Software Labs"
-                sx={{ width: { md: 300, lg: 360 }, height: 'auto', mx: 'auto' }}
+                sx={{ width: { md: 480, lg: 640 }, height: 'auto', mx: 'auto' }}
               />
             </Box>
-            <Typography sx={{ mt: 4, color: 'rgba(255,255,255,0.75)', fontSize: 18 }}>
+            <Typography sx={{ mt: 5, color: 'rgba(255,255,255,0.8)', fontSize: 22, fontWeight: 500 }}>
               All the software we've built for you, in one place.
+            </Typography>
+            <Typography sx={{ mt: 1.5, color: 'rgba(255,255,255,0.5)', fontSize: 16, maxWidth: 440, mx: 'auto' }}>
+              Custom software for businesses that don't need a full-time software team.
             </Typography>
           </Box>
         </Reveal>
@@ -87,25 +90,34 @@ export function LoginPage() {
       <Box
         sx={{
           flex: '1 1 50%',
+          position: 'relative',
+          overflow: 'hidden',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           px: 2,
+          py: 6,
           bgcolor: SURFACE_SUBTLE,
         }}
       >
+        <GradientBackdrop />
         <Reveal y={16}>
-          <Box sx={{ width: '100%', maxWidth: 400 }}>
-            <Stack sx={{ mb: 4, alignItems: 'center' }}>
-              <Link component={RouterLink} to="/" underline="none" sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                <Box component="img" src={hslIcon} alt="Henderson Software Labs" sx={{ height: 34, width: 'auto' }} />
-                <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
-                  Henderson Software Labs
-                </Typography>
+          <Box sx={{ position: 'relative', width: '100%', maxWidth: 400 }}>
+            <Stack sx={{ mb: 5, alignItems: 'center', display: { xs: 'flex', md: 'none' } }}>
+              <Link component={RouterLink} to="/" underline="none">
+                <Box component="img" src={wordmarkDark} alt="Henderson Software Labs" sx={{ width: 240, height: 'auto' }} />
               </Link>
             </Stack>
 
-            <Paper variant="outlined" sx={{ p: 4, borderRadius: 3 }}>
+            <Paper
+              elevation={0}
+              sx={{
+                p: 4,
+                borderRadius: 4,
+                border: '1px solid rgba(15,23,42,0.06)',
+                boxShadow: '0 24px 48px -24px rgba(15,23,42,0.22)',
+              }}
+            >
               <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary' }}>
                 Client Login
               </Typography>

@@ -9,8 +9,10 @@ interface GradientBackdropProps {
 }
 
 export function GradientBackdrop({ variant = 'light', interactive = false }: GradientBackdropProps) {
-  const primaryOpacity = variant === 'dark' ? 0.35 : 0.16;
-  const secondaryOpacity = variant === 'dark' ? 0.22 : 0.1;
+  const primaryOpacity = variant === 'dark' ? 0.5 : 0.16;
+  const secondaryOpacity = variant === 'dark' ? 0.32 : 0.1;
+  const primarySize = variant === 'dark' ? 620 : 480;
+  const secondarySize = variant === 'dark' ? 540 : 420;
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -52,8 +54,8 @@ export function GradientBackdrop({ variant = 'light', interactive = false }: Gra
           position: 'absolute',
           top: -140,
           right: -120,
-          width: 480,
-          height: 480,
+          width: primarySize,
+          height: primarySize,
           borderRadius: '50%',
           background: `radial-gradient(circle, rgba(37,99,235,${primaryOpacity}) 0%, rgba(37,99,235,0) 70%)`,
           filter: 'blur(10px)',
@@ -67,8 +69,8 @@ export function GradientBackdrop({ variant = 'light', interactive = false }: Gra
           position: 'absolute',
           top: 80,
           left: -160,
-          width: 420,
-          height: 420,
+          width: secondarySize,
+          height: secondarySize,
           borderRadius: '50%',
           background: `radial-gradient(circle, rgba(37,99,235,${secondaryOpacity}) 0%, rgba(37,99,235,0) 70%)`,
           filter: 'blur(10px)',

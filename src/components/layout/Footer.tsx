@@ -17,7 +17,7 @@ export function Footer() {
           }}
         >
           <Box>
-            <Box component="img" src={wordmark} alt="Henderson Software Labs" sx={{ height: 32, width: 'auto' }} />
+            <Box component="img" src={wordmark} alt="Henderson Software Labs" sx={{ height: 44, width: 'auto' }} />
             <Typography variant="body2" sx={{ mt: 2, maxWidth: 320, color: 'rgba(255,255,255,0.55)' }}>
               Custom software and automation for small businesses.
             </Typography>
