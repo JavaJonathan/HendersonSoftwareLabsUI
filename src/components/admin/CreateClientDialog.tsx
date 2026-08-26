@@ -8,13 +8,10 @@ import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
-import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import CheckIcon from '@mui/icons-material/Check';
 import { createClient } from '../../api/admin';
 import { getApiErrorMessage } from '../../api/client';
 import { Reveal } from '../motion/Reveal';
+import { PasswordRevealPanel } from './PasswordRevealPanel';
 import type { CreateClientResult } from '../../types';
 
 interface CreateClientDialogProps {
@@ -30,7 +27,6 @@ export function CreateClientDialog({ open, onClose, onCreated }: CreateClientDia
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<CreateClientResult | null>(null);
-  const [copied, setCopied] = useState(false);
 
   function resetAndClose() {
     setEmail('');
@@ -38,7 +34,6 @@ export function CreateClientDialog({ open, onClose, onCreated }: CreateClientDia
     setContactName('');
     setError(null);
     setResult(null);
-    setCopied(false);
     onClose();
   }
 
@@ -62,12 +57,6 @@ export function CreateClientDialog({ open, onClose, onCreated }: CreateClientDia
     }
   }
 
-  async function handleCopy() {
-    if (!result) return;
-    await navigator.clipboard.writeText(result.generatedPassword);
-    setCopied(true);
-  }
-
   return (
     <Dialog
       open={open}
@@ -87,29 +76,7 @@ export function CreateClientDialog({ open, onClose, onCreated }: CreateClientDia
                 {result.companyName} ({result.email})
               </Typography>
 
-              <TextField
-                label="Generated Password"
-                value={result.generatedPassword}
-                fullWidth
-                margin="normal"
-                slotProps={{
-                  input: {
-                    readOnly: true,
-                    sx: { fontFamily: 'monospace' },
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton onClick={handleCopy} edge="end">
-                          {copied ? <CheckIcon color="success" /> : <ContentCopyIcon />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  },
-                }}
-              />
-
-              <Alert severity="warning" sx={{ mt: 1 }}>
-                This password won't be shown again. Copy it now and relay it to the client directly.
-              </Alert>
+              <PasswordRevealPanel password={result.generatedPassword} />
             </Reveal>
           </DialogContent>
           <DialogActions>

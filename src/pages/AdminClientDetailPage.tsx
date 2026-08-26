@@ -7,12 +7,14 @@ import Button from '@mui/material/Button';
 import Link from '@mui/material/Link';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddIcon from '@mui/icons-material/Add';
+import KeyOutlinedIcon from '@mui/icons-material/KeyOutlined';
 import { getClient, getClientProjects } from '../api/admin';
 import { ProjectGrid } from '../components/portal/ProjectGrid';
 import { Reveal } from '../components/motion/Reveal';
 import { AuthedAppBar } from '../components/layout/AuthedAppBar';
 import { SURFACE_SUBTLE } from '../theme';
 import { CreateProjectDialog } from '../components/admin/CreateProjectDialog';
+import { ResetPasswordDialog } from '../components/admin/ResetPasswordDialog';
 import type { AdminClient, SoftwareProject } from '../types';
 
 export function AdminClientDetailPage() {
@@ -21,6 +23,7 @@ export function AdminClientDetailPage() {
   const [projects, setProjects] = useState<SoftwareProject[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
   function loadData() {
     if (!clientId) return;
@@ -65,9 +68,20 @@ export function AdminClientDetailPage() {
                 {client?.contactName ? ` · ${client.contactName}` : ''}
               </Typography>
             </Box>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)} disabled={!clientId}>
-              Add Project
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+              <Button
+                variant="outlined"
+                color="warning"
+                startIcon={<KeyOutlinedIcon />}
+                onClick={() => setResetDialogOpen(true)}
+                disabled={!clientId}
+              >
+                Reset Password
+              </Button>
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)} disabled={!clientId}>
+                Add Project
+              </Button>
+            </Box>
           </Box>
         </Reveal>
 
@@ -85,6 +99,15 @@ export function AdminClientDetailPage() {
           clientId={clientId}
           onClose={() => setDialogOpen(false)}
           onCreated={loadData}
+        />
+      )}
+
+      {clientId && (
+        <ResetPasswordDialog
+          open={resetDialogOpen}
+          clientId={clientId}
+          clientLabel={client?.companyName ?? client?.email ?? 'this client'}
+          onClose={() => setResetDialogOpen(false)}
         />
       )}
     </Box>

@@ -61,9 +61,9 @@ export function CtaBanner() {
             </Box>
 
             <Button
-              id="contact"
               variant="contained"
               size="large"
+              href="mailto:jonathan@HendersonSoftwareLabs.com?subject=Booking%20a%20Call"
               endIcon={<ArrowForwardIcon />}
               sx={{ flexShrink: 0, bgcolor: 'primary.main', '&:hover': { bgcolor: 'primary.dark' } }}
             >

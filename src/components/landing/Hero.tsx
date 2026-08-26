@@ -50,7 +50,12 @@ export function Hero() {
             <Reveal delay={0.24}>
               <Stack direction="row" spacing={2} sx={{ mt: 4, flexWrap: 'wrap' }} useFlexGap>
                 <MagneticWrap>
-                  <Button variant="contained" size="large" href="#contact" endIcon={<ArrowForwardIcon />}>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    href="mailto:jonathan@HendersonSoftwareLabs.com?subject=Booking%20a%20Call"
+                    endIcon={<ArrowForwardIcon />}
+                  >
                     Book a Call
                   </Button>
                 </MagneticWrap>

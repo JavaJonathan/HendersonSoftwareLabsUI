@@ -5,21 +5,6 @@ import Stack from '@mui/material/Stack';
 import wordmark from '../../assets/branding/wordmark-light.png';
 import { SURFACE_DARK } from '../../theme';
 
-const COLUMNS = [
-  {
-    title: 'Company',
-    links: ['About Us', 'Our Process', 'Careers'],
-  },
-  {
-    title: 'Services',
-    links: ['Workflow Automation', 'System Integrations', 'Custom Tools'],
-  },
-  {
-    title: 'Resources',
-    links: ['Blog', 'Case Studies', 'FAQs'],
-  },
-];
-
 export function Footer() {
   return (
     <Box component="footer" sx={{ bgcolor: SURFACE_DARK, color: 'rgba(255,255,255,0.7)' }}>
@@ -28,47 +13,40 @@ export function Footer() {
           sx={{
             display: 'grid',
             gap: 6,
-            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '2fr 1fr 1fr 1fr 1fr' },
+            gridTemplateColumns: { xs: '1fr', sm: '1.4fr 1fr' },
           }}
         >
           <Box>
             <Box component="img" src={wordmark} alt="Henderson Software Labs" sx={{ height: 32, width: 'auto' }} />
-            <Typography variant="body2" sx={{ mt: 2, maxWidth: 260, color: 'rgba(255,255,255,0.55)' }}>
+            <Typography variant="body2" sx={{ mt: 2, maxWidth: 320, color: 'rgba(255,255,255,0.55)' }}>
               Custom software and automation for small businesses.
             </Typography>
-            <Typography variant="caption" sx={{ mt: 3, display: 'block', color: 'rgba(255,255,255,0.4)' }}>
-              © {new Date().getFullYear()} Henderson Software Labs. All rights reserved.
-            </Typography>
-          </Box>
-
-          {COLUMNS.map((column) => (
-            <Box key={column.title}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'white' }}>
-                {column.title}
+            <Stack direction="row" spacing={1.5} sx={{ mt: 3, alignItems: 'center', flexWrap: 'wrap' }} useFlexGap>
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)' }}>
+                © {new Date().getFullYear()} Henderson Software Labs. All rights reserved.
               </Typography>
-              <Stack spacing={1} sx={{ mt: 2 }}>
-                {column.links.map((link) => (
-                  <Typography key={link} variant="body2" sx={{ color: 'rgba(255,255,255,0.55)' }}>
-                    {link}
-                  </Typography>
-                ))}
-              </Stack>
-            </Box>
-          ))}
+              <Box sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: 'rgba(255,255,255,0.3)' }} />
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.55)' }}>
+                About Us
+              </Typography>
+            </Stack>
+          </Box>
 
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'white' }}>
               Get in Touch
             </Typography>
             <Stack spacing={1} sx={{ mt: 2 }}>
-              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.55)' }}>
-                hello@hendersonsoftwarelabs.com
+              <Typography
+                component="a"
+                href="mailto:jonathan@HendersonSoftwareLabs.com"
+                variant="body2"
+                sx={{ color: 'rgba(255,255,255,0.55)', textDecoration: 'none', '&:hover': { color: 'white' } }}
+              >
+                jonathan@HendersonSoftwareLabs.com
               </Typography>
               <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.55)' }}>
-                (614) 555-0124
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.55)' }}>
-                Columbus, Ohio
+                Maryland, USA
               </Typography>
             </Stack>
           </Box>

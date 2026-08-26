@@ -62,6 +62,10 @@ export interface CreateClientResult {
   generatedPassword: string;
 }
 
+export interface ResetPasswordResult {
+  generatedPassword: string;
+}
+
 export interface CreateProjectPayload {
   name: string;
   description: string;

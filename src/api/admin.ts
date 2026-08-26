@@ -1,5 +1,12 @@
 import { apiFetch } from './client';
-import type { AdminClient, CreateClientPayload, CreateClientResult, CreateProjectPayload, SoftwareProject } from '../types';
+import type {
+  AdminClient,
+  CreateClientPayload,
+  CreateClientResult,
+  CreateProjectPayload,
+  ResetPasswordResult,
+  SoftwareProject,
+} from '../types';
 
 export function getClients() {
   return apiFetch<AdminClient[]>('/api/admin/clients');
@@ -13,6 +20,12 @@ export function createClient(payload: CreateClientPayload) {
   return apiFetch<CreateClientResult>('/api/admin/clients', {
     method: 'POST',
     body: JSON.stringify(payload),
+  });
+}
+
+export function resetClientPassword(clientId: string) {
+  return apiFetch<ResetPasswordResult>(`/api/admin/clients/${clientId}/reset-password`, {
+    method: 'POST',
   });
 }
 
