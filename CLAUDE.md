@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project Status (as of 2026-08-28)
+
+Active development is paused here. Everything below is deployed and live in production (see "Production Deployment") with no known bugs or unfinished work. The most recent work was a design pass on `LoginPage.tsx` — branding assets, layout, and polish — see "Branding assets" and the `Reveal` `fullWidth` gotcha below for what changed and why it's worth reading before touching that page again. This file and the API repo's `CLAUDE.md` are both kept current as of the pause — read both before resuming.
+
 ## Commands
 
 ```bash
@@ -23,11 +27,13 @@ This project uses a solution-style root `tsconfig.json` (`references` only, no `
 
 **Stack**: Vite + React 19 + TypeScript, MUI v9 (Emotion) for all UI — **not** Tailwind. Tailwind was the original styling choice and was fully removed in favor of MUI partway through this project's history; don't reintroduce it.
 
-**Design system lives in `src/theme.ts`** — primary blue `#2563eb`, Plus Jakarta Sans for headings/buttons + Inter for body text (both self-hosted via `@fontsource`, imported in `main.tsx`), pill-shaped buttons, card hover-lift, sticky-AppBar blur-on-scroll styling. Prefer relying on theme defaults over hardcoding one-off `sx` styles that duplicate what the theme already provides.
+**Design system lives in `src/theme.ts`** — primary blue `#2563eb`, Plus Jakarta Sans for headings/buttons + Inter for body text (both self-hosted via `@fontsource`, imported in `main.tsx`), pill-shaped buttons, card hover-lift, sticky-AppBar blur-on-scroll styling. Also overrides the browser's default autofill styling on `MuiOutlinedInput` (`&:-webkit-autofill`) so autofilled fields keep the app's own white background instead of Chrome/Edge's pale-blue tint. Prefer relying on theme defaults over hardcoding one-off `sx` styles that duplicate what the theme already provides.
 
 **Two reusable motion primitives, both in `src/components/motion/`** — reuse these rather than writing new `framer-motion` code:
-- `Reveal.tsx` — scroll-triggered fade/slide-up wrapper, used for nearly every section/card entrance across the site (supports a `delay` prop for staggering a list)
+- `Reveal.tsx` — scroll-triggered fade/slide-up wrapper, used for nearly every section/card entrance across the site (supports a `delay` prop for staggering a list, and a `fullWidth` prop — pass it whenever `Reveal` sits inside a flex container; otherwise its `motion.div` wrapper shrinks to fit its content as a flex item, silently making any `width`/`maxWidth` set on the child a no-op. This exact bug ate real time on `LoginPage.tsx` before being traced back to `Reveal` itself — see the gotcha below.)
 - `GradientBackdrop.tsx` — decorative animated blurred gradient blobs, used behind hero-style page headers (`Hero.tsx`, `PortfolioPage.tsx`, `LoginPage.tsx`)
+
+**Branding assets (`src/assets/branding/`)**: `icon-dark.png` (dark HSL monogram, for light backgrounds — `NavBar`, `AuthedAppBar`, `LoginPage`'s form side) and `wordmark-light.png` (white-text wordmark, for dark backgrounds — `Footer`, `LoginPage`'s dark brand panel) are in active use across most of the site. `wordmark-dark.png` (black-text wordmark, for light backgrounds) is used once, as `LoginPage.tsx`'s mobile-only header (shown below the `md` breakpoint, where the dark panel is hidden). `wordmark-square-dark.png` was generated alongside the others but has no current use — a stacked-layout variant, available if a future spot needs it. `icon-light.png` and `wordmark-glow.png` are older, orphaned assets confirmed unused anywhere in the code — safe to delete during a cleanup pass.
 
 **`src/hooks/useScrolled.ts`** — shared scroll-position hook backing the sticky-header blur effect. Used by `NavBar.tsx` and all three authenticated-app headers (`PortalPage`, `AdminPage`, `AdminClientDetailPage`) so the effect is implemented once, not duplicated per page.
 
@@ -56,6 +62,7 @@ Hosted on **AWS Amplify** (app `henderson-software-labs-ui`, id `d2qschmehrzw1m`
 
 ## Known gotchas (from this project's history)
 
+- `Reveal`'s wrapper is a plain `motion.div` with no explicit width — inside a flex container (e.g. `display:'flex', justifyContent:'center'`), it shrinks to fit its content as a flex item, which makes any `width`/`maxWidth` set on `Reveal`'s child silently do nothing regardless of the value. Pass `fullWidth` to `Reveal` in that situation (see `LoginPage.tsx`) rather than fighting it with sizing on the child.
 - MUI icon component names don't always match intuitive guesses and differ between MUI major versions (e.g. `CheckCircleOutline` doesn't exist in the installed version, it's `CheckCircleOutlined`). Before importing an icon that isn't already used elsewhere in this codebase, verify it exists: `ls node_modules/@mui/icons-material | grep -i <name>`.
 - After installing/removing npm packages while the Vite dev server is running, kill it, delete `node_modules/.vite`, and restart — otherwise you'll see "Invalid hook call" / duplicate-React errors that look like real bugs but are just a stale dependency pre-bundle cache.
 - Never run two `npm install`/`npm uninstall` commands concurrently in this project — they can clobber each other's `package.json` writes (this has actually happened here).
