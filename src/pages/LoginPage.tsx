@@ -8,6 +8,11 @@ import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import Link from '@mui/material/Link';
+import InputAdornment from '@mui/material/InputAdornment';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { motion } from 'framer-motion';
 import { useAuth } from '../auth/AuthContext';
 import { ApiError, getApiErrorMessage } from '../api/client';
@@ -49,7 +54,29 @@ export function LoginPage() {
   }
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex' }}>
+    <Box sx={{ minHeight: '100vh', display: 'flex', position: 'relative' }}>
+      <Link
+        component={RouterLink}
+        to="/"
+        underline="none"
+        sx={{
+          position: 'fixed',
+          top: { xs: 24, sm: 32 },
+          left: { xs: 24, sm: 32 },
+          zIndex: 10,
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 0.5,
+          fontSize: 14,
+          fontWeight: 500,
+          color: { xs: 'text.secondary', md: 'rgba(255,255,255,0.8)' },
+          '&:hover': { color: { xs: 'primary.main', md: '#ffffff' } },
+        }}
+      >
+        <ArrowBackIcon sx={{ fontSize: 16 }} />
+        Back to home
+      </Link>
+
       <Box
         sx={{
           display: { xs: 'none', md: 'flex' },
@@ -101,57 +128,88 @@ export function LoginPage() {
         }}
       >
         <GradientBackdrop />
-        <Reveal y={16}>
-          <Box sx={{ position: 'relative', width: '100%', maxWidth: 400 }}>
-            <Stack sx={{ mb: 5, alignItems: 'center', display: { xs: 'flex', md: 'none' } }}>
-              <Link component={RouterLink} to="/" underline="none">
-                <Box component="img" src={wordmarkDark} alt="Henderson Software Labs" sx={{ width: 240, height: 'auto' }} />
-              </Link>
+
+        <Reveal y={16} fullWidth>
+          <Box sx={{ position: 'relative', width: '100%', maxWidth: 480 }}>
+            <Stack sx={{ mb: 4, alignItems: 'center', display: { xs: 'flex', md: 'none' } }}>
+              <Box component="img" src={wordmarkDark} alt="Henderson Software Labs" sx={{ width: 240, height: 'auto' }} />
             </Stack>
 
-            <Paper
-              elevation={0}
-              sx={{
-                p: 4,
-                borderRadius: 4,
-                border: '1px solid rgba(15,23,42,0.06)',
-                boxShadow: '0 24px 48px -24px rgba(15,23,42,0.22)',
-              }}
-            >
-              <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary' }}>
-                Client Login
-              </Typography>
-              <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>
-                Sign in to view the software we've built for you.
-              </Typography>
+            <Box sx={{ position: 'relative' }}>
+              <Paper
+                elevation={0}
+                sx={{
+                  position: 'relative',
+                  borderRadius: 4,
+                  overflow: 'hidden',
+                  border: '1px solid rgba(15,23,42,0.06)',
+                  boxShadow: '0 24px 48px -24px rgba(15,23,42,0.22)',
+                }}
+              >
+                <Box sx={{ height: 5, background: 'linear-gradient(90deg, #2563eb, #60a5fa)' }} />
 
-              <Stack component="form" spacing={2.5} sx={{ mt: 3 }} onSubmit={handleSubmit}>
-                <TextField
-                  label="Email"
-                  type="email"
-                  required
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  fullWidth
-                />
-                <TextField
-                  label="Password"
-                  type="password"
-                  required
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  fullWidth
-                />
+                <Box sx={{ p: 4 }}>
+                  <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                    Client Login
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>
+                    Sign in to view the software we've built for you.
+                  </Typography>
 
-                {error && <Alert severity="error">{error}</Alert>}
+                  <Stack component="form" spacing={2.5} sx={{ mt: 3 }} onSubmit={handleSubmit}>
+                    <TextField
+                      label="Email"
+                      type="email"
+                      required
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      fullWidth
+                      slotProps={{
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <EmailOutlinedIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                            </InputAdornment>
+                          ),
+                        },
+                      }}
+                    />
+                    <TextField
+                      label="Password"
+                      type="password"
+                      required
+                      autoComplete="current-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      fullWidth
+                      slotProps={{
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <LockOutlinedIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
+                            </InputAdornment>
+                          ),
+                        },
+                      }}
+                    />
 
-                <Button type="submit" variant="contained" size="large" disabled={submitting} fullWidth>
-                  {submitting ? 'Signing in…' : 'Sign In'}
-                </Button>
-              </Stack>
-            </Paper>
+                    {error && <Alert severity="error">{error}</Alert>}
+
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      size="large"
+                      disabled={submitting}
+                      endIcon={<ArrowForwardIcon />}
+                      fullWidth
+                    >
+                      {submitting ? 'Signing in…' : 'Sign In'}
+                    </Button>
+                  </Stack>
+                </Box>
+              </Paper>
+            </Box>
           </Box>
         </Reveal>
       </Box>

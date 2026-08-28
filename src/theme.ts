@@ -99,6 +99,19 @@ export const theme = createTheme({
         },
       },
     },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        input: {
+          // Chrome/Edge tint autofilled fields with their own pale-blue background by default,
+          // which clashes with the app's own field styling. Force it back to match instead.
+          '&:-webkit-autofill': {
+            WebkitBoxShadow: '0 0 0 1000px #ffffff inset',
+            WebkitTextFillColor: '#0f172a',
+            caretColor: '#0f172a',
+          },
+        },
+      },
+    },
     MuiAppBar: {
       styleOverrides: {
         root: {
