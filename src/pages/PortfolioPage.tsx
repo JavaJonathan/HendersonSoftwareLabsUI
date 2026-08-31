@@ -10,16 +10,21 @@ import Link from '@mui/material/Link';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
+import GitHubIcon from '@mui/icons-material/GitHub';
+import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import WorkOutlinedIcon from '@mui/icons-material/WorkOutlined';
 import CodeOutlinedIcon from '@mui/icons-material/CodeOutlined';
 import BuildOutlinedIcon from '@mui/icons-material/BuildOutlined';
-import LanguageOutlinedIcon from '@mui/icons-material/LanguageOutlined';
 import StorageOutlinedIcon from '@mui/icons-material/StorageOutlined';
+import CloudOutlinedIcon from '@mui/icons-material/CloudOutlined';
 import BugReportOutlinedIcon from '@mui/icons-material/BugReportOutlined';
-import PsychologyOutlinedIcon from '@mui/icons-material/PsychologyOutlined';
+import EmojiEventsOutlinedIcon from '@mui/icons-material/EmojiEventsOutlined';
 import LocalShippingOutlinedIcon from '@mui/icons-material/LocalShippingOutlined';
 import SyncAltOutlinedIcon from '@mui/icons-material/SyncAltOutlined';
 import CompareArrowsOutlinedIcon from '@mui/icons-material/CompareArrowsOutlined';
+import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
+import ArchiveOutlinedIcon from '@mui/icons-material/ArchiveOutlined';
+import AutoAwesomeOutlinedIcon from '@mui/icons-material/AutoAwesomeOutlined';
 import { Footer } from '../components/layout/Footer';
 import { Reveal } from '../components/motion/Reveal';
 import { GradientBackdrop } from '../components/motion/GradientBackdrop';
@@ -31,59 +36,93 @@ const EXPERIENCE = [
     title: 'Senior Software Engineer',
     dates: 'July 2019 - Present',
     bullets: [
-      'Diagnosed and resolved critical production errors and outages',
-      'Designed and implemented automation scripts for the Clinical Trial Process',
-      'Leveraged SQL for data handling, verification, and advanced reporting',
-      'Utilized BurpSuite to identify application vulnerabilities',
-      'Collaborated with Business Analysts on client feature integration',
-      'Awarded the Impact Program Reward for resolving a critical client issue',
+      'Develop CompleteConsent / eConsent software that helps life-sciences organizations streamline clinical-trial operations',
+      'Delivered a bulk site-access provisioning feature (SQL Server, C#/.NET REST API, React) that automated manual staff access management',
+      'Designed database schemas and built the API and React UI for enterprise administration — enterprise, user, and group management',
+      'Built a secure workflow that packages and archives site-level clinical-trial data into ZIP files with email and Amazon S3 delivery',
+      'Designed a REST endpoint integrating an AI service for document parsing, cutting manual data-entry work',
+      'Collaborated on an embedded video-conferencing feature for patient-provider communication, and on a secure clinical-trial reporting system',
+      'Owned end-to-end feature delivery: design, estimation, implementation, code review, testing, deployment, and production validation',
+      'Primary production-support owner — performed root-cause analysis and wrote AWS Lambda remediations that restored disrupted integrations',
+      'Mentored two junior engineers and transferred production-support knowledge',
+      'Promoted from Engineer I to Engineer II to Senior; received the IQVIA Ovation Award and multiple Impact Program recognitions',
     ],
   },
   {
-    company: 'Freelance',
+    company: 'Independent Software Consultant',
     location: 'Frederick, MD',
-    title: 'Senior Software Engineer',
+    title: 'Software Engineer',
     dates: 'August 2020 - Present',
     bullets: [
-      'Developed automation scripts and applications for a family-owned business',
-      'Delivered high-quality software ahead of schedule',
-      'Consulted on optimization strategies',
-      'Conducted workflow analysis for innovative solutions',
+      'Design and deliver custom software that replaces manual workflows for small-business operations',
+      'Built and maintain a production .NET / React / PostgreSQL / AWS document and shipping platform with authentication, PDF processing, reporting, and search',
+      'Built a React tool that checks order status across export, inventory, purchase-order, and ShipStation data',
+      'Built a C# utility that reconciles and updates product datasets for downstream import',
+      'Built multiple JavaScript / Puppeteer scrapers automating repetitive workflows, including marketplace product migration',
     ],
   },
 ];
 
 const SKILL_GROUPS = [
-  { label: 'Programming Languages', icon: CodeOutlinedIcon, items: ['C#', 'JavaScript', 'SQL'] },
   {
-    label: 'Tools & Technologies',
-    icon: BuildOutlinedIcon,
-    items: ['GitHub', 'Bitbucket', 'MS SQL Server', 'Visual Studio', 'VS Code', 'Postman', 'SourceTree', 'TeamCity', 'Jira', 'Co-Pilot'],
+    label: 'Engineering',
+    icon: CodeOutlinedIcon,
+    items: ['C#', 'JavaScript', '.NET', 'Entity Framework', 'React', 'REST APIs'],
   },
   {
-    label: 'Web Technologies',
-    icon: LanguageOutlinedIcon,
-    items: ['HTML', 'CSS', 'React.js', 'Express.js', 'Puppeteer.js', 'Material UI'],
+    label: 'Data',
+    icon: StorageOutlinedIcon,
+    items: ['SQL Server', 'PostgreSQL', 'Schema Design', 'Stored Procedures'],
   },
-  { label: 'Database Management', icon: StorageOutlinedIcon, items: ['Database relationships', 'Table design'] },
-  { label: 'Other', icon: BugReportOutlinedIcon, items: ['Debugging', 'Root Cause Analysis'] },
-  { label: 'Soft Skills', icon: PsychologyOutlinedIcon, items: ['Problem-Solving', 'Critical-Thinking'] },
+  {
+    label: 'Cloud & Delivery',
+    icon: CloudOutlinedIcon,
+    items: ['AWS (S3, Lambda, RDS)', 'TeamCity', 'Octopus Deploy', 'Git', 'GitHub', 'Bitbucket', 'Postman', 'Jira'],
+  },
+  {
+    label: 'Quality & AI Tools',
+    icon: BugReportOutlinedIcon,
+    items: ['NUnit', 'Jest', 'Unit & Integration Testing', 'Cursor', 'GitHub Copilot', 'Claude'],
+  },
+];
+
+const RECOGNITION = [
+  'IQVIA Ovation Award',
+  'Promoted twice in 6 years',
+  '3 Impact Program recognitions',
+  'Mentored 2 junior engineers',
+  '"Exceeds Expectations" reviews, 2020-2025',
 ];
 
 const PROJECTS = [
   {
-    title: 'Digital Box',
-    description: 'An Express.js/React.js application that digitizes shipping labels.',
+    title: 'Bulk Site Access Provisioning',
+    description: 'Spreadsheet-driven bulk management of clinical-trial site-staff access, replacing a manual process. Built with SQL Server, C#/.NET, and React.',
+    icon: GroupsOutlinedIcon,
+  },
+  {
+    title: 'Secure Site Data Archiving',
+    description: 'A workflow that packages site-level clinical-trial data into ZIP archives with email and Amazon S3 delivery.',
+    icon: ArchiveOutlinedIcon,
+  },
+  {
+    title: 'AI-Assisted Document Processing',
+    description: 'A REST endpoint integrating an AI service to parse documents and cut manual data-entry work.',
+    icon: AutoAwesomeOutlinedIcon,
+  },
+  {
+    title: 'Digital Box Platform',
+    description: 'A production .NET / React / PostgreSQL / AWS document and shipping platform with auth, PDF processing, reporting, and search.',
     icon: LocalShippingOutlinedIcon,
   },
   {
-    title: 'Product Migration Automation',
-    description: 'A JavaScript/Puppeteer.js tool that automates migrating products between marketplaces.',
+    title: 'Order Lookup Automation',
+    description: 'A React tool that aggregates order status across export, inventory, purchase-order, and ShipStation data.',
     icon: SyncAltOutlinedIcon,
   },
   {
-    title: 'CSV Product Matcher',
-    description: 'A C# automation script for comparing and matching records across CSV files.',
+    title: 'Product Data Reconciliation',
+    description: 'A C# utility that reconciles and updates product datasets for downstream import.',
     icon: CompareArrowsOutlinedIcon,
   },
 ];
@@ -138,9 +177,10 @@ export function PortfolioPage() {
           </Reveal>
 
           <Reveal delay={0.2}>
-            <Typography sx={{ mt: 3, maxWidth: 560, color: 'text.secondary', fontSize: 17 }}>
-              Software engineer with 7 years of experience in full-stack development and software
-              security within the pharmaceutical industry.
+            <Typography sx={{ mt: 3, maxWidth: 620, color: 'text.secondary', fontSize: 17 }}>
+              Senior software engineer with 7+ years delivering regulated clinical-trial software with
+              C#/.NET, React, SQL Server, and AWS — full-stack feature delivery, production
+              problem-solving, technical design, and team mentorship.
             </Typography>
           </Reveal>
 
@@ -149,7 +189,7 @@ export function PortfolioPage() {
               <Button
                 variant="contained"
                 size="large"
-                href="mailto:Jonathan.Henderson24@yahoo.com"
+                href="mailto:Jonathan.Henderson@HendersonSoftwareLabs.com"
                 startIcon={<EmailOutlinedIcon />}
               >
                 Email Me
@@ -164,6 +204,28 @@ export function PortfolioPage() {
                 startIcon={<LinkedInIcon />}
               >
                 LinkedIn
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                color="inherit"
+                href="https://github.com/JavaJonathan"
+                target="_blank"
+                rel="noreferrer"
+                startIcon={<GitHubIcon />}
+              >
+                GitHub
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                color="inherit"
+                component="a"
+                href="/resume.pdf"
+                download
+                startIcon={<DownloadOutlinedIcon />}
+              >
+                Download Resume
               </Button>
             </Stack>
           </Reveal>
@@ -256,17 +318,38 @@ export function PortfolioPage() {
         </Box>
       </Container>
 
+      <Container maxWidth="md" sx={{ pt: { xs: 3, md: 4 }, pb: { xs: 4, md: 5 } }}>
+        <Reveal>
+          <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 3 }}>
+            <EmojiEventsOutlinedIcon sx={{ color: 'primary.main' }} />
+            <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: 1 }}>
+              Recognition
+            </Typography>
+          </Stack>
+        </Reveal>
+
+        <Reveal delay={0.06}>
+          <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
+            <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }} useFlexGap>
+              {RECOGNITION.map((item) => (
+                <Chip key={item} label={item} size="small" sx={{ bgcolor: 'primary.light', color: 'primary.main', fontWeight: 600 }} />
+              ))}
+            </Stack>
+          </Paper>
+        </Reveal>
+      </Container>
+
       <Container maxWidth="md" sx={{ pt: { xs: 3, md: 4 }, pb: { xs: 5, md: 6 } }}>
         <Reveal>
           <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 3 }}>
             <BuildOutlinedIcon sx={{ color: 'primary.main' }} />
             <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: 1 }}>
-              Side Projects
+              Selected Work
             </Typography>
           </Stack>
         </Reveal>
 
-        <Box sx={{ display: 'grid', gap: 2.5, gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' } }}>
+        <Box sx={{ display: 'grid', gap: 2.5, gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' } }}>
           {PROJECTS.map(({ title, description, icon: Icon }, index) => (
             <Reveal key={title} delay={index * 0.1}>
               <Paper
