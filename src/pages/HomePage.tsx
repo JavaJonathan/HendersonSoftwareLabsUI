@@ -13,8 +13,8 @@ export function HomePage() {
       <ScrollProgressBar />
       <NavBar />
       <Hero />
-      <WhatWeDo />
       <BeforeAfter />
+      <WhatWeDo />
       <HowItWorks />
       <CtaBanner />
       <Footer />

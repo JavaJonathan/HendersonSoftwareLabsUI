@@ -1,8 +1,9 @@
-import { useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import SwapHorizRoundedIcon from '@mui/icons-material/SwapHorizRounded';
+import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
 import {
   motion,
   useMotionTemplate,
@@ -15,7 +16,11 @@ import {
 } from 'framer-motion';
 import { Reveal } from '../motion/Reveal';
 
-const START = 55;
+const START = 54;
+const MIN = 5;
+const MAX = 95;
+
+const clampPos = (v: number) => Math.min(MAX, Math.max(MIN, v));
 
 /**
  * "See the difference" — a draggable before/after wipe comparing a manual process with the
@@ -39,17 +44,17 @@ export function BeforeAfter() {
 
   const clipPath = useMotionTemplate`inset(0 0 0 ${source}%)`;
   const handleLeft = useMotionTemplate`${source}%`;
-  const beforeLabelOpacity = useTransform(source, [38, 62], [1, 0.3]);
-  const afterLabelOpacity = useTransform(source, [38, 62], [0.3, 1]);
+  // Higher pos hides more of the "after" layer, so "before" dominates — labels track that.
+  const beforeOpacity = useTransform(source, [42, 60], [0.35, 1]);
+  const afterOpacity = useTransform(source, [42, 60], [1, 0.35]);
 
   function posFromClientX(clientX: number) {
     const rect = stageRef.current?.getBoundingClientRect();
     if (!rect || rect.width === 0) return pos.get();
-    return Math.min(100, Math.max(0, ((clientX - rect.left) / rect.width) * 100));
+    return clampPos(((clientX - rect.left) / rect.width) * 100);
   }
 
   function handleStagePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
-    // A plain click/tap on the stage sends the handle there (eased via the spring).
     pos.set(posFromClientX(event.clientX));
   }
 
@@ -76,11 +81,11 @@ export function BeforeAfter() {
     let next: number | null = null;
     if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') next = current - step;
     else if (event.key === 'ArrowRight' || event.key === 'ArrowUp') next = current + step;
-    else if (event.key === 'Home') next = 0;
-    else if (event.key === 'End') next = 100;
+    else if (event.key === 'Home') next = MIN;
+    else if (event.key === 'End') next = MAX;
     if (next === null) return;
     event.preventDefault();
-    pos.set(Math.min(100, Math.max(0, next)));
+    pos.set(clampPos(next));
   }
 
   return (
@@ -107,7 +112,7 @@ export function BeforeAfter() {
             sx={{
               position: 'relative',
               width: '100%',
-              aspectRatio: { xs: '4 / 3', sm: '16 / 10', md: '16 / 9' },
+              aspectRatio: { xs: '3 / 2', sm: '16 / 10', md: '16 / 9' },
               borderRadius: 4,
               overflow: 'hidden',
               border: '1px solid',
@@ -118,16 +123,31 @@ export function BeforeAfter() {
               bgcolor: '#ffffff',
             }}
           >
-            <Box sx={{ position: 'absolute', inset: 0 }}>
+            <Box sx={{ position: 'absolute', inset: 0, bgcolor: '#f8fafc' }}>
               <BeforeScene />
             </Box>
 
-            <Box component={motion.div} style={{ clipPath }} sx={{ position: 'absolute', inset: 0, willChange: 'clip-path' }}>
-              <AfterScene animate={!reduce} />
+            <Box
+              component={motion.div}
+              style={{ clipPath }}
+              sx={{ position: 'absolute', inset: 0, bgcolor: '#ffffff', willChange: 'clip-path' }}
+            >
+              <AfterScene />
             </Box>
 
-            <SideLabel align="left" opacity={beforeLabelOpacity} title="Before" subtitle="manual" tone="muted" />
-            <SideLabel align="right" opacity={afterLabelOpacity} title="After" subtitle="automated" tone="brand" />
+            <CornerLabel h="left" v="top" opacity={beforeOpacity} tone="muted">
+              <LabelText title="Before" subtitle="manual" />
+            </CornerLabel>
+            <CornerLabel h="right" v="top" opacity={afterOpacity} tone="brand">
+              <LabelText title="After" subtitle="automated" />
+            </CornerLabel>
+
+            <CornerLabel h="left" v="bottom" opacity={beforeOpacity} tone="muted">
+              <StatText>about 6 hrs / week</StatText>
+            </CornerLabel>
+            <CornerLabel h="right" v="bottom" opacity={afterOpacity} tone="brand">
+              <StatText>about 15 min / week</StatText>
+            </CornerLabel>
 
             <Box
               component={motion.div}
@@ -163,7 +183,7 @@ export function BeforeAfter() {
                   bottom: 0,
                   width: 2,
                   bgcolor: 'primary.main',
-                  boxShadow: '0 0 0 1px rgba(255,255,255,0.6)',
+                  boxShadow: '0 0 0 1px rgba(255,255,255,0.65)',
                 },
                 '&:focus-visible .ba-grip': {
                   boxShadow: '0 0 0 4px rgba(37, 99, 235, 0.35)',
@@ -205,18 +225,45 @@ export function BeforeAfter() {
   );
 }
 
-function SideLabel({
-  align,
+function StatText({ children }: { children: ReactNode }) {
+  return (
+    <>
+      <AccessTimeRoundedIcon sx={{ fontSize: { xs: 13, sm: 14 } }} />
+      <Typography component="span" sx={{ fontSize: { xs: 11, sm: 12 }, fontWeight: 700, lineHeight: 1 }}>
+        {children}
+      </Typography>
+    </>
+  );
+}
+
+function LabelText({ title, subtitle }: { title: string; subtitle: string }) {
+  return (
+    <>
+      <Typography component="span" sx={{ fontWeight: 800, fontSize: { xs: 12, sm: 13 }, lineHeight: 1 }}>
+        {title}
+      </Typography>
+      <Typography
+        component="span"
+        sx={{ fontSize: 11, lineHeight: 1, opacity: 0.85, display: { xs: 'none', sm: 'inline' } }}
+      >
+        {subtitle}
+      </Typography>
+    </>
+  );
+}
+
+function CornerLabel({
+  h,
+  v,
   opacity,
-  title,
-  subtitle,
   tone,
+  children,
 }: {
-  align: 'left' | 'right';
+  h: 'left' | 'right';
+  v: 'top' | 'bottom';
   opacity: MotionValue<number>;
-  title: string;
-  subtitle: string;
   tone: 'muted' | 'brand';
+  children: ReactNode;
 }) {
   return (
     <Box
@@ -224,12 +271,12 @@ function SideLabel({
       style={{ opacity }}
       sx={{
         position: 'absolute',
-        top: 16,
-        [align]: 16,
-        px: 1.5,
+        [v]: { xs: 10, sm: 14 },
+        [h]: { xs: 10, sm: 14 },
+        px: 1.25,
         py: 0.75,
         borderRadius: 9999,
-        bgcolor: tone === 'brand' ? 'primary.main' : 'rgba(255,255,255,0.9)',
+        bgcolor: tone === 'brand' ? 'primary.main' : 'rgba(255,255,255,0.92)',
         color: tone === 'brand' ? 'primary.contrastText' : 'text.secondary',
         border: tone === 'brand' ? 'none' : '1px solid',
         borderColor: 'divider',
@@ -237,39 +284,35 @@ function SideLabel({
         boxShadow: '0 4px 12px -6px rgba(15, 23, 42, 0.25)',
         pointerEvents: 'none',
         display: 'flex',
-        alignItems: 'baseline',
+        alignItems: 'center',
         gap: 0.75,
+        whiteSpace: 'nowrap',
       }}
     >
-      <Typography component="span" sx={{ fontWeight: 800, fontSize: 13, lineHeight: 1 }}>
-        {title}
-      </Typography>
-      <Typography component="span" sx={{ fontSize: 11, lineHeight: 1, opacity: 0.85 }}>
-        {subtitle}
-      </Typography>
+      {children}
     </Box>
   );
 }
 
 /* -------------------------------------------------------------------------- */
-/* Scenes — abstract node diagrams, drawn from theme tokens.                  */
+/* Scenes — abstract node diagrams, drawn from theme tokens. `meet` keeps the  */
+/* whole diagram visible at every stage aspect ratio; the layer's bgcolor      */
+/* matches the scene fill so any letterboxing is invisible.                    */
 /* -------------------------------------------------------------------------- */
 
-const SCENE_VIEWBOX = '0 0 320 190';
 const sceneSvgProps = {
-  viewBox: SCENE_VIEWBOX,
-  preserveAspectRatio: 'xMidYMid slice',
+  viewBox: '0 0 320 190',
+  preserveAspectRatio: 'xMidYMid meet',
   width: '100%',
   height: '100%',
-  style: { display: 'block', fontFamily: 'inherit' } as const,
-};
+  style: { display: 'block', fontFamily: 'inherit' },
+} as const;
 
 function BeforeScene() {
   return (
     <svg {...sceneSvgProps} role="img" aria-label="A tangle of disconnected manual steps">
       <rect width="320" height="190" fill="#f8fafc" />
 
-      {/* tangled connectors */}
       <g fill="none" stroke="#cbd5e1" strokeWidth="1.5">
         <path d="M60 55 C 120 20, 150 150, 220 120" />
         <path d="M85 130 C 140 90, 90 40, 230 60" strokeDasharray="4 4" />
@@ -277,26 +320,15 @@ function BeforeScene() {
         <path d="M110 45 C 150 120, 210 130, 245 150" strokeDasharray="3 5" />
       </g>
 
-      {/* scattered note cards */}
-      <NoteCard x={40} y={34} rotate={-7} />
-      <NoteCard x={128} y={22} rotate={5} accent />
-      <NoteCard x={214} y={40} rotate={9} />
+      <NoteCard x={40} y={30} rotate={-7} />
+      <NoteCard x={128} y={20} rotate={5} accent />
+      <NoteCard x={214} y={38} rotate={9} />
       <NoteCard x={54} y={104} rotate={4} />
-      <NoteCard x={150} y={120} rotate={-6} accent />
-      <NoteCard x={228} y={112} rotate={7} />
+      <NoteCard x={150} y={118} rotate={-6} accent />
+      <NoteCard x={228} y={110} rotate={7} />
 
-      {/* alert badges */}
-      <AlertBadge cx={120} cy={30} />
-      <AlertBadge cx={224} cy={150} />
-
-      {/* time cost */}
-      <g transform="translate(20 168)">
-        <circle cx="6" cy="0" r="6" fill="none" stroke="#64748b" strokeWidth="1.5" />
-        <path d="M6 -3 V0 L8.5 1.5" fill="none" stroke="#64748b" strokeWidth="1.5" strokeLinecap="round" />
-        <text x="18" y="3.5" fill="#64748b" fontSize="11" fontWeight="600">
-          about 6 hrs / week
-        </text>
-      </g>
+      <AlertBadge cx={120} cy={28} />
+      <AlertBadge cx={224} cy={148} />
     </svg>
   );
 }
@@ -329,14 +361,13 @@ function AlertBadge({ cx, cy }: { cx: number; cy: number }) {
   );
 }
 
-function AfterScene({ animate }: { animate: boolean }) {
+function AfterScene() {
   const nodes = [26, 100, 174, 248];
   const y = 78;
   return (
     <svg {...sceneSvgProps} role="img" aria-label="A clean automated pipeline of connected steps">
       <rect width="320" height="190" fill="#ffffff" />
 
-      {/* straight pipeline connectors */}
       <g stroke="#2563eb" strokeWidth="2" fill="none">
         {nodes.slice(0, -1).map((nx, i) => (
           <g key={nx}>
@@ -346,7 +377,6 @@ function AfterScene({ animate }: { animate: boolean }) {
         ))}
       </g>
 
-      {/* aligned nodes */}
       {nodes.map((nx, i) => (
         <g key={nx} transform={`translate(${nx} ${y})`}>
           <rect
@@ -365,23 +395,6 @@ function AfterScene({ animate }: { animate: boolean }) {
           </g>
         </g>
       ))}
-
-      {/* running indicator */}
-      {animate && (
-        <motion.circle
-          cx={248 + 23}
-          cy={y + 44}
-          r={4}
-          fill="#2563eb"
-          animate={{ opacity: [1, 0.25, 1] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-        />
-      )}
-      {!animate && <circle cx={248 + 23} cy={y + 44} r={4} fill="#2563eb" />}
-
-      <text x="20" y="171" fill="#2563eb" fontSize="11" fontWeight="700">
-        about 15 min / week
-      </text>
     </svg>
   );
 }
