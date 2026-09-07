@@ -5,6 +5,7 @@ import Paper from '@mui/material/Paper';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import ExtensionOutlinedIcon from '@mui/icons-material/ExtensionOutlined';
 import ViewModuleOutlinedIcon from '@mui/icons-material/ViewModuleOutlined';
+import { motion } from 'framer-motion';
 import { Reveal } from '../motion/Reveal';
 
 const ITEMS = [
@@ -43,11 +44,15 @@ export function WhatWeDo() {
         {ITEMS.map(({ title, description, icon: Icon }, index) => (
           <Reveal key={title} delay={index * 0.1}>
             <Paper
+              component={motion.div}
               variant="outlined"
+              whileTap={{ scale: 0.985 }}
+              transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               sx={{
                 p: 3,
                 borderRadius: 3,
                 height: '100%',
+                cursor: 'default',
                 '&:hover': {
                   transform: 'translateY(-4px)',
                   boxShadow: '0 18px 34px -14px rgba(15, 23, 42, 0.18)',

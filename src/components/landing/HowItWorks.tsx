@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Reveal } from '../motion/Reveal';
 
 const STEPS = [
@@ -11,6 +11,8 @@ const STEPS = [
 ];
 
 export function HowItWorks() {
+  const reduce = useReducedMotion();
+
   return (
     <Container maxWidth="lg" id="how-it-works" sx={{ py: { xs: 4, md: 5 } }}>
       <Reveal>
@@ -55,23 +57,45 @@ export function HowItWorks() {
             </Reveal>
 
             {index < STEPS.length - 1 && (
-              <Box
-                component={motion.div}
-                initial={{ scaleX: 0 }}
-                whileInView={{ scaleX: 1 }}
-                viewport={{ once: true, margin: '-60px' }}
-                transition={{ duration: 0.6, delay: index * 0.15 + 0.25, ease: 'easeOut' }}
-                sx={{
-                  flex: 1,
-                  height: 0,
-                  borderTop: '2px dashed',
-                  borderColor: '#bfdbfe',
-                  mt: '24px',
-                  mx: 2,
-                  minWidth: 40,
-                  transformOrigin: 'left',
-                }}
-              />
+              <Box sx={{ flex: 1, minWidth: 40, mx: 2, mt: '24px', position: 'relative', height: '2px' }}>
+                <Box
+                  component={motion.div}
+                  initial={{ scaleX: 0 }}
+                  whileInView={{ scaleX: 1 }}
+                  viewport={{ once: true, margin: '-60px' }}
+                  transition={{ duration: 0.6, delay: index * 0.15 + 0.25, ease: 'easeOut' }}
+                  sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    borderTop: '2px dashed',
+                    borderColor: '#bfdbfe',
+                    transformOrigin: 'left',
+                  }}
+                />
+                {!reduce && (
+                  <Box
+                    component={motion.div}
+                    aria-hidden
+                    animate={{ left: ['0%', '100%'] }}
+                    transition={{
+                      duration: 2.4,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                      delay: index * 0.6 + 1,
+                    }}
+                    sx={{
+                      position: 'absolute',
+                      top: '1px',
+                      width: 7,
+                      height: 7,
+                      borderRadius: '50%',
+                      bgcolor: 'primary.main',
+                      boxShadow: '0 0 0 4px rgba(37, 99, 235, 0.14)',
+                      transform: 'translate(-50%, -50%)',
+                    }}
+                  />
+                )}
+              </Box>
             )}
           </Box>
         ))}

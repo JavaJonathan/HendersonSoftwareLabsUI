@@ -12,12 +12,12 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
 import { Reveal } from '../motion/Reveal';
 import { GradientBackdrop } from '../motion/GradientBackdrop';
 import { MagneticWrap } from '../motion/MagneticWrap';
-import { useCountUp } from '../../hooks/useCountUp';
+import { OdometerNumber } from '../motion/OdometerNumber';
 
 export function Hero() {
   return (
     <Box sx={{ position: 'relative', overflow: 'hidden' }}>
-      <GradientBackdrop interactive />
+      <GradientBackdrop interactive spotlight />
 
       <Container maxWidth="lg" sx={{ pt: { xs: 4, md: 5 }, pb: { xs: 3, md: 4 }, position: 'relative' }}>
         <Box sx={{ display: 'grid', gap: 5, gridTemplateColumns: { xs: '1fr', md: '1.1fr 0.9fr' }, alignItems: 'flex-start' }}>
@@ -96,8 +96,6 @@ function StatCard({
   label: string;
   large?: boolean;
 }) {
-  const { ref, value: animatedValue } = useCountUp(value);
-
   return (
     <Paper
       variant="outlined"
@@ -128,13 +126,11 @@ function StatCard({
       >
         <Icon />
       </Box>
-      <Box ref={ref}>
-        <Typography
-          sx={{ fontSize: large ? 44 : 30, fontWeight: 800, color: 'primary.main', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}
-        >
-          {animatedValue}+
-        </Typography>
-      </Box>
+      <Typography
+        sx={{ fontSize: large ? 44 : 30, fontWeight: 800, color: 'primary.main', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}
+      >
+        <OdometerNumber value={value} />+
+      </Typography>
       <Typography sx={{ mt: 1, color: 'text.primary', fontWeight: 500 }}>{label}</Typography>
     </Paper>
   );
