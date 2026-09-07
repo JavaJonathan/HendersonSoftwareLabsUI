@@ -13,9 +13,9 @@ export function HomePage() {
       <ScrollProgressBar />
       <NavBar />
       <Hero />
-      <AutomationEngine />
       <WhatWeDo />
       <HowItWorks />
+      <AutomationEngine />
       <CtaBanner />
       <Footer />
     </>

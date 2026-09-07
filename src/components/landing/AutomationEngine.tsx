@@ -80,15 +80,12 @@ export function AutomationEngine() {
   const [presetId, setPresetId] = useState<PresetId>(loadPreset);
   const preset = PRESETS[presetId];
 
-  const { jobs, stats } = useJobSimulation({
+  const { jobs } = useJobSimulation({
     dial: source,
     active: inView,
     reduce,
     kindCount: preset.jobKinds.length,
   });
-  // A visual sense of work waiting — the pile at the entry. No numeric claim is shown.
-  const queueHint = Math.max(0, Math.round((28 - ariaNow) * 0.5));
-  const queue = Math.max(queueHint, stats.backlog);
 
   const [selectedStage, setSelectedStage] = useState<number | null>(null);
   const [focusStage, setFocusStage] = useState(0);
@@ -242,7 +239,6 @@ export function AutomationEngine() {
               active={inView}
               selectedStage={selectedStage}
               stageLabels={preset.stages.map((s) => s.shortLabel)}
-              backlogCount={queue}
             />
 
             <JobLayer jobs={jobs} />

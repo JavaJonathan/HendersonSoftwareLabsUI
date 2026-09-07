@@ -1,22 +1,22 @@
-import { useEffect, useReducer, useRef, useState } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
 import type { MotionValue } from 'framer-motion';
 import { ENTRY_X, EXIT_X, LANE_DY, RAIL_Y, STAGE_FRACS } from './geometry';
 
 /**
- * The pipeline's living heartbeat. One requestAnimationFrame loop advances a small pool of
- * job tokens along the rail; the dial governs how fast they move, how often they jam, how
- * often something slips, and how big the backlog gets. Positions are written straight to the
- * SVG nodes' `transform` every frame — React only re-renders when a job is added or removed,
- * and the counters sync a few times a second. The loop is fully stopped when the section is
- * off screen, the tab is hidden, or the visitor prefers reduced motion.
+ * The pipeline's living heartbeat. One requestAnimationFrame loop moves a small pool of
+ * task cards along the belt — a handful at a time, never a swarm. The dial governs their
+ * speed and how often they jam or slip; cards keep a following distance so they queue
+ * rather than overlap. Positions are written straight to the SVG nodes every frame; React
+ * only re-renders on add/remove. The loop is fully stopped when the section is off screen,
+ * the tab is hidden, or reduced motion is on.
  */
 
 export interface Job {
   id: number;
   kindIndex: number;
-  /** 0 = just entered, 1 = exited. */
+  /** 0 = just entered, ~1 = exiting. */
   progress: number;
-  /** -1 | 0 | 1 vertical lane around the rail. */
+  /** -1 | 1 — the lane above or below the belt. */
   lane: number;
   status: 'flowing' | 'stuck' | 'done';
   nextStage: number;
@@ -26,13 +26,13 @@ export interface Job {
   el: SVGGElement | null;
 }
 
-export interface SimStats {
-  handled: number;
-  backlog: number;
-}
+/** Minimum spacing between two cards in the same lane, in progress units. */
+const MIN_GAP = 0.09;
+const DONE_MS = 520;
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 const lerp = (a: number, b: number, t: number) => a + (b - a) * clamp01(t);
+const randLane = () => (Math.random() < 0.5 ? -1 : 1);
 
 function fracToStage(p: number) {
   let s = 0;
@@ -55,23 +55,20 @@ function makeJob(id: number, kindIndex: number, progress: number, lane: number):
   };
 }
 
-/** A calm starting frame — a few jobs spread along the pipeline, used while paused. */
+/** A calm starting frame — a few cards spread along the belt, used while paused. */
 function seedJobs(kindCount: number): Job[] {
-  return [0.1, 0.32, 0.5, 0.68, 0.86].map((p, k) => makeJob(-1 - k, k % Math.max(1, kindCount), p, (k % 3) - 1));
+  return [0.14, 0.44, 0.74].map((p, k) => makeJob(-1 - k, k % Math.max(1, kindCount), p, k % 2 === 0 ? -1 : 1));
 }
-
-/** So "handled today" doesn't read as an empty system the instant the page loads. */
-const seedHandled = () => 40 + Math.floor(Math.random() * 90);
 
 function paramsFor(dial: number) {
   const t = dial / 100;
   return {
-    speed: lerp(0.045, 0.32, t), // progress per second
-    spawnMs: lerp(1500, 780, t),
-    jamChance: lerp(0.62, 0.012, t),
-    jamMs: lerp(3200, 240, t),
-    errorChance: lerp(0.28, 0, t),
-    cap: dial < 30 ? 7 : 15,
+    speed: lerp(0.05, 0.26, t), // progress per second
+    spawnMs: lerp(2800, 1400, t),
+    jamChance: lerp(0.5, 0.01, t),
+    jamMs: lerp(2600, 220, t),
+    errorChance: lerp(0.22, 0, t),
+    cap: dial < 30 ? 4 : 6,
   };
 }
 
@@ -87,22 +84,18 @@ export function useJobSimulation({ dial, active, reduce, kindCount }: Options) {
 
   const listRef = useRef<Job[]>(seedJobs(kindCount));
   const [, bump] = useReducer((n: number) => n + 1, 0);
-  const statsRef = useRef<SimStats>({ handled: seedHandled(), backlog: 0 });
-  const [stats, setStats] = useState<SimStats>(() => ({ ...statsRef.current }));
 
   const kindCountRef = useRef(kindCount);
   kindCountRef.current = kindCount;
   const firstRun = useRef(true);
 
-  // Re-seed when the preset (kind count) changes so tokens match the new world.
+  // Re-seed when the preset (kind count) changes so cards match the new world.
   useEffect(() => {
     if (firstRun.current) {
       firstRun.current = false;
       return;
     }
     listRef.current = seedJobs(kindCountRef.current);
-    statsRef.current = { handled: seedHandled(), backlog: 0 };
-    setStats({ ...statsRef.current });
     bump();
   }, [kindCount]);
 
@@ -112,8 +105,7 @@ export function useJobSimulation({ dial, active, reduce, kindCount }: Options) {
     let raf = 0;
     let alive = true;
     let last = performance.now();
-    let nextSpawn = last + 700;
-    let lastStatsSync = 0;
+    let nextSpawn = last + 600;
     let nextId = 1;
 
     const step = (now: number) => {
@@ -125,14 +117,12 @@ export function useJobSimulation({ dial, active, reduce, kindCount }: Options) {
       const p = paramsFor(dial.get());
       let structural = false;
 
-      // spawn / backlog
       if (now >= nextSpawn) {
         nextSpawn = now + p.spawnMs * (0.75 + Math.random() * 0.5);
-        if (list.length < p.cap) {
-          list.push(makeJob(nextId++, Math.floor(Math.random() * kindCountRef.current), 0, Math.floor(Math.random() * 3) - 1));
+        const activeCount = list.filter((j) => j.status !== 'done').length;
+        if (activeCount < p.cap) {
+          list.push(makeJob(nextId++, Math.floor(Math.random() * kindCountRef.current), 0, randLane()));
           structural = true;
-        } else {
-          statsRef.current.backlog += 1;
         }
       }
 
@@ -140,13 +130,10 @@ export function useJobSimulation({ dial, active, reduce, kindCount }: Options) {
         const job = list[i];
 
         if (job.status === 'done') {
-          if (now - job.doneAt > 420) {
+          job.progress += p.speed * dt * 1.15;
+          if (now - job.doneAt > DONE_MS || job.progress > 1.25) {
             list.splice(i, 1);
             structural = true;
-            if (statsRef.current.backlog > 0 && list.length < p.cap) {
-              statsRef.current.backlog -= 1;
-              list.push(makeJob(nextId++, Math.floor(Math.random() * kindCountRef.current), 0, Math.floor(Math.random() * 3) - 1));
-            }
           }
           continue;
         }
@@ -158,7 +145,7 @@ export function useJobSimulation({ dial, active, reduce, kindCount }: Options) {
 
         job.progress += p.speed * dt;
 
-        // stage crossing
+        // stage crossing — chance to jam or slip
         if (job.nextStage < STAGE_FRACS.length && job.progress >= STAGE_FRACS[job.nextStage]) {
           job.nextStage += 1;
           if (Math.random() < p.jamChance) {
@@ -172,33 +159,34 @@ export function useJobSimulation({ dial, active, reduce, kindCount }: Options) {
           }
         }
 
+        // keep a following distance from the nearest card ahead in the same lane
+        let aheadGap = Infinity;
+        for (let k = 0; k < list.length; k += 1) {
+          const other = list[k];
+          if (other === job || other.lane !== job.lane || other.status === 'done') continue;
+          const gap = other.progress - job.progress;
+          if (gap > 0 && gap < aheadGap) aheadGap = gap;
+        }
+        if (aheadGap < MIN_GAP) job.progress -= (MIN_GAP - aheadGap) * 0.5;
+
         if (job.progress >= 1) {
           job.progress = 1;
           job.status = 'done';
           job.doneAt = now;
-          statsRef.current.handled += 1;
         }
       }
 
-      // write transforms
       for (let i = 0; i < list.length; i += 1) {
         const job = list[i];
         if (!job.el) continue;
         const x = lerp(ENTRY_X, EXIT_X, job.progress);
         const y = RAIL_Y + job.lane * LANE_DY;
-        const scale = job.status === 'done' ? 1 + Math.min(1, (now - job.doneAt) / 420) * 0.6 : 1;
-        job.el.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) scale(${scale.toFixed(2)})`);
-        job.el.setAttribute('opacity', job.status === 'done' ? String(clamp01(1 - (now - job.doneAt) / 420)) : '1');
+        job.el.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+        job.el.setAttribute('opacity', job.status === 'done' ? clamp01(1 - (now - job.doneAt) / DONE_MS).toFixed(2) : '1');
         job.el.dataset.state = job.errorUntil > now ? 'error' : job.status;
       }
 
       if (structural) bump();
-      if (now - lastStatsSync > 260) {
-        lastStatsSync = now;
-        const s = statsRef.current;
-        setStats((prev) => (prev.handled === s.handled && prev.backlog === s.backlog ? prev : { ...s }));
-      }
-
       raf = requestAnimationFrame(step);
     };
 
@@ -224,5 +212,5 @@ export function useJobSimulation({ dial, active, reduce, kindCount }: Options) {
     };
   }, [running, dial]);
 
-  return { jobs: listRef.current, stats, running };
+  return { jobs: listRef.current };
 }

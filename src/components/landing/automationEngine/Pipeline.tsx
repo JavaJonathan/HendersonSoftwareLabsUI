@@ -35,13 +35,11 @@ interface PipelineProps {
   active: boolean;
   selectedStage: number | null;
   stageLabels: string[];
-  backlogCount: number;
 }
 
-export function Pipeline({ dial, reduce, active, selectedStage, stageLabels, backlogCount }: PipelineProps) {
+export function Pipeline({ dial, reduce, active, selectedStage, stageLabels }: PipelineProps) {
   const flow = active && !reduce;
   const warmOpacity = useTransform(dial, [10, 60], [1, 0]);
-  const pileChips = Math.min(7, Math.max(0, backlogCount));
 
   return (
     <svg
@@ -69,23 +67,6 @@ export function Pipeline({ dial, reduce, active, selectedStage, stageLabels, bac
 
       {/* the conveyor belt */}
       <line x1={ENTRY_X - 4} y1={RAIL_Y} x2={EXIT_X + 4} y2={RAIL_Y} stroke="#e7ecf2" strokeWidth={5} strokeLinecap="round" />
-
-      {/* backlog piling up at the entry */}
-      <g>
-        {Array.from({ length: pileChips }, (_, k) => (
-          <rect
-            key={k}
-            x={ENTRY_X - 12 + (k % 3) * 4}
-            y={RAIL_Y - 5 - Math.floor(k / 3) * 11}
-            width={13}
-            height={10}
-            rx={2}
-            fill="#fff7ed"
-            stroke="#f59e0b"
-            strokeWidth={1}
-          />
-        ))}
-      </g>
 
       {STAGE_CX.map((cx, i) => (
         <Stage
