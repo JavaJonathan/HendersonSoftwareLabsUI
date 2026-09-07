@@ -16,9 +16,9 @@ import {
 } from 'framer-motion';
 import { Reveal } from '../motion/Reveal';
 
-const START = 54;
-const MIN = 5;
-const MAX = 95;
+const START = 52;
+const MIN = 6;
+const MAX = 94;
 
 const clampPos = (v: number) => Math.min(MAX, Math.max(MIN, v));
 
@@ -44,9 +44,10 @@ export function BeforeAfter() {
 
   const clipPath = useMotionTemplate`inset(0 0 0 ${source}%)`;
   const handleLeft = useMotionTemplate`${source}%`;
-  // Higher pos hides more of the "after" layer, so "before" dominates — labels track that.
-  const beforeOpacity = useTransform(source, [42, 60], [0.35, 1]);
-  const afterOpacity = useTransform(source, [42, 60], [1, 0.35]);
+  // Higher pos hides more of the "after" layer, so "before" dominates — labels track that,
+  // and the de-emphasized side's labels fade fully out before the handle reaches them.
+  const beforeOpacity = useTransform(source, [24, 60], [0, 1]);
+  const afterOpacity = useTransform(source, [44, 80], [1, 0]);
 
   function posFromClientX(clientX: number) {
     const rect = stageRef.current?.getBoundingClientRect();
@@ -112,8 +113,8 @@ export function BeforeAfter() {
             sx={{
               position: 'relative',
               width: '100%',
-              aspectRatio: { xs: '3 / 2', sm: '16 / 10', md: '16 / 9' },
-              borderRadius: 4,
+              aspectRatio: { xs: '4 / 3', sm: '3 / 2', md: '16 / 10' },
+              borderRadius: { xs: 3, sm: 4 },
               overflow: 'hidden',
               border: '1px solid',
               borderColor: 'divider',
@@ -143,10 +144,10 @@ export function BeforeAfter() {
             </CornerLabel>
 
             <CornerLabel h="left" v="bottom" opacity={beforeOpacity} tone="muted">
-              <StatText>about 6 hrs / week</StatText>
+              <StatText>~6 hrs / week</StatText>
             </CornerLabel>
             <CornerLabel h="right" v="bottom" opacity={afterOpacity} tone="brand">
-              <StatText>about 15 min / week</StatText>
+              <StatText>~15 min / week</StatText>
             </CornerLabel>
 
             <Box
@@ -168,6 +169,7 @@ export function BeforeAfter() {
                 position: 'absolute',
                 top: 0,
                 bottom: 0,
+                zIndex: 3,
                 width: 44,
                 ml: '-22px',
                 display: 'flex',
@@ -228,8 +230,8 @@ export function BeforeAfter() {
 function StatText({ children }: { children: ReactNode }) {
   return (
     <>
-      <AccessTimeRoundedIcon sx={{ fontSize: { xs: 13, sm: 14 } }} />
-      <Typography component="span" sx={{ fontSize: { xs: 11, sm: 12 }, fontWeight: 700, lineHeight: 1 }}>
+      <AccessTimeRoundedIcon sx={{ fontSize: { xs: 12, sm: 14 } }} />
+      <Typography component="span" sx={{ fontSize: { xs: 10.5, sm: 12 }, fontWeight: 700, lineHeight: 1 }}>
         {children}
       </Typography>
     </>
@@ -239,7 +241,7 @@ function StatText({ children }: { children: ReactNode }) {
 function LabelText({ title, subtitle }: { title: string; subtitle: string }) {
   return (
     <>
-      <Typography component="span" sx={{ fontWeight: 800, fontSize: { xs: 12, sm: 13 }, lineHeight: 1 }}>
+      <Typography component="span" sx={{ fontWeight: 800, fontSize: { xs: 11.5, sm: 13 }, lineHeight: 1 }}>
         {title}
       </Typography>
       <Typography
@@ -271,17 +273,17 @@ function CornerLabel({
       style={{ opacity }}
       sx={{
         position: 'absolute',
-        [v]: { xs: 10, sm: 14 },
-        [h]: { xs: 10, sm: 14 },
+        zIndex: 4,
+        [v]: { xs: 12, sm: 16 },
+        [h]: { xs: 12, sm: 16 },
         px: 1.25,
         py: 0.75,
         borderRadius: 9999,
-        bgcolor: tone === 'brand' ? 'primary.main' : 'rgba(255,255,255,0.92)',
+        bgcolor: tone === 'brand' ? 'primary.main' : '#ffffff',
         color: tone === 'brand' ? 'primary.contrastText' : 'text.secondary',
         border: tone === 'brand' ? 'none' : '1px solid',
         borderColor: 'divider',
-        backdropFilter: 'blur(4px)',
-        boxShadow: '0 4px 12px -6px rgba(15, 23, 42, 0.25)',
+        boxShadow: '0 4px 14px -4px rgba(15, 23, 42, 0.3)',
         pointerEvents: 'none',
         display: 'flex',
         alignItems: 'center',
@@ -314,21 +316,21 @@ function BeforeScene() {
       <rect width="320" height="190" fill="#f8fafc" />
 
       <g fill="none" stroke="#cbd5e1" strokeWidth="1.5">
-        <path d="M60 55 C 120 20, 150 150, 220 120" />
-        <path d="M85 130 C 140 90, 90 40, 230 60" strokeDasharray="4 4" />
-        <path d="M55 95 C 130 130, 180 30, 250 110" />
-        <path d="M110 45 C 150 120, 210 130, 245 150" strokeDasharray="3 5" />
+        <path d="M56 58 C 122 18, 150 156, 232 128" />
+        <path d="M86 138 C 150 92, 92 34, 244 56" strokeDasharray="4 4" />
+        <path d="M50 100 C 132 140, 188 26, 262 118" />
+        <path d="M112 42 C 156 128, 214 138, 256 160" strokeDasharray="3 5" />
       </g>
 
-      <NoteCard x={40} y={30} rotate={-7} />
-      <NoteCard x={128} y={20} rotate={5} accent />
-      <NoteCard x={214} y={38} rotate={9} />
-      <NoteCard x={54} y={104} rotate={4} />
-      <NoteCard x={150} y={118} rotate={-6} accent />
-      <NoteCard x={228} y={110} rotate={7} />
+      <NoteCard x={30} y={22} rotate={-8} />
+      <NoteCard x={126} y={14} rotate={5} accent />
+      <NoteCard x={222} y={30} rotate={10} />
+      <NoteCard x={28} y={110} rotate={5} />
+      <NoteCard x={140} y={126} rotate={-7} accent />
+      <NoteCard x={228} y={112} rotate={8} />
 
-      <AlertBadge cx={120} cy={28} />
-      <AlertBadge cx={224} cy={148} />
+      <AlertBadge cx={120} cy={22} />
+      <AlertBadge cx={226} cy={160} />
     </svg>
   );
 }
@@ -337,15 +339,16 @@ function NoteCard({ x, y, rotate, accent }: { x: number; y: number; rotate: numb
   return (
     <g transform={`translate(${x} ${y}) rotate(${rotate})`}>
       <rect
-        width="52"
-        height="34"
-        rx="4"
+        width="58"
+        height="42"
+        rx="5"
         fill={accent ? '#fef3c7' : '#ffffff'}
         stroke={accent ? '#f59e0b' : '#e2e8f0'}
         strokeWidth="1.5"
       />
-      <line x1="8" y1="12" x2="40" y2="12" stroke={accent ? '#d97706' : '#cbd5e1'} strokeWidth="2" strokeLinecap="round" />
-      <line x1="8" y1="20" x2="32" y2="20" stroke={accent ? '#d97706' : '#cbd5e1'} strokeWidth="2" strokeLinecap="round" />
+      <line x1="9" y1="15" x2="46" y2="15" stroke={accent ? '#d97706' : '#cbd5e1'} strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="9" y1="25" x2="37" y2="25" stroke={accent ? '#d97706' : '#cbd5e1'} strokeWidth="2.5" strokeLinecap="round" />
+      <line x1="9" y1="33" x2="42" y2="33" stroke={accent ? '#e0a95a' : '#dde3ea'} strokeWidth="2.5" strokeLinecap="round" />
     </g>
   );
 }
@@ -353,8 +356,8 @@ function NoteCard({ x, y, rotate, accent }: { x: number; y: number; rotate: numb
 function AlertBadge({ cx, cy }: { cx: number; cy: number }) {
   return (
     <g transform={`translate(${cx} ${cy})`}>
-      <circle r="8" fill="#f59e0b" />
-      <text x="0" y="3.5" textAnchor="middle" fill="#ffffff" fontSize="11" fontWeight="800">
+      <circle r="9" fill="#f59e0b" />
+      <text x="0" y="4" textAnchor="middle" fill="#ffffff" fontSize="12" fontWeight="800">
         !
       </text>
     </g>
@@ -362,37 +365,57 @@ function AlertBadge({ cx, cy }: { cx: number; cy: number }) {
 }
 
 function AfterScene() {
-  const nodes = [26, 100, 174, 248];
-  const y = 78;
+  const xs = [16, 92, 168, 244];
+  const nodeW = 54;
+  const nodeH = 60;
+  const nodeY = 66;
+  const midY = nodeY + nodeH / 2;
   return (
     <svg {...sceneSvgProps} role="img" aria-label="A clean automated pipeline of connected steps">
       <rect width="320" height="190" fill="#ffffff" />
 
+      {/* status dots */}
+      <circle cx="18" cy="36" r="3" fill="#cbd5e1" />
+      <circle cx="30" cy="36" r="3" fill="#cbd5e1" />
+      <circle cx="42" cy="36" r="3" fill="#16a34a" />
+
+      {/* rail + connectors */}
+      <line x1="12" y1={midY} x2="308" y2={midY} stroke="#dbeafe" strokeWidth="2" />
       <g stroke="#2563eb" strokeWidth="2" fill="none">
-        {nodes.slice(0, -1).map((nx, i) => (
+        {xs.slice(0, -1).map((nx, i) => (
           <g key={nx}>
-            <line x1={nx + 46} y1={y + 17} x2={nodes[i + 1]} y2={y + 17} />
-            <path d={`M${nodes[i + 1] - 6} ${y + 13} l6 4 l-6 4`} strokeLinecap="round" strokeLinejoin="round" />
+            <line x1={nx + nodeW} y1={midY} x2={xs[i + 1]} y2={midY} />
+            <path d={`M${xs[i + 1] - 6} ${midY - 4} l6 4 l-6 4`} strokeLinecap="round" strokeLinejoin="round" />
           </g>
         ))}
       </g>
 
-      {nodes.map((nx, i) => (
-        <g key={nx} transform={`translate(${nx} ${y})`}>
+      {/* nodes */}
+      {xs.map((nx, i) => (
+        <g key={nx} transform={`translate(${nx} ${nodeY})`}>
           <rect
-            width="46"
-            height="34"
-            rx="5"
+            width={nodeW}
+            height={nodeH}
+            rx="7"
             fill={i === 1 ? '#eff6ff' : '#ffffff'}
             stroke="#bfdbfe"
             strokeWidth="1.5"
           />
-          <line x1="8" y1="12" x2="38" y2="12" stroke="#93c5fd" strokeWidth="2" strokeLinecap="round" />
-          <line x1="8" y1="20" x2="28" y2="20" stroke="#93c5fd" strokeWidth="2" strokeLinecap="round" />
-          <g transform="translate(38 -4)">
-            <circle r="7" fill="#16a34a" />
-            <path d="M-3 0 l2 2 l4 -4" fill="none" stroke="#ffffff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          <line x1="10" y1="17" x2={nodeW - 10} y2="17" stroke="#93c5fd" strokeWidth="2.5" strokeLinecap="round" />
+          <line x1="10" y1="27" x2={nodeW - 18} y2="27" stroke="#bfdbfe" strokeWidth="2.5" strokeLinecap="round" />
+          <line x1="10" y1="37" x2={nodeW - 13} y2="37" stroke="#bfdbfe" strokeWidth="2.5" strokeLinecap="round" />
+          <g transform={`translate(${nodeW - 7} -3)`}>
+            <circle r="6.5" fill="#16a34a" />
+            <path
+              d="M-3 0 l2 2 l3.8 -4"
+              fill="none"
+              stroke="#ffffff"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </g>
+          <line x1="8" y1={nodeH + 13} x2={nodeW - 8} y2={nodeH + 13} stroke="#e2e8f0" strokeWidth="3" strokeLinecap="round" />
         </g>
       ))}
     </svg>

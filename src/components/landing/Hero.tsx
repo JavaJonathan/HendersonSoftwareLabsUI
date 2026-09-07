@@ -12,7 +12,7 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
 import { Reveal } from '../motion/Reveal';
 import { GradientBackdrop } from '../motion/GradientBackdrop';
 import { MagneticWrap } from '../motion/MagneticWrap';
-import { OdometerNumber } from '../motion/OdometerNumber';
+import { useCountUp } from '../../hooks/useCountUp';
 
 export function Hero() {
   return (
@@ -96,6 +96,8 @@ function StatCard({
   label: string;
   large?: boolean;
 }) {
+  const { ref, value: animatedValue } = useCountUp(value);
+
   return (
     <Paper
       variant="outlined"
@@ -126,11 +128,13 @@ function StatCard({
       >
         <Icon />
       </Box>
-      <Typography
-        sx={{ fontSize: large ? 44 : 30, fontWeight: 800, color: 'primary.main', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}
-      >
-        <OdometerNumber value={value} />+
-      </Typography>
+      <Box ref={ref}>
+        <Typography
+          sx={{ fontSize: large ? 44 : 30, fontWeight: 800, color: 'primary.main', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}
+        >
+          {animatedValue}+
+        </Typography>
+      </Box>
       <Typography sx={{ mt: 1, color: 'text.primary', fontWeight: 500 }}>{label}</Typography>
     </Paper>
   );
