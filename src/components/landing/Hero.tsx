@@ -95,6 +95,7 @@ export function Hero() {
 
             <Reveal delay={0.32}>
               <Typography
+                component="div"
                 variant="body2"
                 sx={{ mt: { xs: 2.5, md: 3 }, color: 'text.secondary', display: 'flex', alignItems: 'flex-start', gap: 1 }}
               >
