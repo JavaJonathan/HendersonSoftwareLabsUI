@@ -16,11 +16,11 @@ export function Hero() {
     <Box sx={{ position: 'relative', overflow: 'hidden' }}>
       <GradientBackdrop interactive spotlight />
 
-      <Container maxWidth="lg" sx={{ pt: { xs: 4, md: 6 }, pb: { xs: 4, md: 6 }, position: 'relative' }}>
+      <Container maxWidth="lg" sx={{ pt: { xs: 3, md: 6 }, pb: { xs: 5, md: 6 }, position: 'relative' }}>
         <Box
           sx={{
             display: 'grid',
-            gap: { xs: 5, md: 6 },
+            gap: { xs: 4, md: 6 },
             gridTemplateColumns: { xs: '1fr', md: '1.15fr 0.85fr' },
             alignItems: 'center',
           }}
@@ -30,22 +30,25 @@ export function Hero() {
               <Chip
                 label="On-Demand Software Engineering"
                 icon={<Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'primary.main', ml: '10px' }} />}
-                sx={{ bgcolor: 'primary.light', color: 'primary.main', fontSize: 13, mb: 3 }}
+                sx={{ bgcolor: 'primary.light', color: 'primary.main', fontSize: 13, mb: { xs: 2.5, md: 3 } }}
               />
             </Reveal>
 
             <Reveal delay={0.08}>
-              <Typography variant="h1" sx={{ fontSize: { xs: 36, md: 50 }, color: 'text.primary', lineHeight: 1.12 }}>
+              <Typography
+                variant="h1"
+                sx={{ fontSize: { xs: 33, md: 50 }, color: 'text.primary', lineHeight: { xs: 1.18, md: 1.12 }, textWrap: 'balance' }}
+              >
                 Custom software for businesses that don't need{' '}
                 <Box component="span" sx={{ color: 'primary.main' }}>
-                  a full-time software team
+                  a full{'‑'}time software team
                 </Box>
                 .
               </Typography>
             </Reveal>
 
             <Reveal delay={0.16}>
-              <Typography sx={{ mt: 3, maxWidth: 500, color: 'text.secondary', fontSize: 17, lineHeight: 1.6 }}>
+              <Typography sx={{ mt: { xs: 2.5, md: 3 }, maxWidth: 500, color: 'text.secondary', fontSize: { xs: 16, md: 17 }, lineHeight: 1.6 }}>
                 We build the internal tools, automations, and integrations that take the busywork off
                 your team — without the overhead of hiring.
               </Typography>
@@ -53,9 +56,9 @@ export function Hero() {
 
             <Reveal delay={0.24}>
               <Stack
-                direction={{ xs: 'column', sm: 'row' }}
+                direction="row"
                 spacing={{ xs: 2, sm: 3 }}
-                sx={{ mt: 4, alignItems: { sm: 'center' } }}
+                sx={{ mt: { xs: 3.5, md: 4 }, alignItems: 'center', flexWrap: 'wrap' }}
                 useFlexGap
               >
                 <MagneticWrap>
@@ -93,9 +96,9 @@ export function Hero() {
             <Reveal delay={0.32}>
               <Typography
                 variant="body2"
-                sx={{ mt: 3, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1 }}
+                sx={{ mt: { xs: 2.5, md: 3 }, color: 'text.secondary', display: 'flex', alignItems: 'flex-start', gap: 1 }}
               >
-                <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: 'primary.main', flexShrink: 0 }} />
+                <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: 'primary.main', flexShrink: 0, mt: '7px' }} />
                 Built by a senior engineer — 7+ years shipping production software.
               </Typography>
             </Reveal>
