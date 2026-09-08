@@ -3,9 +3,6 @@ frontend:
   phases:
     preBuild:
       commands:
-        # --cache .npm + caching .npm/** (not node_modules) matches what the Amplify app's
-        # stored inline build spec did — kept here so this file can become the single source
-        # of truth once that inline spec is cleared.
         - npm ci --cache .npm --prefer-offline
     build:
       commands:
@@ -17,21 +14,5 @@ frontend:
   cache:
     paths:
       - .npm/**/*
-customHeaders:
-  - pattern: '**'
-    headers:
-      # Wave 2 will add a Content-Security-Policy here once the app's real script / style /
-      # font / connect origins are enumerated and the built SPA is tested with the header
-      # locally — a wrong CSP white-screens the site on deploy. The JWT lives in localStorage,
-      # so that CSP is the main XSS-to-token-theft mitigation; the headers below are the
-      # safe-now subset.
-      - key: 'Strict-Transport-Security'
-        value: 'max-age=31536000; includeSubDomains'
-      - key: 'X-Frame-Options'
-        value: 'DENY'
-      - key: 'X-Content-Type-Options'
-        value: 'nosniff'
-      - key: 'Referrer-Policy'
-        value: 'no-referrer'
-      - key: 'Permissions-Policy'
-        value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()'
+# Security response headers live in customHttp.yml (repo root) — AWS recommends keeping them
+# out of the build spec / amplify.yml. Wave 2 adds a Content-Security-Policy there.
