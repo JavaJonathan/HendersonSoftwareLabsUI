@@ -4,23 +4,27 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
-import Paper from '@mui/material/Paper';
+import Link from '@mui/material/Link';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
-import AccountTreeOutlinedIcon from '@mui/icons-material/AccountTreeOutlined';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutlined';
 import { Reveal } from '../motion/Reveal';
 import { GradientBackdrop } from '../motion/GradientBackdrop';
 import { MagneticWrap } from '../motion/MagneticWrap';
-import { useCountUp } from '../../hooks/useCountUp';
+import { ImpactPanel } from './hero/ImpactPanel';
 
 export function Hero() {
   return (
     <Box sx={{ position: 'relative', overflow: 'hidden' }}>
       <GradientBackdrop interactive spotlight />
 
-      <Container maxWidth="lg" sx={{ pt: { xs: 4, md: 5 }, pb: { xs: 3, md: 4 }, position: 'relative' }}>
-        <Box sx={{ display: 'grid', gap: 5, gridTemplateColumns: { xs: '1fr', md: '1.1fr 0.9fr' }, alignItems: 'flex-start' }}>
+      <Container maxWidth="lg" sx={{ pt: { xs: 4, md: 6 }, pb: { xs: 4, md: 6 }, position: 'relative' }}>
+        <Box
+          sx={{
+            display: 'grid',
+            gap: { xs: 5, md: 6 },
+            gridTemplateColumns: { xs: '1fr', md: '1.15fr 0.85fr' },
+            alignItems: 'center',
+          }}
+        >
           <Box>
             <Reveal>
               <Chip
@@ -31,7 +35,7 @@ export function Hero() {
             </Reveal>
 
             <Reveal delay={0.08}>
-              <Typography variant="h1" sx={{ fontSize: { xs: 36, md: 48 }, color: 'text.primary', lineHeight: 1.15 }}>
+              <Typography variant="h1" sx={{ fontSize: { xs: 36, md: 50 }, color: 'text.primary', lineHeight: 1.12 }}>
                 Custom software for businesses that don't need{' '}
                 <Box component="span" sx={{ color: 'primary.main' }}>
                   a full-time software team
@@ -41,14 +45,19 @@ export function Hero() {
             </Reveal>
 
             <Reveal delay={0.16}>
-              <Typography sx={{ mt: 3, maxWidth: 480, color: 'text.secondary', fontSize: 17 }}>
-                We build internal tools, automations, and system integrations that save time, reduce
-                manual work, and improve operations.
+              <Typography sx={{ mt: 3, maxWidth: 500, color: 'text.secondary', fontSize: 17, lineHeight: 1.6 }}>
+                We build the internal tools, automations, and integrations that take the busywork off
+                your team — without the overhead of hiring.
               </Typography>
             </Reveal>
 
             <Reveal delay={0.24}>
-              <Stack direction="row" spacing={2} sx={{ mt: 4, flexWrap: 'wrap' }} useFlexGap>
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={{ xs: 2, sm: 3 }}
+                sx={{ mt: 4, alignItems: { sm: 'center' } }}
+                useFlexGap
+              >
                 <MagneticWrap>
                   <Button
                     variant="contained"
@@ -59,83 +68,44 @@ export function Hero() {
                     Book a Call
                   </Button>
                 </MagneticWrap>
-                <Button variant="outlined" size="large" color="inherit" href="#what-we-do" endIcon={<ArrowForwardIcon />}>
-                  See Services
-                </Button>
+
+                <Link
+                  href="#how-it-works"
+                  underline="none"
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    fontWeight: 600,
+                    fontSize: 15,
+                    color: 'text.secondary',
+                    '& svg': { fontSize: 17, transition: 'transform 0.2s ease' },
+                    '&:hover': { color: 'primary.main' },
+                    '&:hover svg': { transform: 'translateX(3px)' },
+                  }}
+                >
+                  See how it works
+                  <ArrowForwardIcon />
+                </Link>
               </Stack>
+            </Reveal>
+
+            <Reveal delay={0.32}>
+              <Typography
+                variant="body2"
+                sx={{ mt: 3, color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 1 }}
+              >
+                <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: 'primary.main', flexShrink: 0 }} />
+                Built by a senior engineer — 7+ years shipping production software.
+              </Typography>
             </Reveal>
           </Box>
 
-          <Box sx={{ display: 'grid', gap: 2 }}>
-            <Reveal delay={0.1} y={16}>
-              <StatCard icon={AccessTimeOutlinedIcon} value={120} label="Hours Saved" large />
-            </Reveal>
-            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-              <Reveal delay={0.18} y={16}>
-                <StatCard icon={AccountTreeOutlinedIcon} value={8} label="Workflows Automated" />
-              </Reveal>
-              <Reveal delay={0.26} y={16}>
-                <StatCard icon={CheckCircleOutlineIcon} value={15} label="Manual Tasks Eliminated" />
-              </Reveal>
-            </Box>
-          </Box>
+          <Reveal delay={0.12} y={18} fullWidth>
+            <ImpactPanel />
+          </Reveal>
         </Box>
       </Container>
     </Box>
-  );
-}
-
-function StatCard({
-  icon: Icon,
-  value,
-  label,
-  large,
-}: {
-  icon: typeof AccessTimeOutlinedIcon;
-  value: number;
-  label: string;
-  large?: boolean;
-}) {
-  const { ref, value: animatedValue } = useCountUp(value);
-
-  return (
-    <Paper
-      variant="outlined"
-      sx={{
-        p: large ? 4 : 3,
-        textAlign: 'center',
-        borderRadius: 3,
-        '&:hover': {
-          transform: 'translateY(-3px)',
-          boxShadow: '0 16px 32px -14px rgba(15, 23, 42, 0.18)',
-          borderColor: '#bfdbfe',
-        },
-      }}
-    >
-      <Box
-        sx={{
-          width: 48,
-          height: 48,
-          borderRadius: '50%',
-          bgcolor: 'primary.light',
-          color: 'primary.main',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          mx: 'auto',
-          mb: 1.5,
-        }}
-      >
-        <Icon />
-      </Box>
-      <Box ref={ref}>
-        <Typography
-          sx={{ fontSize: large ? 44 : 30, fontWeight: 800, color: 'primary.main', lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}
-        >
-          {animatedValue}+
-        </Typography>
-      </Box>
-      <Typography sx={{ mt: 1, color: 'text.primary', fontWeight: 500 }}>{label}</Typography>
-    </Paper>
   );
 }
