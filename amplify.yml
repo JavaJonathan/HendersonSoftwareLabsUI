@@ -3,7 +3,10 @@ frontend:
   phases:
     preBuild:
       commands:
-        - npm ci
+        # --cache .npm + caching .npm/** (not node_modules) matches what the Amplify app's
+        # stored inline build spec did — kept here so this file can become the single source
+        # of truth once that inline spec is cleared.
+        - npm ci --cache .npm --prefer-offline
     build:
       commands:
         - npm run build
@@ -13,7 +16,7 @@ frontend:
       - '**/*'
   cache:
     paths:
-      - node_modules/**/*
+      - .npm/**/*
 customHeaders:
   - pattern: '**'
     headers:
