@@ -38,12 +38,12 @@ const EXPERIENCE = [
     bullets: [
       'Develop CompleteConsent / eConsent software that helps life-sciences organizations streamline clinical-trial operations',
       'Delivered a bulk site-access provisioning feature (SQL Server, C#/.NET REST API, React) that automated manual staff access management',
-      'Designed database schemas and built the API and React UI for enterprise administration — enterprise, user, and group management',
+      'Designed database schemas and built the API and React UI for enterprise administration - enterprise, user, and group management',
       'Built a secure workflow that packages and archives site-level clinical-trial data into ZIP files with email and Amazon S3 delivery',
       'Designed a REST endpoint integrating an AI service for document parsing, cutting manual data-entry work',
       'Collaborated on an embedded video-conferencing feature for patient-provider communication, and on a secure clinical-trial reporting system',
       'Owned end-to-end feature delivery: design, estimation, implementation, code review, testing, deployment, and production validation',
-      'Primary production-support owner — performed root-cause analysis and wrote AWS Lambda remediations that restored disrupted integrations',
+      'Primary production-support owner - performed root-cause analysis and wrote AWS Lambda remediations that restored disrupted integrations',
       'Mentored two junior engineers and transferred production-support knowledge',
       'Promoted from Engineer I to Engineer II to Senior; received the IQVIA Ovation Award and multiple Impact Program recognitions',
     ],
@@ -179,7 +179,7 @@ export function PortfolioPage() {
           <Reveal delay={0.2}>
             <Typography sx={{ mt: 3, maxWidth: 620, color: 'text.secondary', fontSize: 17 }}>
               Senior software engineer with 7+ years delivering regulated clinical-trial software with
-              C#/.NET, React, SQL Server, and AWS — full-stack feature delivery, production
+              C#/.NET, React, SQL Server, and AWS - full-stack feature delivery, production
               problem-solving, technical design, and team mentorship.
             </Typography>
           </Reveal>

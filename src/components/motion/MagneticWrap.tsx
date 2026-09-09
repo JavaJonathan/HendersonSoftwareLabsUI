@@ -9,7 +9,7 @@ interface MagneticWrapProps {
 /**
  * Wraps an element (typically a single primary CTA) so it leans subtly toward the
  * cursor on approach and springs back on leave. Reserve for the one action on a
- * page that matters most — using it on every button dilutes the effect.
+ * page that matters most - using it on every button dilutes the effect.
  */
 export function MagneticWrap({ children, strength = 0.35 }: MagneticWrapProps) {
   const ref = useRef<HTMLDivElement>(null);

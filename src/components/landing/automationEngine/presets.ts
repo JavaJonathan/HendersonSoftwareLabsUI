@@ -1,16 +1,16 @@
 /**
  * Industry presets for the Automation Engine. Each one reskins the pipeline's four stages,
  * the job tokens that flow through it, and the savings estimator's model. Copy is grounded
- * in the kind of work HSL actually does (see PortfolioPage.tsx) — order/inventory/shipping
+ * in the kind of work HSL actually does (see PortfolioPage.tsx) - order/inventory/shipping
  * plumbing, proposal + onboarding flows, quote → dispatch → invoice for field service.
  */
 
 export type PresetId = 'ecommerce' | 'agency' | 'trades';
 
 export interface PresetStage {
-  /** Full stage name — used as the explainer card's title. */
+  /** Full stage name - used as the explainer card's title. */
   label: string;
-  /** One or two words — the caption under the pipeline node. */
+  /** One or two words - the caption under the pipeline node. */
   shortLabel: string;
   /** Plain-English "here's what we'd build for you", 1–2 sentences. */
   explainer: string;
@@ -24,7 +24,7 @@ export interface Preset {
   unitNoun: string;
   /** Token labels for the job simulation (Phase 2). */
   jobKinds: string[];
-  /** Rough hand-time per item today — drives the illustrative estimator (Phase 3). */
+  /** Rough hand-time per item today - drives the illustrative estimator (Phase 3). */
   manualMinutesPerJob: number;
   stages: [PresetStage, PresetStage, PresetStage, PresetStage];
 }
@@ -43,7 +43,7 @@ export const PRESETS: Record<PresetId, Preset> = {
         label: 'New order',
         shortLabel: 'Order',
         explainer:
-          'Order details get entered once and end up everywhere they need to, in the same format every time — instead of being re-typed between screens.',
+          'Order details get entered once and end up everywhere they need to, in the same format every time - instead of being re-typed between screens.',
       },
       {
         label: 'Check stock',
@@ -55,7 +55,7 @@ export const PRESETS: Record<PresetId, Preset> = {
         label: 'Create invoice',
         shortLabel: 'Invoice',
         explainer:
-          'The same invoice gets built from the same details every time — work a small piece of software can do instead of a person.',
+          'The same invoice gets built from the same details every time - work a small piece of software can do instead of a person.',
       },
       {
         label: 'Notify customer',
@@ -88,7 +88,7 @@ export const PRESETS: Record<PresetId, Preset> = {
         label: 'Start onboarding',
         shortLabel: 'Onboard',
         explainer:
-          'The checklist that runs after every signed client — access, folders, first tasks — happens on its own instead of from memory.',
+          'The checklist that runs after every signed client - access, folders, first tasks - happens on its own instead of from memory.',
       },
       {
         label: 'Log activity',
@@ -109,7 +109,7 @@ export const PRESETS: Record<PresetId, Preset> = {
         label: 'Job request',
         shortLabel: 'Request',
         explainer:
-          'Calls, texts, and form fills become jobs on the schedule in one consistent place — nothing left on a notepad.',
+          'Calls, texts, and form fills become jobs on the schedule in one consistent place - nothing left on a notepad.',
       },
       {
         label: 'Send quote',

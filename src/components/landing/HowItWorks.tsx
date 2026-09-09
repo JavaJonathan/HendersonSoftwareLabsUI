@@ -19,7 +19,7 @@ const STEPS = [
   {
     title: 'Support',
     description: 'We help you launch, refine, and maintain what we build.',
-    outcome: 'It keeps running — and improving',
+    outcome: 'It keeps running - and improving',
   },
 ];
 

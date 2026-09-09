@@ -1,5 +1,5 @@
 /**
- * "Hours saved" model — PLACEHOLDER until we have the real figure.
+ * "Hours saved" model - PLACEHOLDER until we have the real figure.
  *
  * When we do, `dailyHours` becomes the sum, across every live client, of
  *   (hours of manual work removed per employee per workday) × (employees affected).
@@ -39,7 +39,7 @@ export function workdaysBetween(from: Date, to: Date): number {
   return workdays;
 }
 
-/** The honest running total of hours saved — grows once per calendar workday. */
+/** The honest running total of hours saved - grows once per calendar workday. */
 export function hoursSavedBase(now: Date = new Date()): number {
   return IMPACT.base + workdaysBetween(IMPACT.since, now) * IMPACT.dailyHours;
 }

@@ -5,7 +5,7 @@ interface RevealProps {
   children: ReactNode;
   delay?: number;
   y?: number;
-  /** Stretch to the full width of the parent — needed inside flex containers, where a plain
+  /** Stretch to the full width of the parent - needed inside flex containers, where a plain
    * motion.div shrinks to fit its content as a flex item instead of filling available space. */
   fullWidth?: boolean;
 }

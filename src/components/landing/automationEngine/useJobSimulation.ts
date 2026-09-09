@@ -4,7 +4,7 @@ import { ENTRY_X, EXIT_X, LANE_DY, RAIL_Y, STAGE_FRACS } from './geometry';
 
 /**
  * The pipeline's living heartbeat. One requestAnimationFrame loop moves a small pool of
- * task cards along the belt — a handful at a time, never a swarm. The dial governs their
+ * task cards along the belt - a handful at a time, never a swarm. The dial governs their
  * speed and how often they jam or slip; cards keep a following distance so they queue
  * rather than overlap. Positions are written straight to the SVG nodes every frame; React
  * only re-renders on add/remove. The loop is fully stopped when the section is off screen,
@@ -16,7 +16,7 @@ export interface Job {
   kindIndex: number;
   /** 0 = just entered, ~1 = exiting. */
   progress: number;
-  /** -1 | 1 — the lane above or below the belt. */
+  /** -1 | 1 - the lane above or below the belt. */
   lane: number;
   status: 'flowing' | 'stuck' | 'done';
   nextStage: number;
@@ -55,7 +55,7 @@ function makeJob(id: number, kindIndex: number, progress: number, lane: number):
   };
 }
 
-/** A calm starting frame — a few cards spread along the belt, used while paused. */
+/** A calm starting frame - a few cards spread along the belt, used while paused. */
 function seedJobs(kindCount: number): Job[] {
   return [0.14, 0.44, 0.74].map((p, k) => makeJob(-1 - k, k % Math.max(1, kindCount), p, k % 2 === 0 ? -1 : 1));
 }
@@ -145,7 +145,7 @@ export function useJobSimulation({ dial, active, reduce, kindCount }: Options) {
 
         job.progress += p.speed * dt;
 
-        // stage crossing — chance to jam or slip
+        // stage crossing - chance to jam or slip
         if (job.nextStage < STAGE_FRACS.length && job.progress >= STAGE_FRACS[job.nextStage]) {
           job.nextStage += 1;
           if (Math.random() < p.jamChance) {

@@ -41,16 +41,16 @@ function loadPreset(): PresetId {
     const v = localStorage.getItem(STORAGE_KEY);
     if (v && v in PRESETS) return v as PresetId;
   } catch {
-    /* private mode / disabled storage — fall through to default */
+    /* private mode / disabled storage - fall through to default */
   }
   return 'ecommerce';
 }
 
 /**
- * "The Automation Engine" — the homepage's signature interaction. One living operations
+ * "The Automation Engine" - the homepage's signature interaction. One living operations
  * pipeline: drag the handle and order sweeps across it stage by stage; pick an industry to
  * reskin every stage; tap a stage to see what HSL would build there. All client-side SVG +
- * framer-motion — no backend, no assets, no AWS cost.
+ * framer-motion - no backend, no assets, no AWS cost.
  */
 export function AutomationEngine() {
   const reduce = useReducedMotion() ?? false;
@@ -255,7 +255,7 @@ export function AutomationEngine() {
                   tabIndex={focusStage === i ? 0 : -1}
                   aria-expanded={selectedStage === i}
                   aria-controls="ae-explainer"
-                  aria-label={`${stage.label} — what we build`}
+                  aria-label={`${stage.label} - what we build`}
                   onPointerDown={(event) => event.stopPropagation()}
                   onClick={() => toggleStage(i)}
                   onKeyDown={(event) => handleStageKeyDown(event, i)}
@@ -294,7 +294,7 @@ export function AutomationEngine() {
                   component={motion.div}
                   id="ae-explainer"
                   role="region"
-                  aria-label={`${preset.stages[selectedStage].label} — an example of what we'd automate`}
+                  aria-label={`${preset.stages[selectedStage].label} - an example of what we'd automate`}
                   initial={{ y: 24, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   exit={{ y: 24, opacity: 0 }}

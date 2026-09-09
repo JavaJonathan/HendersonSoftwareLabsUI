@@ -27,19 +27,19 @@ export function GradientBackdrop({
   const reduce = useReducedMotion();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Far layer — slow, low-amplitude drift of the whole backdrop.
+  // Far layer - slow, low-amplitude drift of the whole backdrop.
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const springX = useSpring(mouseX, { stiffness: 40, damping: 20 });
   const springY = useSpring(mouseY, { stiffness: 40, damping: 20 });
 
-  // Near layer — snappier, larger travel so the two blobs separate in depth as the cursor moves.
+  // Near layer - snappier, larger travel so the two blobs separate in depth as the cursor moves.
   const nearX = useMotionValue(0);
   const nearY = useMotionValue(0);
   const nearSpringX = useSpring(nearX, { stiffness: 90, damping: 18 });
   const nearSpringY = useSpring(nearY, { stiffness: 90, damping: 18 });
 
-  // Spotlight — raw cursor position in px relative to the backdrop, lightly sprung.
+  // Spotlight - raw cursor position in px relative to the backdrop, lightly sprung.
   const spotX = useMotionValue(-1000);
   const spotY = useMotionValue(-1000);
   const spotSpringX = useSpring(spotX, { stiffness: 260, damping: 30 });

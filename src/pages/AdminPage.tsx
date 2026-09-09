@@ -106,7 +106,7 @@ export function AdminPage() {
                       >
                         <TableCell sx={{ fontWeight: 600 }}>{client.companyName}</TableCell>
                         <TableCell>{client.email}</TableCell>
-                        <TableCell>{client.contactName ?? '—'}</TableCell>
+                        <TableCell>{client.contactName ?? '-'}</TableCell>
                         <TableCell>
                           <Chip label={client.projectCount} size="small" />
                         </TableCell>

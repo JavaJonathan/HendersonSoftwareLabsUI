@@ -3,7 +3,7 @@ import type { Job } from './useJobSimulation';
 
 /**
  * The task cards moving through the pipeline, as an SVG overlay in the pipeline's
- * coordinate space. React only touches this on add/remove — the simulation loop writes
+ * coordinate space. React only touches this on add/remove - the simulation loop writes
  * each card's `transform` straight to the DOM node it captures via the ref callback, and
  * flips `data-state` for the stuck / slipped / done styling below.
  */

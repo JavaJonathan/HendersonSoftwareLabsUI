@@ -29,7 +29,7 @@ const buttonReset = {
 /**
  * The sign-off. A dark, roomy footer that earns its place: one last CTA, a conveyor of
  * task tokens running along the top edge (the site's motif), a live Maryland clock, a
- * click-to-copy email, a springy back-to-top — and a wordmark you can triple-click to send
+ * click-to-copy email, a springy back-to-top - and a wordmark you can triple-click to send
  * the conveyor into overdrive. Every animation is gated by reduced motion.
  */
 export function Footer() {
@@ -99,7 +99,7 @@ export function Footer() {
               component="button"
               type="button"
               onClick={pokeWordmark}
-              aria-label="Henderson Software Labs — back to top"
+              aria-label="Henderson Software Labs - back to top"
               sx={{ ...buttonReset, cursor: 'pointer', display: 'block' }}
             >
               <Box component="img" src={wordmark} alt="" sx={{ height: 38, width: 'auto', display: 'block', userSelect: 'none' }} />

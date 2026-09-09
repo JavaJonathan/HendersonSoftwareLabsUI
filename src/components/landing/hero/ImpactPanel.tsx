@@ -8,7 +8,7 @@ import { IMPACT, hoursSavedBase } from './impactModel';
 
 /**
  * The hero's proof panel: two numbers on one white surface. "Hours saved" counts up on
- * load and then keeps creeping upward — a live "and counting" figure. "Workflows automated"
+ * load and then keeps creeping upward - a live "and counting" figure. "Workflows automated"
  * is a plain count with a concrete supporting line, so it reads the same whether it's 8
  * or 80.
  */

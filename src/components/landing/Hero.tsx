@@ -50,7 +50,7 @@ export function Hero() {
             <Reveal delay={0.16}>
               <Typography sx={{ mt: { xs: 2.5, md: 3 }, maxWidth: 500, color: 'text.secondary', fontSize: { xs: 16, md: 17 }, lineHeight: 1.6 }}>
                 We build the internal tools, automations, and integrations that take the busywork off
-                your team — without the overhead of hiring.
+                your team - without the overhead of hiring.
               </Typography>
             </Reveal>
 
@@ -100,7 +100,7 @@ export function Hero() {
                 sx={{ mt: { xs: 2.5, md: 3 }, color: 'text.secondary', display: 'flex', alignItems: 'flex-start', gap: 1 }}
               >
                 <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: 'primary.main', flexShrink: 0, mt: '7px' }} />
-                Built by a senior engineer — 7+ years shipping production software.
+                Built by a senior engineer - 7+ years shipping production software.
               </Typography>
             </Reveal>
           </Box>

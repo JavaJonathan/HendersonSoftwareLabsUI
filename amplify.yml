@@ -14,5 +14,5 @@ frontend:
   cache:
     paths:
       - .npm/**/*
-# Security response headers live in customHttp.yml (repo root) — AWS recommends keeping them
+# Security response headers live in customHttp.yml (repo root) - AWS recommends keeping them
 # out of the build spec / amplify.yml. Wave 2 adds a Content-Security-Policy there.
