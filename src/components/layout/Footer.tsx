@@ -115,6 +115,7 @@ export function Footer() {
             <Stack spacing={1.25} sx={{ mt: 2 }}>
               <FooterLink href="/#what-we-do">Services</FooterLink>
               <FooterLink href="/#how-it-works">How it works</FooterLink>
+              <FooterLink to="/tools/task-cost-calculator">Task cost calculator</FooterLink>
               <FooterLink to="/portfolio">About the team</FooterLink>
               <FooterLink to="/login">Client login</FooterLink>
             </Stack>
