@@ -1,8 +1,9 @@
 /**
- * Industry presets for the Automation Engine. Each one reskins the pipeline's four stages,
- * the job tokens that flow through it, and the savings estimator's model. Copy is grounded
- * in the kind of work HSL actually does (see PortfolioPage.tsx) - order/inventory/shipping
- * plumbing, proposal + onboarding flows, quote → dispatch → invoice for field service.
+ * Industry presets for the homepage's shared Line. Picking one reskins the example work that
+ * flows along the belt and tags the station a visitor places, so the "what do people automate"
+ * tally can be sliced by industry. Copy is grounded in the kind of work HSL actually does
+ * (see PortfolioPage.tsx): order/inventory/shipping plumbing, proposal and onboarding flows,
+ * quote to dispatch to invoice for field service.
  */
 
 export type PresetId = 'ecommerce' | 'agency' | 'trades';
@@ -12,7 +13,7 @@ export interface PresetStage {
   label: string;
   /** One or two words - the caption under the pipeline node. */
   shortLabel: string;
-  /** Plain-English "here's what we'd build for you", 1–2 sentences. */
+  /** Plain-English "here's what we'd build for you", 1 or 2 sentences. */
   explainer: string;
 }
 
@@ -22,9 +23,9 @@ export interface Preset {
   label: string;
   /** Unit for the estimator question ("about how many ___ a week?"). */
   unitNoun: string;
-  /** Token labels for the job simulation (Phase 2). */
+  /** Example work items that ride the belt for this industry. */
   jobKinds: string[];
-  /** Rough hand-time per item today - drives the illustrative estimator (Phase 3). */
+  /** Rough hand-time per item today, kept for future estimator copy. */
   manualMinutesPerJob: number;
   stages: [PresetStage, PresetStage, PresetStage, PresetStage];
 }

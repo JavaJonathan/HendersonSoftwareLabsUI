@@ -2,7 +2,7 @@ import { NavBar } from '../components/layout/NavBar';
 import { Footer } from '../components/layout/Footer';
 import { Hero } from '../components/landing/Hero';
 import { WhatWeDo } from '../components/landing/WhatWeDo';
-import { AutomationEngine } from '../components/landing/AutomationEngine';
+import { TheLine } from '../components/landing/TheLine';
 import { HowItWorks } from '../components/landing/HowItWorks';
 import { CtaBanner } from '../components/landing/CtaBanner';
 import { ScrollProgressBar } from '../components/motion/ScrollProgressBar';
@@ -15,7 +15,7 @@ export function HomePage() {
       <Hero />
       <WhatWeDo />
       <HowItWorks />
-      <AutomationEngine />
+      <TheLine />
       <CtaBanner />
       <Footer />
     </>
