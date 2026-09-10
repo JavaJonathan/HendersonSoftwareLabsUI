@@ -175,8 +175,12 @@ export function Conveyor({
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          pb: 0.5,
-          ml: '-16px',
+          pb: 0,
+          // Measured, not guessed: the belt's centre line lands near the bottom of the machine's
+          // viewBox, so the whole character drops to bring its mouth onto the belt, and slides
+          // left so the in-tray meets the end of it.
+          mb: '-17px',
+          ml: '-22px',
         }}
       >
         {machine}
