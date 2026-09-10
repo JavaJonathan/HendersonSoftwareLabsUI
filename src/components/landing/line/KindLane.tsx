@@ -3,35 +3,43 @@ import Typography from '@mui/material/Typography';
 import { AnimatePresence, motion } from 'framer-motion';
 import { STATION_KINDS, type StationKind } from './lineModel';
 import { STATION_ICONS } from './stationIcons';
+import { STATION_THEME } from './stationTheme';
 import {
   HIT_H,
   HIT_W,
-  PILE_H,
-  PILE_W,
+  PILE_COLS_NARROW,
+  PILE_COLS_WIDE,
   TOKEN_BORDER,
   TOKEN_H,
   TOKEN_W,
+  pileHeight,
+  pileWidth,
   slotFor,
 } from './pileModel';
 
 /**
- * One kind of work: what it is, whether it is automated, and whatever is waiting.
+ * One station on the line: what it does, whether it runs itself, and the work waiting in front
+ * of it.
  *
- * The same component serves the desktop belt and the mobile grid, so there is no second surface
- * to keep in sync; only the arrangement differs. Work sits in front of its own station, so a
- * visitor can see at a glance which kinds are backing up and which are clearing themselves, which
- * is the whole point: the shape of the pile tells you what to automate next.
+ * The single most important thing this component does is show an automated station *eating*. A
+ * lane that clears itself sitting right beside a lane that is visibly stacking up is the entire
+ * argument the section exists to make, and it has to be watchable, not described. So an automated
+ * station has a task dropping into it on a loop, forever, whether or not anyone is clicking.
  *
- * The tokens are pointer targets only, deliberately. Thirty appearing and disappearing elements
- * would be thirty tab stops and a screen-reader firehose, so they are `aria-hidden` and the
- * equivalent keyboard path lives in KindPanel, which can clear a whole column in one press.
+ * Tasks are drawn as little documents rather than plain rectangles, with a tab in their own
+ * kind's colour. That is what makes a pile readable at a glance: six columns of identical grey
+ * boxes tell you nothing, but a wall of amber tells you invoicing is what is drowning you.
+ *
+ * The tokens are pointer targets only. Thirty appearing and vanishing elements would be thirty
+ * tab stops and a screen-reader firehose, so they are `aria-hidden` and the equivalent keyboard
+ * path lives in KindPanel, where one press clears a whole column.
  */
 
 interface KindLaneProps {
   kind: StationKind;
   waiting: number;
   automated: boolean;
-  layout: 'belt' | 'grid';
+  layout: 'wide' | 'narrow';
   reduce: boolean;
   /** The example work item riding this lane, from the industry preset. */
   taskLabel: string;
@@ -49,161 +57,240 @@ export function KindLane({
 }: KindLaneProps) {
   const Icon = STATION_ICONS[kind];
   const meta = STATION_KINDS[kind];
-  const grid = layout === 'grid';
+  const theme = STATION_THEME[kind];
+  const narrow = layout === 'narrow';
+  const cols = narrow ? PILE_COLS_NARROW : PILE_COLS_WIDE;
+
+  const station = (
+    <Box
+      sx={{
+        position: 'relative',
+        width: narrow ? 150 : '100%',
+        flexShrink: 0,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 0.75,
+        px: 1,
+        py: 0.75,
+        borderRadius: 2,
+        overflow: 'hidden',
+        bgcolor: automated ? theme.wash : '#ffffff',
+        border: '1px solid',
+        borderColor: automated ? theme.edge : '#e2e8f0',
+        boxShadow: automated
+          ? `0 1px 0 ${theme.edge}`
+          : '0 1px 2px rgba(15, 23, 42, 0.06)',
+      }}
+    >
+      {/* the kind's colour, always present so the lane is identifiable even when empty */}
+      <Box
+        aria-hidden
+        sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, bgcolor: theme.ink }}
+      />
+
+      <Icon sx={{ fontSize: 17, color: theme.ink, flexShrink: 0, ml: 0.25 }} />
+
+      <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+        <Typography
+          sx={{
+            fontSize: 12,
+            fontWeight: 800,
+            color: 'text.primary',
+            lineHeight: 1.15,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {meta.label}
+        </Typography>
+        <Typography
+          sx={{
+            fontSize: 9.5,
+            lineHeight: 1.2,
+            color: automated ? theme.ink : 'text.disabled',
+            fontWeight: automated ? 700 : 500,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {automated ? 'runs itself' : taskLabel}
+        </Typography>
+      </Box>
+
+    </Box>
+  );
+
+  const pile = (
+    <Box
+      role="group"
+      aria-label={
+        automated
+          ? `${meta.label} is automated and clears itself.`
+          : `${meta.label}, ${waiting} ${waiting === 1 ? 'task' : 'tasks'} waiting.`
+      }
+      sx={{
+        position: 'relative',
+        width: pileWidth(cols),
+        height: pileHeight(cols),
+        flexShrink: 0,
+      }}
+    >
+      {/*
+        * An automated lane's work area is the most important picture in the section: a lane
+        * clearing itself, sitting immediately beside a lane stacking up. Left empty it reads as
+        * dead space and the contrast is lost, so work keeps arriving here and keeps being eaten,
+        * whether or not anybody is clicking.
+        */}
+      {automated &&
+        (reduce ? (
+          <Box
+            aria-hidden
+            sx={{
+              position: 'absolute',
+              left: narrow ? pileWidth(cols) / 2 - TOKEN_W / 2 : pileWidth(cols) / 2 - TOKEN_W / 2,
+              top: pileHeight(cols) / 2 - TOKEN_H / 2,
+              width: TOKEN_W,
+              height: TOKEN_H,
+              borderRadius: '3px',
+              border: '1px dashed',
+              borderColor: theme.edge,
+              opacity: 0.7,
+            }}
+          />
+        ) : (
+          [0, 1].map((i) => (
+            <Box
+              key={`auto-${i}`}
+              component={motion.div}
+              aria-hidden
+              animate={
+                narrow
+                  ? {
+                      x: [pileWidth(cols) - TOKEN_W, pileWidth(cols) * 0.6, TOKEN_W * 0.3, 0],
+                      opacity: [0, 1, 1, 0],
+                      scale: [0.9, 1, 1, 0.4],
+                    }
+                  : {
+                      y: [pileHeight(cols) - TOKEN_H, pileHeight(cols) * 0.5, TOKEN_H * 0.3, 0],
+                      opacity: [0, 1, 1, 0],
+                      scale: [0.9, 1, 1, 0.4],
+                    }
+              }
+              transition={{
+                duration: 1.9,
+                times: [0, 0.12, 0.72, 1],
+                repeat: Infinity,
+                delay: i * 0.95,
+                ease: 'linear',
+              }}
+              sx={{
+                position: 'absolute',
+                left: narrow ? 0 : pileWidth(cols) / 2 - TOKEN_W / 2,
+                top: narrow ? pileHeight(cols) / 2 - TOKEN_H / 2 : 0,
+                width: TOKEN_W,
+                height: TOKEN_H,
+                borderRadius: '3px',
+                bgcolor: '#ffffff',
+                border: '1px solid',
+                borderColor: TOKEN_BORDER,
+                boxShadow: '0 1px 2px rgba(15, 23, 42, 0.12)',
+                overflow: 'hidden',
+              }}
+            >
+              <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, bgcolor: theme.ink }} />
+              <Box sx={{ position: 'absolute', left: 7, top: 5, width: 15, height: 2, borderRadius: 9999, bgcolor: '#b6c2d1' }} />
+              <Box sx={{ position: 'absolute', left: 7, top: 10, width: 10, height: 2, borderRadius: 9999, bgcolor: '#ced8e4' }} />
+            </Box>
+          ))
+        ))}
+
+      <AnimatePresence initial={false}>
+        {!automated &&
+          Array.from({ length: waiting }, (_, index) => {
+            const slot = slotFor(index, cols);
+            return (
+              <Box
+                key={`${kind}-${index}`}
+                component={motion.div}
+                data-line-token={kind}
+                aria-hidden
+                tabIndex={-1}
+                initial={reduce ? { opacity: 1 } : { opacity: 0, scale: 0.5, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={
+                  reduce
+                    ? { opacity: 0, transition: { duration: 0.08 } }
+                    : {
+                        // Toward the machine rather than simply away, so a cleared task visibly
+                        // goes somewhere and the machine is where it goes.
+                        opacity: 0,
+                        scale: 0.4,
+                        x: narrow ? 10 : 46,
+                        y: narrow ? 40 : -14,
+                        transition: { duration: 0.3, ease: 'easeIn' },
+                      }
+                }
+                whileTap={reduce ? undefined : { scale: 0.82 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                onPointerDown={() => onClearOne(kind)}
+                sx={{
+                  position: 'absolute',
+                  left: slot.x,
+                  top: slot.y,
+                  width: TOKEN_W,
+                  height: TOKEN_H,
+                  rotate: `${slot.rotate}deg`,
+                  borderRadius: '3px',
+                  bgcolor: '#ffffff',
+                  border: '1px solid',
+                  // Neutral edge on purpose. Colouring the whole outline turned these into
+                  // coloured capsules; letting the tab carry the hue makes them read as paper.
+                  borderColor: TOKEN_BORDER,
+                  boxShadow: '0 1px 2px rgba(15, 23, 42, 0.16)',
+                  cursor: 'pointer',
+                  touchAction: 'manipulation',
+                  userSelect: 'none',
+                  overflow: 'hidden',
+                  transition: 'border-color 0.15s ease',
+                  // The drawn token is smaller than a comfortable target, so the target is grown
+                  // around it rather than the token being drawn oversized.
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    left: (TOKEN_W - HIT_W) / 2,
+                    top: (TOKEN_H - HIT_H) / 2,
+                    width: HIT_W,
+                    height: HIT_H,
+                  },
+                  '&:hover': { borderColor: STATION_THEME[kind].ink },
+                }}
+              >
+                {/* a document: a coloured tab and a couple of lines of nothing in particular */}
+                <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, bgcolor: STATION_THEME[kind].ink }} />
+                <Box sx={{ position: 'absolute', left: 7, top: 5, width: 15, height: 2, borderRadius: 9999, bgcolor: '#b6c2d1' }} />
+                <Box sx={{ position: 'absolute', left: 7, top: 10, width: 10, height: 2, borderRadius: 9999, bgcolor: '#ced8e4' }} />
+              </Box>
+            );
+          })}
+      </AnimatePresence>
+    </Box>
+  );
 
   return (
     <Box
       data-kind={kind}
       data-waiting={waiting}
       data-automated={automated ? 'true' : 'false'}
-      sx={{
-        width: grid ? '100%' : 104,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: grid ? 0.75 : 0.5,
-      }}
+      sx={
+        narrow
+          ? { display: 'flex', alignItems: 'center', gap: 1, width: '100%' }
+          : { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.75, width: 116 }
+      }
     >
-      <Box
-        sx={{
-          width: '100%',
-          height: grid ? 'auto' : 62,
-          px: 1,
-          py: grid ? 1 : 0.75,
-          borderRadius: 2.5,
-          bgcolor: automated ? '#eff6ff' : '#ffffff',
-          border: '1px solid',
-          borderColor: automated ? '#bfdbfe' : 'divider',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 0.25,
-          textAlign: 'center',
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <Icon sx={{ fontSize: 17, color: automated ? 'primary.main' : '#94a3b8' }} />
-          <Typography sx={{ fontSize: 12, fontWeight: 800, color: 'text.primary', lineHeight: 1 }}>
-            {meta.label}
-          </Typography>
-        </Box>
-
-        {automated ? (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            {!reduce && (
-              <Box
-                component={motion.span}
-                aria-hidden
-                animate={{ opacity: [1, 0.25, 1] }}
-                transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-                sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: 'primary.main', display: 'block' }}
-              />
-            )}
-            <Typography sx={{ fontSize: 10, fontWeight: 700, color: 'primary.main', lineHeight: 1 }}>
-              automated
-            </Typography>
-          </Box>
-        ) : (
-          <Typography sx={{ fontSize: 10, color: 'text.disabled', lineHeight: 1.2 }}>
-            {taskLabel}
-          </Typography>
-        )}
-      </Box>
-
-      <Box
-        role="group"
-        aria-label={
-          automated
-            ? `${meta.label} is automated and clears itself.`
-            : `${meta.label}, ${waiting} ${waiting === 1 ? 'task' : 'tasks'} waiting.`
-        }
-        sx={{
-          position: 'relative',
-          width: PILE_W,
-          height: PILE_H,
-          borderRadius: 1.5,
-          bgcolor: automated ? 'transparent' : '#fbfcfd',
-          border: '1px solid',
-          borderColor: automated ? 'transparent' : '#e7ecf2',
-        }}
-      >
-        <AnimatePresence initial={false}>
-          {!automated &&
-            Array.from({ length: waiting }, (_, index) => {
-              const slot = slotFor(index);
-              return (
-                <Box
-                  key={`${kind}-${index}`}
-                  component={motion.div}
-                  data-line-token={kind}
-                  aria-hidden
-                  tabIndex={-1}
-                  initial={reduce ? { opacity: 1 } : { opacity: 0, scale: 0.6 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={
-                    reduce
-                      ? { opacity: 0, transition: { duration: 0.08 } }
-                      : { opacity: 0, x: 34, y: -8, scale: 0.5, transition: { duration: 0.24, ease: 'easeIn' } }
-                  }
-                  transition={{ duration: 0.18, ease: 'easeOut' }}
-                  onPointerDown={() => onClearOne(kind)}
-                  sx={{
-                    position: 'absolute',
-                    left: slot.x,
-                    top: slot.y,
-                    width: TOKEN_W,
-                    height: TOKEN_H,
-                    rotate: `${slot.rotate}deg`,
-                    borderRadius: 1,
-                    bgcolor: '#ffffff',
-                    border: '1px solid',
-                    // Darker than the site's decorative hairlines on purpose: this one carries
-                    // meaning and has to clear 3:1 against white.
-                    borderColor: TOKEN_BORDER,
-                    boxShadow: '0 1px 2px rgba(15, 23, 42, 0.10)',
-                    cursor: 'pointer',
-                    touchAction: 'manipulation',
-                    userSelect: 'none',
-                    // The drawn token is smaller than a comfortable target, so the target is grown
-                    // around it rather than the token being drawn oversized.
-                    '&::after': {
-                      content: '""',
-                      position: 'absolute',
-                      left: (TOKEN_W - HIT_W) / 2,
-                      top: (TOKEN_H - HIT_H) / 2,
-                      width: HIT_W,
-                      height: HIT_H,
-                    },
-                    '&:hover': { borderColor: 'primary.main' },
-                  }}
-                />
-              );
-            })}
-        </AnimatePresence>
-
-        {automated && (
-          <Box
-            aria-hidden
-            sx={{
-              position: 'absolute',
-              inset: 0,
-              display: 'grid',
-              placeItems: 'center',
-            }}
-          >
-            <Box
-              sx={{
-                width: PILE_W - 12,
-                height: 2,
-                borderRadius: 9999,
-                bgcolor: '#dbeafe',
-              }}
-            />
-          </Box>
-        )}
-      </Box>
-
+      {station}
+      {pile}
     </Box>
   );
 }

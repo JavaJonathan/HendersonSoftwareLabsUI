@@ -37,6 +37,8 @@ interface MachineProps {
   partyNonce: number;
   /** Bumped when the backlog drops sharply. */
   reliefNonce: number;
+  /** Bumped every time work is cleared, so the machine visibly swallows it. */
+  gulpNonce: number;
 }
 
 const LOOPS: Record<Mood, { blink: number; halo: number }> = {
@@ -54,7 +56,7 @@ const CONFETTI = [
   { rot: -18, dx: 18, rise: 34 },
 ];
 
-export function Machine({ stress: rawStress, mood, reduce, partyNonce, reliefNonce }: MachineProps) {
+export function Machine({ stress: rawStress, mood, reduce, partyNonce, reliefNonce, gulpNonce }: MachineProps) {
   const target = useMotionValue(rawStress);
   const stress = useSpring(
     target,
@@ -65,6 +67,7 @@ export function Machine({ stress: rawStress, mood, reduce, partyNonce, reliefNon
   const scan = useMotionValue(0);
   const relief = useMotionValue(0);
   const party = useMotionValue(0);
+  const gulp = useMotionValue(0);
 
   useEffect(() => {
     target.set(Number.isFinite(rawStress) ? Math.min(1, Math.max(0, rawStress)) : 0);
@@ -109,6 +112,20 @@ export function Machine({ stress: rawStress, mood, reduce, partyNonce, reliefNon
     return () => controls.stop();
   }, [reliefNonce, relief, reduce]);
 
+  // Every cleared task visibly goes somewhere: the intake flexes and the whole body takes the
+  // hit. Without this the tokens fly toward a machine that does not react, and the connection
+  // between the clicking and the eating is left for the visitor to infer.
+  const firstGulp = useRef(true);
+  useEffect(() => {
+    if (firstGulp.current) {
+      firstGulp.current = false;
+      return;
+    }
+    if (reduce) return;
+    const controls = animate(gulp, [0, 1, 0], { duration: 0.34, ease: 'easeOut' });
+    return () => controls.stop();
+  }, [gulpNonce, gulp, reduce]);
+
   // Squared, so it is genuinely still when calm and only rattles when that means something.
   const shakeX = useTransform([stress, wobble], ([s, w]: number[]) => s * s * 1.8 * w);
   const bodyRotate = useTransform(
@@ -116,7 +133,9 @@ export function Machine({ stress: rawStress, mood, reduce, partyNonce, reliefNon
     ([s, w, p]: number[]) => s * s * 0.9 * w + Math.sin(p * Math.PI * 2) * 5,
   );
   const hop = useTransform(party, [0, 0.3, 0.6, 1], [0, -10, 0, 0]);
-  const squash = useTransform(relief, [0, 0.25, 1], [1, 0.92, 1]);
+  const squash = useTransform([relief, gulp], ([r, g]: number[]) =>
+    (r < 0.25 ? 1 : 0.92) * (1 - g * 0.06));
+  const intakeScale = useTransform(gulp, [0, 1], [1, 1.22]);
 
   // Amber at the top of the range, never red. Red on a business page reads as an outage rather
   // than as someone having a busy afternoon.
@@ -135,6 +154,8 @@ export function Machine({ stress: rawStress, mood, reduce, partyNonce, reliefNon
 
   const lampGreen = useTransform([stress, party], ([s, p]: number[]) => Math.max(1 - s / 0.35, p));
   const lampAmber = useTransform(stress, [0.3, 0.55, 0.9], [0, 1, 0.4]);
+  // Deliberately orange rather than red at the top of the range. A red lamp on a business
+  // homepage reads as something being broken, and nothing here is broken.
   const lampRed = useTransform(stress, [0.85, 1], [0, 1]);
 
   const puffOpacity = useTransform(relief, [0, 0.5, 1], [0, 0.5, 0]);
@@ -161,13 +182,14 @@ export function Machine({ stress: rawStress, mood, reduce, partyNonce, reliefNon
             <rect x={10} y={26} width={12} height={6} rx={3} fill="#e7ecf2" />
           </motion.g>
 
-          {/* the intake, where the belt arrives */}
-          <path
+          {/* the intake, where the belt arrives. It flexes as each task goes down. */}
+          <motion.path
             d="M -46 2 L -33 -4 L -33 16 L -46 20 Z"
             fill="#ffffff"
             stroke="#cbd5e1"
             strokeWidth={1.75}
             strokeLinejoin="round"
+            style={{ scaleY: intakeScale, transformBox: 'fill-box', transformOrigin: 'center' }}
           />
 
           {/* the output chute */}
@@ -192,7 +214,7 @@ export function Machine({ stress: rawStress, mood, reduce, partyNonce, reliefNon
               <circle r={4.8} fill="#ffffff" stroke="#e2e8f0" strokeWidth={1.2} />
               <motion.circle r={3} fill="#16a34a" style={{ opacity: lampGreen }} />
               <motion.circle r={3} fill="#f59e0b" style={{ opacity: lampAmber }} />
-              <motion.circle r={3} fill="#ef4444" style={{ opacity: lampRed }} />
+              <motion.circle r={3} fill="#f97316" style={{ opacity: lampRed }} />
               {!reduce && (
                 <motion.circle
                   r={4.8}

@@ -154,6 +154,7 @@ export function TheLine() {
   const [mood, setMood] = useState<Mood>('calm');
   const [partyNonce, setPartyNonce] = useState(0);
   const [reliefNonce, setReliefNonce] = useState(0);
+  const [gulpNonce, setGulpNonce] = useState(0);
   const [ghosts, setGhosts] = useState<Ghost[]>([]);
   const [announcement, setAnnouncement] = useState('');
   const [arrival, setArrival] = useState('');
@@ -324,6 +325,7 @@ export function TheLine() {
         return next;
       });
       registerClears(kind, count);
+      setGulpNonce((n) => n + 1);
       setInteractionNonce((n) => n + 1);
       setEverCleared(true);
       if (options?.announce !== false) announceCleared(kind, count);
@@ -527,9 +529,10 @@ export function TheLine() {
                 mood={mood}
                 active={inView}
                 reduce={reduce}
-                layout={compact ? 'grid' : 'belt'}
+                layout={compact ? 'narrow' : 'wide'}
                 partyNonce={partyNonce}
                 reliefNonce={reliefNonce}
+                gulpNonce={gulpNonce}
                 onClearOne={clearOne}
               />
             ) : (
@@ -638,12 +641,20 @@ export function TheLine() {
   );
 }
 
+/**
+ * Visually hidden, but still read aloud.
+ *
+ * The units here are spelled out on purpose. MUI's `sx` treats a bare `width: 1` as `100%` rather
+ * than one pixel, which turned both of these live regions into full-viewport absolutely
+ * positioned boxes. They stayed invisible thanks to the clip, so the only symptom was the whole
+ * page gaining a horizontal scrollbar at narrower desktop widths.
+ */
 const srOnly = {
   position: 'absolute',
-  width: 1,
-  height: 1,
+  width: '1px',
+  height: '1px',
   padding: 0,
-  margin: -1,
+  margin: '-1px',
   overflow: 'hidden',
   clip: 'rect(0 0 0 0)',
   whiteSpace: 'nowrap',

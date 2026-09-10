@@ -1,28 +1,30 @@
-import { useEffect, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { AnimatePresence, motion } from 'framer-motion';
 import { MOOD_LABELS, type Mood, type StationKind } from './lineModel';
 import { KindLane } from './KindLane';
 import { Machine } from './Machine';
+import { STATION_THEME, BELT_BODY, BELT_EDGE, BELT_TREAD, STAGE_BG, STAGE_DOT, STAGE_DOT_SIZE } from './stationTheme';
 
 /**
- * The belt: six fixed lanes with the machine at the end of them.
+ * The stage: every station, the belt that connects them, and the machine they all feed.
  *
- * The lanes never change in number or order, so unlike the version this replaces there is no
- * horizontal scroller, no measuring, and nothing to scroll into view. Work sits in front of its
- * own station and the machine sits where all of it ends up.
+ * The thing this is fixing is that six outlined cards floating on white read as a form, not a
+ * machine. So there is a tinted ground with a little texture, the belt physically runs through
+ * every station and into the machine's mouth, and work sits *on* the belt rather than near it.
+ * The point is that a visitor should see one apparatus, not six widgets.
  *
- * One rAF loop drives the tokens travelling along the belt. It writes `transform` straight to the
- * nodes it captured by ref, so React never re-renders on a frame, and it is fully stopped when the
- * section is off screen, when the tab is hidden, or under reduced motion. The travelling tokens
- * live in an overlay that does not belong to any lane, because the belt looks the same everywhere
- * and a fixed pool of a dozen reads correctly at any width.
+ * On a wide screen the belt runs left to right with the machine at the end. On a narrow one it
+ * becomes a vertical spine with stations hanging off it, which is a real layout rather than a
+ * reflowed compromise: six cards in a grid with a stray belt underneath communicated nothing.
+ *
+ * The belt treads are one transform-animated strip rather than a pool of moving nodes. The old
+ * version put a handful of white tokens on a grey bar, which at this width read unmistakably as a
+ * slider handle.
  */
 
-const TOKEN_SPEED = 62;
-const TOKEN_GAP = 148;
-const BELT_INSET = 14;
+const BELT_H = 14;
+const SPINE_W = 11;
 
 export interface LaneView {
   kind: StationKind;
@@ -44,9 +46,10 @@ interface ConveyorProps {
   mood: Mood;
   active: boolean;
   reduce: boolean;
-  layout: 'belt' | 'grid';
+  layout: 'wide' | 'narrow';
   partyNonce: number;
   reliefNonce: number;
+  gulpNonce: number;
   onClearOne: (kind: StationKind) => void;
 }
 
@@ -60,77 +63,179 @@ export function Conveyor({
   layout,
   partyNonce,
   reliefNonce,
+  gulpNonce,
   onClearOne,
 }: ConveyorProps) {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const tokenRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [trackW, setTrackW] = useState(0);
+  const narrow = layout === 'narrow';
+  const running = active && !reduce;
 
-  const grid = layout === 'grid';
-  const tokenCount = trackW > 0 ? Math.ceil(trackW / TOKEN_GAP) + 2 : 0;
+  const machine = (
+    <MachineWithChip
+      stress={stress}
+      mood={mood}
+      reduce={reduce}
+      partyNonce={partyNonce}
+      reliefNonce={reliefNonce}
+      gulpNonce={gulpNonce}
+      size={narrow ? 128 : 118}
+    />
+  );
 
-  useEffect(() => {
-    const el = trackRef.current;
-    if (!el) return;
+  return (
+    <Box
+      sx={{
+        position: 'relative',
+        mx: { xs: 1.25, sm: 2 },
+        mb: 2,
+        borderRadius: 3,
+        background: STAGE_BG,
+        backgroundImage: `${STAGE_DOT}, ${STAGE_BG}`,
+        backgroundSize: `${STAGE_DOT_SIZE}, auto`,
+        border: '1px solid',
+        borderColor: '#e2e8f0',
+        boxShadow: 'inset 0 1px 3px rgba(15, 23, 42, 0.06)',
+        overflow: 'hidden',
+        px: narrow ? 1 : 2,
+        py: narrow ? 1.5 : 2,
+      }}
+    >
+      {narrow ? (
+        <Box sx={{ position: 'relative', pl: `${SPINE_W + 6}px` }}>
+          {/* the spine: one belt running down, with every station hanging off it */}
+          <Box
+            aria-hidden
+            sx={{
+              position: 'absolute',
+              left: 0,
+              top: 6,
+              bottom: 6,
+              width: SPINE_W,
+              borderRadius: 9999,
+              bgcolor: BELT_BODY,
+              border: '1px solid',
+              borderColor: BELT_EDGE,
+              overflow: 'hidden',
+            }}
+          >
+            {running && (
+              <Box
+                component={motion.div}
+                animate={{ y: [0, 24] }}
+                transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}
+                sx={{
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  top: -24,
+                  height: 'calc(100% + 48px)',
+                  backgroundImage: `repeating-linear-gradient(180deg, transparent 0 14px, ${BELT_TREAD} 14px 18px)`,
+                }}
+              />
+            )}
+          </Box>
 
-    const measure = () => setTrackW(el.clientWidth);
-    measure();
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+            {lanes.map((lane) => (
+              <Box key={lane.kind} sx={{ position: 'relative' }}>
+                {/* the tie from the spine to this station */}
+                <Box
+                  aria-hidden
+                  sx={{
+                    position: 'absolute',
+                    left: `-${SPINE_W / 2 + 6}px`,
+                    top: 22,
+                    width: SPINE_W / 2 + 6,
+                    height: 2,
+                    bgcolor: BELT_EDGE,
+                  }}
+                />
+                <LaneWithGhosts
+                  lane={lane}
+                  ghosts={ghosts}
+                  layout="narrow"
+                  reduce={reduce}
+                  onClearOne={onClearOne}
+                />
+              </Box>
+            ))}
+          </Box>
 
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
+          <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 1, ml: `-${SPINE_W + 10}px` }}>
+            {machine}
+          </Box>
+        </Box>
+      ) : (
+        <Box sx={{ position: 'relative', pb: `${BELT_H + 4}px` }}>
+          {/* the belt every station sits on, running out into the machine */}
+          <Box
+            aria-hidden
+            sx={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: BELT_H,
+              borderRadius: 9999,
+              bgcolor: BELT_BODY,
+              border: '1px solid',
+              borderColor: BELT_EDGE,
+              overflow: 'hidden',
+            }}
+          >
+            {running && (
+              <Box
+                component={motion.div}
+                animate={{ x: [0, 24] }}
+                transition={{ duration: 0.9, repeat: Infinity, ease: 'linear' }}
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  bottom: 0,
+                  left: -24,
+                  width: 'calc(100% + 48px)',
+                  backgroundImage: `repeating-linear-gradient(90deg, transparent 0 8px, ${BELT_TREAD} 8px 12px)`,
+                }}
+              />
+            )}
+          </Box>
 
-  useEffect(() => {
-    if (!active || reduce || tokenCount === 0) return;
+          <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 1 }}>
+            {lanes.map((lane) => (
+              <LaneWithGhosts
+                key={lane.kind}
+                lane={lane}
+                ghosts={ghosts}
+                layout="wide"
+                reduce={reduce}
+                onClearOne={onClearOne}
+              />
+            ))}
 
-    let raf = 0;
-    let alive = true;
-    let last = performance.now();
-    let offset = 0;
-    const span = tokenCount * TOKEN_GAP;
+            <Box sx={{ flexShrink: 0, alignSelf: 'flex-end', mb: `-${BELT_H + 4}px` }}>{machine}</Box>
+          </Box>
+        </Box>
+      )}
+    </Box>
+  );
+}
 
-    const step = (nowMs: number) => {
-      if (!alive) return;
+function LaneWithGhosts({
+  lane,
+  ghosts,
+  layout,
+  reduce,
+  onClearOne,
+}: {
+  lane: LaneView;
+  ghosts: Ghost[];
+  layout: 'wide' | 'narrow';
+  reduce: boolean;
+  onClearOne: (kind: StationKind) => void;
+}) {
+  const mine = ghosts.filter((ghost) => ghost.kind === lane.kind);
 
-      // The clamp keeps a restored tab from teleporting every token across the belt at once.
-      const dt = Math.min(0.05, (nowMs - last) / 1000);
-      last = nowMs;
-      offset = (offset + TOKEN_SPEED * dt) % span;
-
-      for (let k = 0; k < tokenCount; k += 1) {
-        const node = tokenRefs.current[k];
-        if (!node) continue;
-        const x = ((offset + k * TOKEN_GAP) % span) - TOKEN_GAP;
-        node.style.transform = `translateX(${x.toFixed(1)}px)`;
-      }
-
-      raf = requestAnimationFrame(step);
-    };
-
-    const onVisibility = () => {
-      if (document.hidden) {
-        alive = false;
-        cancelAnimationFrame(raf);
-      } else if (!alive) {
-        alive = true;
-        last = performance.now();
-        raf = requestAnimationFrame(step);
-      }
-    };
-
-    document.addEventListener('visibilitychange', onVisibility);
-    raf = requestAnimationFrame(step);
-
-    return () => {
-      alive = false;
-      cancelAnimationFrame(raf);
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
-  }, [active, reduce, tokenCount]);
-
-  const laneNodes = lanes.map((lane) => (
-    <Box key={lane.kind} sx={{ position: 'relative', flex: grid ? '1 1 40%' : '0 0 auto' }}>
+  return (
+    <Box sx={{ position: 'relative', flexShrink: 0 }}>
       <KindLane
         kind={lane.kind}
         waiting={lane.waiting}
@@ -142,127 +247,37 @@ export function Conveyor({
       />
 
       <AnimatePresence>
-        {ghosts
-          .filter((ghost) => ghost.kind === lane.kind)
-          .map((ghost) => (
-            <Box
-              key={ghost.id}
-              component={motion.div}
-              aria-hidden
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: -8 }}
-              exit={{ opacity: 0, y: -18 }}
-              transition={{ duration: reduce ? 0 : 0.5, ease: 'easeOut' }}
-              sx={{
-                position: 'absolute',
-                top: -6,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                px: 0.75,
-                py: 0.2,
-                borderRadius: 9999,
-                bgcolor: '#eef2f7',
-                color: '#64748b',
-                fontSize: 10,
-                fontWeight: 800,
-                whiteSpace: 'nowrap',
-                pointerEvents: 'none',
-              }}
-            >
-              {`-${ghost.count} by someone else`}
-            </Box>
-          ))}
+        {mine.map((ghost) => (
+          <Box
+            key={ghost.id}
+            component={motion.div}
+            aria-hidden
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: -10 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: reduce ? 0 : 0.5, ease: 'easeOut' }}
+            sx={{
+              position: 'absolute',
+              top: -4,
+              right: 0,
+              px: 0.75,
+              py: 0.2,
+              borderRadius: 9999,
+              bgcolor: '#ffffff',
+              border: '1px solid',
+              borderColor: STATION_THEME[lane.kind].edge,
+              color: STATION_THEME[lane.kind].ink,
+              fontSize: 9.5,
+              fontWeight: 800,
+              whiteSpace: 'nowrap',
+              pointerEvents: 'none',
+              boxShadow: '0 2px 6px rgba(15, 23, 42, 0.12)',
+            }}
+          >
+            {`someone cleared ${ghost.count}`}
+          </Box>
+        ))}
       </AnimatePresence>
-    </Box>
-  ));
-
-  return (
-    <Box sx={{ position: 'relative', px: { xs: 1.5, sm: 2 }, pb: 1 }}>
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: grid ? 'stretch' : 'flex-end',
-          justifyContent: grid ? 'space-between' : 'space-between',
-          flexWrap: grid ? 'wrap' : 'nowrap',
-          gap: grid ? 1.25 : 1,
-        }}
-      >
-        {laneNodes}
-
-        {!grid && (
-          <Box sx={{ flex: '0 0 auto', width: 116, alignSelf: 'flex-end', mb: -1 }}>
-            <MachineWithChip
-              stress={stress}
-              mood={mood}
-              reduce={reduce}
-              partyNonce={partyNonce}
-              reliefNonce={reliefNonce}
-            />
-          </Box>
-        )}
-      </Box>
-
-      {/* the belt the work travels along */}
-      <Box ref={trackRef} sx={{ position: 'relative', height: grid ? 74 : 34, mt: grid ? 1 : 0.5 }}>
-        <Box
-          aria-hidden
-          sx={{
-            position: 'absolute',
-            left: BELT_INSET,
-            right: BELT_INSET,
-            top: grid ? 30 : 10,
-            height: 6,
-            borderRadius: 9999,
-            bgcolor: '#e7ecf2',
-          }}
-        />
-
-        <Box
-          aria-hidden
-          sx={{
-            position: 'absolute',
-            left: BELT_INSET,
-            right: BELT_INSET,
-            top: grid ? 24 : 4,
-            height: 18,
-            overflow: 'hidden',
-            pointerEvents: 'none',
-          }}
-        >
-          {Array.from({ length: tokenCount }, (_, k) => (
-            <Box
-              key={k}
-              ref={(el: HTMLDivElement | null) => {
-                tokenRefs.current[k] = el;
-              }}
-              sx={{
-                position: 'absolute',
-                left: 0,
-                top: 2,
-                width: 22,
-                height: 14,
-                borderRadius: 1,
-                bgcolor: '#ffffff',
-                border: '1px solid',
-                borderColor: '#cbd5e1',
-              }}
-              style={{ transform: `translateX(${k * TOKEN_GAP - TOKEN_GAP}px)` }}
-            />
-          ))}
-        </Box>
-
-        {grid && (
-          <Box sx={{ position: 'absolute', right: 0, top: -12, width: 92 }}>
-            <MachineWithChip
-              stress={stress}
-              mood={mood}
-              reduce={reduce}
-              partyNonce={partyNonce}
-              reliefNonce={reliefNonce}
-            />
-          </Box>
-        )}
-      </Box>
     </Box>
   );
 }
@@ -270,9 +285,9 @@ export function Conveyor({
 /**
  * The machine plus the plain-words version of how it is doing.
  *
- * The chip is not a fallback for the face, it ships alongside it always. The lamp changing from
- * green to amber is meaningless to anyone who cannot distinguish them, unreadable at a glance for
- * plenty of people who can, and invisible to a screen reader. Words solve all three.
+ * The chip is not a fallback for the face, it ships alongside it always. A lamp changing from
+ * green to amber is meaningless to anyone who cannot distinguish them, easy to miss at a glance
+ * for everyone else, and invisible to a screen reader. Words solve all three.
  */
 function MachineWithChip({
   stress,
@@ -280,29 +295,34 @@ function MachineWithChip({
   reduce,
   partyNonce,
   reliefNonce,
+  gulpNonce,
+  size,
 }: {
   stress: number;
   mood: Mood;
   reduce: boolean;
   partyNonce: number;
   reliefNonce: number;
+  gulpNonce: number;
+  size: number;
 }) {
   const tone =
     mood === 'calm'
-      ? { bg: '#ecfdf5', fg: '#047857' }
+      ? { bg: '#ecfdf5', fg: '#047857', edge: '#a7f3d0' }
       : mood === 'busy'
-        ? { bg: '#fffbeb', fg: '#b45309' }
-        : { bg: '#fef2f2', fg: '#b91c1c' };
+        ? { bg: '#fffbeb', fg: '#b45309', edge: '#fde68a' }
+        : { bg: '#fff7ed', fg: '#c2410c', edge: '#fed7aa' };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
-      <Box sx={{ width: '100%', aspectRatio: '1 / 1' }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.25, width: size }}>
+      <Box sx={{ width: size, height: size }}>
         <Machine
           stress={stress}
           mood={mood}
           reduce={reduce}
           partyNonce={partyNonce}
           reliefNonce={reliefNonce}
+          gulpNonce={gulpNonce}
         />
       </Box>
       <Typography
@@ -313,6 +333,8 @@ function MachineWithChip({
           borderRadius: 9999,
           bgcolor: tone.bg,
           color: tone.fg,
+          border: '1px solid',
+          borderColor: tone.edge,
           fontSize: 10.5,
           fontWeight: 800,
           whiteSpace: 'nowrap',

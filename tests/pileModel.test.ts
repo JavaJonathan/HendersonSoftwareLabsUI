@@ -5,20 +5,29 @@ import {
   HIT_H,
   HIT_W,
   PILE_CAPACITY,
-  PILE_COLS,
-  PILE_H,
-  PILE_ROWS,
-  PILE_W,
+  PILE_COLS_NARROW,
+  PILE_COLS_WIDE,
   TOKEN_H,
   TOKEN_W,
+  pileHeight,
+  pileRows,
   pileSlots,
+  pileWidth,
   slotFor,
 } from '../src/components/landing/line/pileModel.ts';
+
+const LAYOUTS = [PILE_COLS_WIDE, PILE_COLS_NARROW];
 
 test('the pile holds exactly one full column of waiting work', () => {
   const r = PILE_CAPACITY;
   assert.equal(r, CAP_PER_KIND);
-  assert.equal(r, PILE_COLS * PILE_ROWS);
+});
+
+test('every layout has room for the whole cap', () => {
+  for (const cols of LAYOUTS) {
+    const r = pileRows(cols) * cols;
+    assert.ok(r >= PILE_CAPACITY, `${cols} columns only holds ${r}`);
+  }
 });
 
 test('slot positions are stable across calls', () => {
@@ -35,47 +44,54 @@ test('every touch target meets the 24 by 24 minimum', () => {
   assert.ok(r >= 24, `hit height ${r}`);
 });
 
-test('neighbouring hit areas do not overlap', () => {
-  const slots = pileSlots();
+test('neighbouring hit areas cannot overlap in any layout', () => {
+  for (const cols of LAYOUTS) {
+    const slots = pileSlots(cols);
 
-  for (let a = 0; a < slots.length; a += 1) {
-    for (let b = a + 1; b < slots.length; b += 1) {
-      // Hit areas are centred on the drawn token, so compare their expanded boxes.
-      const boxA = {
-        left: slots[a].x - (HIT_W - TOKEN_W) / 2,
-        top: slots[a].y - (HIT_H - TOKEN_H) / 2,
-      };
-      const boxB = {
-        left: slots[b].x - (HIT_W - TOKEN_W) / 2,
-        top: slots[b].y - (HIT_H - TOKEN_H) / 2,
-      };
+    for (let a = 0; a < slots.length; a += 1) {
+      for (let b = a + 1; b < slots.length; b += 1) {
+        // Hit areas are centred on the drawn token, so compare their expanded boxes.
+        const left = (slot: { x: number }) => slot.x - (HIT_W - TOKEN_W) / 2;
+        const top = (slot: { y: number }) => slot.y - (HIT_H - TOKEN_H) / 2;
 
-      const overlaps =
-        boxA.left < boxB.left + HIT_W &&
-        boxB.left < boxA.left + HIT_W &&
-        boxA.top < boxB.top + HIT_H &&
-        boxB.top < boxA.top + HIT_H;
+        const overlaps =
+          left(slots[a]) < left(slots[b]) + HIT_W &&
+          left(slots[b]) < left(slots[a]) + HIT_W &&
+          top(slots[a]) < top(slots[b]) + HIT_H &&
+          top(slots[b]) < top(slots[a]) + HIT_H;
 
-      assert.ok(!overlaps, `slots ${a} and ${b} overlap`);
+        assert.ok(!overlaps, `slots ${a} and ${b} overlap at ${cols} columns`);
+      }
     }
   }
 });
 
-test('the pile grows upward from the bottom left', () => {
-  const slots = pileSlots();
-  assert.equal(slots[0].x, slotFor(0).x);
-  // The first slot sits on the bottom row, the last on the top.
-  assert.ok(slots[0].y > slots[PILE_CAPACITY - 1].y);
-  const r = slots[1].x;
-  assert.ok(r > slots[0].x, 'the second slot is to the right of the first');
+test('the pile grows up and to the right from the bottom left', () => {
+  const slots = pileSlots(PILE_COLS_WIDE);
+  assert.ok(slots[1].x > slots[0].x, 'the second slot sits right of the first');
+  const r = slots[PILE_CAPACITY - 1].y;
+  assert.ok(slots[0].y > r, 'the last slot sits above the first');
 });
 
-test('every slot stays inside the pile box', () => {
-  for (const slot of pileSlots()) {
-    assert.ok(slot.x >= 0 && slot.x + TOKEN_W <= PILE_W, `slot ${slot.index} x`);
-    assert.ok(slot.y >= 0 && slot.y + TOKEN_H <= PILE_H, `slot ${slot.index} y`);
+test('the narrow pile still fits beside a station on the smallest phone', () => {
+  // The real constraint, and the one that bit: on a 320px screen the stage has to hold a spine,
+  // a station card and this pile side by side. A single row of six came to 192px and ran clean
+  // off the edge of the card, so the budget is asserted rather than eyeballed.
+  const SPINE = 11;
+  const STATION = 150;
+  const CHROME = 40;
+  const r = pileWidth(PILE_COLS_NARROW);
+  assert.ok(r + SPINE + STATION + CHROME <= 320, `pile of ${r}px does not fit a 320px screen`);
+});
+
+test('every slot stays inside its own pile box', () => {
+  for (const cols of LAYOUTS) {
+    for (const slot of pileSlots(cols)) {
+      assert.ok(slot.x >= 0 && slot.x + TOKEN_W <= pileWidth(cols), `slot ${slot.index} x at ${cols} cols`);
+      assert.ok(slot.y >= 0 && slot.y + TOKEN_H <= pileHeight(cols), `slot ${slot.index} y at ${cols} cols`);
+    }
   }
-  const r = slotFor(PILE_CAPACITY - 1);
+  const r = slotFor(PILE_CAPACITY - 1, PILE_COLS_NARROW);
   assert.ok(r.y >= 0);
 });
 
