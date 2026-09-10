@@ -82,12 +82,11 @@ export function Conveyor({
     </Box>
   );
 
-  return (
+  const stage = (
     <Box
       sx={{
         position: 'relative',
-        mx: { xs: 1.25, sm: 2 },
-        mb: 2,
+        ...(narrow ? { mx: 1.25, mb: 2 } : {}),
         borderRadius: 3,
         background: STAGE_BG,
         backgroundImage: `${STAGE_DOT}, ${STAGE_BG}`,
@@ -96,8 +95,8 @@ export function Conveyor({
         borderColor: '#e2e8f0',
         boxShadow: 'inset 0 1px 3px rgba(15, 23, 42, 0.06)',
         overflow: 'hidden',
-        px: narrow ? 1 : 3,
-        py: narrow ? 1.5 : 2.5,
+        px: narrow ? 1 : 2.5,
+        py: narrow ? 1.5 : 2,
       }}
     >
       {narrow ? (
@@ -136,33 +135,53 @@ export function Conveyor({
           </Box>
         </Box>
       ) : (
-        <>
-          <Box sx={{ position: 'relative', pb: `${BELT_H}px` }}>
-            {/* Stops inside the machine's intake, so the work has somewhere to go. */}
-            <Belt running={running} endInset={MACHINE_WIDE - 26} />
+        <Box sx={{ position: 'relative', pb: `${BELT_H}px` }}>
+          {/* Runs the full width of the stage and straight out at the machine waiting on its edge. */}
+          <Belt running={running} />
 
-            <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 1 }}>
-              {lanes.map((lane) => (
-                <LaneWithGhosts
-                  key={lane.kind}
-                  lane={lane}
-                  ghosts={ghosts}
-                  layout="wide"
-                  reduce={reduce}
-                  onClearOne={onClearOne}
-                />
-              ))}
-              {machine}
-            </Box>
+          <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 1 }}>
+            {lanes.map((lane) => (
+              <LaneWithGhosts
+                key={lane.kind}
+                lane={lane}
+                ghosts={ghosts}
+                layout="wide"
+                reduce={reduce}
+                onClearOne={onClearOne}
+              />
+            ))}
           </Box>
-
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.25 }}>
-            <Box sx={{ width: MACHINE_WIDE, display: 'flex', justifyContent: 'center' }}>
-              <MoodChip mood={mood} />
-            </Box>
-          </Box>
-        </>
+        </Box>
       )}
+    </Box>
+  );
+
+  if (narrow) return stage;
+
+  // The machine is not part of the work area, it is what the work area feeds. Keeping it outside
+  // lets the stage be exactly as big as the line, and stops a 140px character dictating the
+  // height of six 120px lanes.
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 0, mx: 2, mb: 2 }}>
+      <Box sx={{ flexGrow: 1, minWidth: 0 }}>{stage}</Box>
+      {/*
+        * Pulled left by the transparent margin inside the SVG, so the mouth lands on the end of
+        * the belt rather than a finger's width away from it. Safe here in a way it was not
+        * before: the machine now sits outside the stage, so nothing clips it.
+        */}
+      <Box
+        sx={{
+          flexShrink: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          pb: 0.5,
+          ml: '-16px',
+        }}
+      >
+        {machine}
+        <MoodChip mood={mood} />
+      </Box>
     </Box>
   );
 }

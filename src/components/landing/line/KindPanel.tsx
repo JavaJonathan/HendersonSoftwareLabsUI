@@ -3,6 +3,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import BoltRounded from '@mui/icons-material/BoltRounded';
 import { STATION_KINDS, type StationKind } from './lineModel';
+import { STATION_THEME } from './stationTheme';
 import { STATION_ICONS } from './stationIcons';
 
 /**
@@ -53,17 +54,26 @@ export function KindPanel({ lanes, totalWaiting, onClearKind, onClearAll }: Kind
 
   return (
     <Box>
-      <Box
-        role="toolbar"
-        aria-label="Clear waiting work"
-        aria-orientation="horizontal"
-        sx={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 1,
-          alignItems: 'stretch',
-        }}
-      >
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+        <Typography
+          component="span"
+          id="line-panel-label"
+          sx={{ fontSize: 11, fontWeight: 700, color: 'text.disabled', letterSpacing: 0.3, flexShrink: 0 }}
+        >
+          Clear by hand
+        </Typography>
+
+        <Box
+          role="toolbar"
+          aria-labelledby="line-panel-label"
+          aria-orientation="horizontal"
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 0.75,
+            alignItems: 'center',
+          }}
+        >
         {lanes.map((lane, index) => {
           const Icon = STATION_ICONS[lane.kind];
           const meta = STATION_KINDS[lane.kind];
@@ -99,33 +109,34 @@ export function KindPanel({ lanes, totalWaiting, onClearKind, onClearAll }: Kind
                 handleKeyDown(event, index);
               }}
               sx={{
-                px: { xs: 0.85, sm: 1.25 },
-                py: 0.75,
+                px: { xs: 0.75, sm: 1 },
+                py: 0.5,
+                minHeight: 26,
                 borderRadius: 9999,
                 fontFamily: 'inherit',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: { xs: 0.4, sm: 0.6 },
+                gap: { xs: 0.35, sm: 0.5 },
                 cursor: lane.automated || empty ? 'default' : 'pointer',
                 border: '1px solid',
-                borderColor: lane.automated ? '#bfdbfe' : 'divider',
-                bgcolor: lane.automated ? '#eff6ff' : '#ffffff',
-                color: lane.automated ? 'primary.main' : 'text.secondary',
-                opacity: empty && !lane.automated ? 0.55 : 1,
+                borderColor: lane.automated ? '#e2e8f0' : '#e2e8f0',
+                bgcolor: lane.automated ? '#f8fafc' : '#ffffff',
+                color: lane.automated ? 'text.disabled' : 'text.secondary',
+                opacity: empty && !lane.automated ? 0.5 : 1,
                 transition: 'opacity 0.2s ease, border-color 0.2s ease',
                 outline: 'none',
                 '&:hover': { borderColor: lane.automated || empty ? undefined : 'primary.main' },
                 '&:focus-visible': { boxShadow: '0 0 0 3px rgba(37, 99, 235, 0.35)' },
               }}
             >
-              <Icon sx={{ fontSize: { xs: 14, sm: 15 } }} />
-              <Typography component="span" sx={{ fontSize: { xs: 11, sm: 12 }, fontWeight: 700 }}>
+              <Icon sx={{ fontSize: 13, color: STATION_THEME[lane.kind].ink, opacity: lane.automated ? 0.45 : 1 }} />
+              <Typography component="span" sx={{ fontSize: 11, fontWeight: 700 }}>
                 {meta.label}
               </Typography>
               {!lane.automated && (
                 <Typography
                   component="span"
-                  sx={{ fontSize: 11, fontWeight: 800, color: 'text.disabled', fontVariantNumeric: 'tabular-nums' }}
+                  sx={{ fontSize: 10.5, fontWeight: 800, color: 'text.disabled', fontVariantNumeric: 'tabular-nums' }}
                 >
                   {lane.waiting}
                 </Typography>
@@ -156,8 +167,9 @@ export function KindPanel({ lanes, totalWaiting, onClearKind, onClearAll }: Kind
             handleKeyDown(event, lanes.length);
           }}
           sx={{
-            px: 1.5,
-            py: 0.75,
+            px: 1.25,
+            py: 0.5,
+            minHeight: 26,
             borderRadius: 9999,
             fontFamily: 'inherit',
             display: 'inline-flex',
@@ -174,10 +186,11 @@ export function KindPanel({ lanes, totalWaiting, onClearKind, onClearAll }: Kind
             '&:focus-visible': { boxShadow: '0 0 0 3px rgba(37, 99, 235, 0.35)' },
           }}
         >
-          <BoltRounded sx={{ fontSize: 15 }} />
-          <Typography component="span" sx={{ fontSize: 12, fontWeight: 800 }}>
+          <BoltRounded sx={{ fontSize: 13 }} />
+          <Typography component="span" sx={{ fontSize: 11, fontWeight: 800 }}>
             Clear everything
           </Typography>
+        </Box>
         </Box>
       </Box>
     </Box>
