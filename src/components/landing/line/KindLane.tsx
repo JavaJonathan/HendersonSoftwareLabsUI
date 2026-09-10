@@ -135,6 +135,15 @@ export function KindLane({
         width: pileWidth(cols),
         height: pileHeight(cols),
         flexShrink: 0,
+        borderRadius: 1.5,
+        // The same footprint whether or not the lane is automated, so the row reads as six of
+        // the same thing in different states rather than as a layout that has gone wrong.
+        // A cleared lane reads as light and open; a backed-up one reads as a full, shadowed tray.
+        bgcolor: automated ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.8)',
+        border: '1px dashed',
+        borderColor: automated ? theme.edge : 'transparent',
+        outline: automated ? 'none' : '1px solid #dbe3ec',
+        boxShadow: automated ? 'none' : 'inset 0 1px 3px rgba(15, 23, 42, 0.07)',
       }}
     >
       {/*
@@ -160,7 +169,7 @@ export function KindLane({
             }}
           />
         ) : (
-          [0, 1].map((i) => (
+          [0].map((i) => (
             <Box
               key={`auto-${i}`}
               component={motion.div}
@@ -179,10 +188,13 @@ export function KindLane({
                     }
               }
               transition={{
-                duration: 1.9,
+                duration: 1.25,
                 times: [0, 0.12, 0.72, 1],
                 repeat: Infinity,
-                delay: i * 0.95,
+                // The gap is the point: the tray sits empty most of the time, which is what
+                // "clears itself" actually looks like.
+                repeatDelay: 1.6,
+                delay: i * 0.4,
                 ease: 'linear',
               }}
               sx={{
@@ -290,6 +302,12 @@ export function KindLane({
       }
     >
       {station}
+      {!narrow && (
+        <Box
+          aria-hidden
+          sx={{ width: 2, height: 10, bgcolor: theme.edge, borderRadius: 9999, flexShrink: 0 }}
+        />
+      )}
       {pile}
     </Box>
   );
