@@ -492,14 +492,16 @@ export function TheLine() {
       <Reveal>
         <Box sx={{ textAlign: 'center', mb: 3 }}>
           <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: 1 }}>
-            See it work
+            Interactive shared game
           </Typography>
           <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mt: 1 }}>
             Work piles up. Clear some.
           </Typography>
           <Typography sx={{ mt: 1.5, color: 'text.secondary', maxWidth: 620, mx: 'auto' }}>
-            The automated kinds clear themselves. The rest wait for a person. Every task visitors
-            clear by hand counts toward automating another kind for good, for everyone.
+            Live, and shared with everyone on this page right now, not just you. Three lanes clear
+            themselves; the rest wait for a person, so click one to help. Every hand-cleared task
+            counts toward automating another lane for good, for every visitor after you: a small,
+            playable version of what automation actually buys a business.
           </Typography>
         </Box>
       </Reveal>

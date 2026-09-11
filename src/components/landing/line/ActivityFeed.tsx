@@ -14,7 +14,10 @@ import { NEUTRAL_BORDER, STATION_THEME } from './stationTheme';
  *
  * The header keeps the status wording ("Swamped", "Keeping up") that the mood chip used to carry.
  * On a plain strip it reads drier and better: a line reporting "Swamped" is wit, a cartoon face
- * reporting it is a mascot.
+ * reporting it is a mascot. `MOOD_ASIDE` fills the rest of that header row with one emoji and a
+ * few words of how it feels ("buried, could use a hand"), the one place this section allows
+ * itself a bit of feeling; it is text, not a drawn face, and there is nothing animated about it,
+ * so it does not reopen the case against the character.
  *
  * The whole strip is `aria-hidden`. The live region in TheLine already announces the visitor's
  * own clears and every unlock; echoing those here plus a stream of other people's activity would
@@ -33,6 +36,16 @@ const MOOD_TONE: Record<Mood, string> = {
   calm: '#047857',
   busy: '#b45309',
   swamped: '#c2410c',
+};
+
+/**
+ * Fills the header row beside the status word, in an emoji and a few words rather than the
+ * header's own colour, so it reads as a small aside and not a second, louder status.
+ */
+const MOOD_ASIDE: Record<Mood, { emoji: string; text: string }> = {
+  calm: { emoji: '🙂', text: 'all clear, nothing urgent' },
+  busy: { emoji: '😅', text: 'starting to stack up' },
+  swamped: { emoji: '😩', text: 'buried, could use a hand' },
 };
 
 interface ActivityFeedProps {
@@ -62,7 +75,6 @@ export function ActivityFeed({ mood, waiting, rows, reduce }: ActivityFeedProps)
         sx={{
           display: 'flex',
           alignItems: 'baseline',
-          justifyContent: 'space-between',
           gap: 1,
           pb: 0.75,
           mb: 0.75,
@@ -72,11 +84,26 @@ export function ActivityFeed({ mood, waiting, rows, reduce }: ActivityFeedProps)
       >
         <Typography
           data-mood={mood}
-          sx={{ fontSize: 11.5, fontWeight: 800, letterSpacing: 0.3, color: MOOD_TONE[mood] }}
+          sx={{ fontSize: 11.5, fontWeight: 800, letterSpacing: 0.3, color: MOOD_TONE[mood], flexShrink: 0 }}
         >
           {MOOD_LABELS[mood]}
         </Typography>
-        <Typography sx={{ fontSize: 11, color: 'text.disabled', fontVariantNumeric: 'tabular-nums' }}>
+        <Typography
+          sx={{
+            flexGrow: 1,
+            minWidth: 0,
+            fontSize: 12.5,
+            color: 'text.secondary',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {MOOD_ASIDE[mood].emoji} {MOOD_ASIDE[mood].text}
+        </Typography>
+        <Typography
+          sx={{ flexShrink: 0, fontSize: 11, color: 'text.disabled', fontVariantNumeric: 'tabular-nums' }}
+        >
           {waiting} waiting
         </Typography>
       </Box>
