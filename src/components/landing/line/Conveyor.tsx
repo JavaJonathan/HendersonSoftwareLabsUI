@@ -2,7 +2,7 @@ import Box from '@mui/material/Box';
 import { motion } from 'framer-motion';
 import type { StationKind } from './lineModel';
 import { KindLane } from './KindLane';
-import { BELT_EDGE, BELT_TREAD, STAGE_BG, STAGE_DOT, STAGE_DOT_SIZE } from './stationTheme';
+import { BELT_EDGE, BELT_TREAD, NEUTRAL_BORDER, STAGE_BG, STAGE_DOT, STAGE_DOT_SIZE } from './stationTheme';
 
 /**
  * The stage: six stations and the belt that connects them.
@@ -49,7 +49,7 @@ export function Conveyor({ lanes, active, reduce, layout, onClearOne }: Conveyor
         backgroundImage: `${STAGE_DOT}, ${STAGE_BG}`,
         backgroundSize: `${STAGE_DOT_SIZE}, auto`,
         border: '1px solid',
-        borderColor: '#e2e8f0',
+        borderColor: NEUTRAL_BORDER,
         boxShadow: 'inset 0 1px 3px rgba(15, 23, 42, 0.06)',
         overflow: 'hidden',
         px: narrow ? 1 : 2.5,

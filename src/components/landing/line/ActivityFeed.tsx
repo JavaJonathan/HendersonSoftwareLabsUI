@@ -2,7 +2,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { AnimatePresence, motion } from 'framer-motion';
 import { MOOD_LABELS, type Mood, type StationKind } from './lineModel';
-import { STATION_THEME } from './stationTheme';
+import { NEUTRAL_BORDER, STATION_THEME } from './stationTheme';
 
 /**
  * The activity feed: what just happened on the line, in the spirit of a multiplayer kill feed.
@@ -54,7 +54,7 @@ export function ActivityFeed({ mood, waiting, rows, reduce }: ActivityFeedProps)
         py: 1.25,
         borderRadius: 2,
         border: '1px solid',
-        borderColor: '#e2e8f0',
+        borderColor: NEUTRAL_BORDER,
         bgcolor: '#fbfcfd',
       }}
     >

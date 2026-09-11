@@ -35,6 +35,9 @@ export const STAGE_BG = 'linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%)';
 export const STAGE_DOT = 'radial-gradient(circle, rgba(15, 23, 42, 0.055) 1px, transparent 1px)';
 export const STAGE_DOT_SIZE = '14px 14px';
 
+/** The plain hairline border every neutral card and panel in this feature shares. */
+export const NEUTRAL_BORDER = '#e2e8f0';
+
 /** The belt itself. Darker than the stage so work reads as sitting on top of it. */
 export const BELT_EDGE = '#94a3b8';
 export const BELT_TREAD = 'rgba(255, 255, 255, 0.55)';

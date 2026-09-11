@@ -30,6 +30,10 @@ type Counts = Partial<Record<StationKind, number>>;
 
 const total = (counts: Counts) => Object.values(counts).reduce((sum, n) => sum + (n ?? 0), 0);
 
+/** Which kinds in this batch this visitor has never sent before, for the first-clear unlock nudge. */
+const firstTimeKinds = (sent: Counts, contributed: Set<StationKind>): StationKind[] =>
+  (Object.keys(sent) as StationKind[]).filter((kind) => !contributed.has(kind));
+
 interface Options {
   snapshot: LineSnapshot | null;
   /** True while the section is on screen. Leaving view is itself a flush trigger. */
@@ -83,7 +87,7 @@ export function useLineClicks({ snapshot, active, onSnapshot, onUnsent }: Option
       inflight.current[kind as StationKind] = (inflight.current[kind as StationKind] ?? 0) + (n ?? 0);
     }
 
-    const firstTime = (Object.keys(sent) as StationKind[]).filter((kind) => !contributed.current.has(kind));
+    const firstTime = firstTimeKinds(sent, contributed.current);
 
     try {
       const result = await flushClears(current.ticket, sent as ClearCounts, firstTime);
@@ -185,7 +189,7 @@ export function useLineClicks({ snapshot, active, onSnapshot, onUnsent }: Option
       if (!current) return;
 
       const sent = pending.current;
-      const firstTime = (Object.keys(sent) as StationKind[]).filter((k) => !contributed.current.has(k));
+      const firstTime = firstTimeKinds(sent, contributed.current);
       if (beaconClears(current.ticket, sent as ClearCounts, firstTime)) {
         // A beacon has no response, so unlike the flush path there is no `accepted` figure to
         // credit `flushed` with: this optimistically assumes the full send was counted. Being

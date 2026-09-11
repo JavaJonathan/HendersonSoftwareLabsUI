@@ -1,3 +1,5 @@
+import { BELT_EDGE } from './stationTheme.ts';
+
 /**
  * Where the waiting tasks sit.
  *
@@ -33,8 +35,12 @@ export const TOKEN_H = 20;
 export const HIT_W = 30;
 export const HIT_H = 24;
 
-/** 3:1 against white, unlike the #cbd5e1 used for purely decorative hairlines elsewhere. */
-export const TOKEN_BORDER = '#94a3b8';
+/**
+ * 3:1 against white, unlike the #cbd5e1 used for purely decorative hairlines elsewhere. Shares
+ * its value with `stationTheme.ts`'s `BELT_EDGE` by importing it rather than repeating the hex,
+ * since both are the same "structural, load-bearing" grey used at the same contrast ratio.
+ */
+export const TOKEN_BORDER = BELT_EDGE;
 
 /** The most tokens a pile can hold. Matches CAP_PER_KIND; the test asserts they agree. */
 export const PILE_CAPACITY = 6;

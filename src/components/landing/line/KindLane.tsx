@@ -3,7 +3,7 @@ import Typography from '@mui/material/Typography';
 import { AnimatePresence, motion } from 'framer-motion';
 import { STATION_KINDS, type StationKind } from './lineModel';
 import { STATION_ICONS } from './stationIcons';
-import { STATION_THEME } from './stationTheme';
+import { NEUTRAL_BORDER, STATION_THEME } from './stationTheme';
 import {
   HIT_H,
   HIT_W,
@@ -76,7 +76,7 @@ export function KindLane({
         overflow: 'hidden',
         bgcolor: automated ? theme.wash : '#ffffff',
         border: '1px solid',
-        borderColor: automated ? theme.edge : '#e2e8f0',
+        borderColor: automated ? theme.edge : NEUTRAL_BORDER,
         boxShadow: automated
           ? `0 1px 0 ${theme.edge}`
           : '0 1px 2px rgba(15, 23, 42, 0.06)',

@@ -3,7 +3,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import BoltRounded from '@mui/icons-material/BoltRounded';
 import { STATION_KINDS, type StationKind } from './lineModel';
-import { STATION_THEME } from './stationTheme';
+import { NEUTRAL_BORDER, STATION_THEME } from './stationTheme';
 import { STATION_ICONS } from './stationIcons';
 
 /**
@@ -120,7 +120,7 @@ export function KindPanel({ lanes, totalWaiting, onClearKind, onClearAll }: Kind
                   gap: { xs: 0.35, sm: 0.5 },
                   cursor: lane.automated || empty ? 'default' : 'pointer',
                   border: '1px solid',
-                  borderColor: '#e2e8f0',
+                  borderColor: NEUTRAL_BORDER,
                   bgcolor: lane.automated ? '#f8fafc' : '#ffffff',
                   color: lane.automated ? 'text.disabled' : 'text.secondary',
                   opacity: empty && !lane.automated ? 0.5 : 1,

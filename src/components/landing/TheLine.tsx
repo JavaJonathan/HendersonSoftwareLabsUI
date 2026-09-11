@@ -12,6 +12,7 @@ import { Reveal } from '../motion/Reveal';
 import { fetchLine } from '../../api/line';
 import { PRESETS, PRESET_ORDER, type PresetId } from './line/presets';
 import {
+  FILL_MS,
   STATION_KINDS,
   STATION_KIND_ORDER,
   advanceClearedThrough,
@@ -19,6 +20,7 @@ import {
   formatTaskCount,
   ghostDelta,
   isFresher,
+  isStationKind,
   isUnlocked,
   moodFor,
   nextUnlockTarget,
@@ -45,8 +47,9 @@ import { useLinePoll } from './line/useLinePoll';
  *
  * Six kinds of work arrive continuously. The automated ones clear themselves; the rest pile up in
  * front of their station until somebody clicks them away. Clicking works, and it keeps working for
- * about as long as you keep doing it: clear a column and it is full again in thirty seconds,
- * because clearing what is in front of you buys nothing against what has not arrived yet.
+ * about as long as you keep doing it: clear a column and it is full again in thirty seconds
+ * (`FILL_MS` in `lineModel.ts`), because clearing what is in front of you buys nothing against
+ * what has not arrived yet.
  *
  * What does change things is shared. Every visitor's clears accumulate toward a threshold, and when
  * one is crossed that kind becomes automated permanently, for everyone who ever visits afterwards.
@@ -105,7 +108,7 @@ function loadSeenUnlocks(): Set<StationKind> {
     const raw = localStorage.getItem(UNLOCKS_KEY);
     const parsed: unknown = raw ? JSON.parse(raw) : null;
     if (Array.isArray(parsed)) {
-      return new Set(parsed.filter((k): k is StationKind => STATION_KIND_ORDER.includes(k as StationKind)));
+      return new Set(parsed.filter(isStationKind));
     }
   } catch {
     /* ignore */
@@ -678,7 +681,7 @@ export function TheLine() {
             >
               <Box>
                 <Typography sx={{ fontWeight: 800, color: 'text.primary', fontSize: 15 }}>
-                  Cleared. It will be full again in thirty seconds.
+                  Cleared. It will be full again in {FILL_MS / 1000} seconds.
                 </Typography>
                 <Typography sx={{ mt: 0.5, fontSize: 13.5, color: 'text.secondary' }}>
                   The automated kinds did not need you at all. That is the entire difference, and it
