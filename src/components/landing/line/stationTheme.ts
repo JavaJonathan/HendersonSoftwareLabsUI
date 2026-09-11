@@ -30,12 +30,11 @@ export const STATION_THEME: Record<StationKind, StationTheme> = {
   Report: { ink: '#db2777', wash: '#fdf2f8', edge: '#fbcfe8' },
 };
 
-/** The stage the whole machine sits on, so the game reads as a place and not a panel. */
+/** The stage the whole line sits on, so the game reads as a place and not a panel. */
 export const STAGE_BG = 'linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%)';
 export const STAGE_DOT = 'radial-gradient(circle, rgba(15, 23, 42, 0.055) 1px, transparent 1px)';
 export const STAGE_DOT_SIZE = '14px 14px';
 
 /** The belt itself. Darker than the stage so work reads as sitting on top of it. */
-export const BELT_BODY = '#cbd5e1';
 export const BELT_EDGE = '#94a3b8';
 export const BELT_TREAD = 'rgba(255, 255, 255, 0.55)';

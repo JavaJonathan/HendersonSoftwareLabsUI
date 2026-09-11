@@ -40,6 +40,12 @@ export function useLineClicks({ snapshot, active, onSnapshot, onUnsent }: Option
   const pending = useRef<Counts>({});
   const inflight = useRef<Counts>({});
   const contributed = useRef<Set<StationKind>>(new Set());
+  /**
+   * Cumulative per-kind total this visitor has actually sent to the server. The activity feed
+   * uses it to net its own contributions out of the next poll's delta, so a clear the visitor
+   * just made does not come back a few seconds later labelled "someone cleared".
+   */
+  const flushed = useRef<Counts>({});
   const idleTimer = useRef<number | null>(null);
   const retryTimer = useRef<number | null>(null);
   const retryIndex = useRef(0);
@@ -101,6 +107,7 @@ export function useLineClicks({ snapshot, active, onSnapshot, onUnsent }: Option
         const k = kind as StationKind;
         inflight.current[k] = Math.max(0, (inflight.current[k] ?? 0) - (n ?? 0));
         if (inflight.current[k] === 0) delete inflight.current[k];
+        flushed.current[k] = (flushed.current[k] ?? 0) + (n ?? 0);
       }
 
       retryIndex.current = 0;
@@ -185,6 +192,9 @@ export function useLineClicks({ snapshot, active, onSnapshot, onUnsent }: Option
       const sent = pending.current;
       const firstTime = (Object.keys(sent) as StationKind[]).filter((k) => !contributed.current.has(k));
       if (beaconClears(current.ticket, sent as ClearCounts, firstTime)) {
+        for (const [kind, n] of Object.entries(sent)) {
+          flushed.current[kind as StationKind] = (flushed.current[kind as StationKind] ?? 0) + (n ?? 0);
+        }
         pending.current = {};
       }
     };
@@ -207,5 +217,8 @@ export function useLineClicks({ snapshot, active, onSnapshot, onUnsent }: Option
 
   useEffect(() => clearTimers, [clearTimers]);
 
-  return { registerClears, optimistic, myClears };
+  /** Cumulative per-kind total this visitor has sent to the server, for the feed to net out. */
+  const getFlushed = useCallback((kind: StationKind) => flushed.current[kind] ?? 0, []);
+
+  return { registerClears, optimistic, myClears, getFlushed };
 }

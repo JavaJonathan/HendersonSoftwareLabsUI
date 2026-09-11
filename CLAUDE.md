@@ -19,7 +19,9 @@ npm run lint      # oxlint
 npm run preview   # preview the production build
 ```
 
-There is no automated test suite in this project.
+```bash
+npm test          # node --test "tests/**/*.test.ts" - pure model/logic tests, no DOM
+```
 
 **Local dev prerequisite**: `.env.local` (gitignored) must set `VITE_API_BASE_URL` pointing at the backend API (its dev profile runs on `http://localhost:5194`).
 

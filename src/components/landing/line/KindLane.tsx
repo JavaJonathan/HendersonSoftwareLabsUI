@@ -235,16 +235,20 @@ export function KindLane({
                   reduce
                     ? { opacity: 0, transition: { duration: 0.08 } }
                     : {
-                        // Toward the machine rather than simply away, so a cleared task visibly
-                        // goes somewhere and the machine is where it goes.
+                        // The press-in lives at the head of the exit, because the token unmounts on
+                        // the same tick the pointer goes down and a `whileTap` at rest would never
+                        // get a frame. Then it slides onto the belt and away along it.
                         opacity: 0,
-                        scale: 0.4,
-                        x: narrow ? 10 : 46,
-                        y: narrow ? 40 : -14,
-                        transition: { duration: 0.3, ease: 'easeIn' },
+                        scale: [1, 0.84, 0.38],
+                        x: narrow ? [0, -4, -24] : [0, 8, 52],
+                        y: narrow ? [0, 6, 34] : [0, 10, 22],
+                        transition: {
+                          duration: 0.32,
+                          ease: 'easeIn',
+                          scale: { times: [0, 0.19, 1], ease: 'easeOut' },
+                        },
                       }
                 }
-                whileTap={reduce ? undefined : { scale: 0.82 }}
                 transition={{ duration: 0.2, ease: 'easeOut' }}
                 onPointerDown={() => onClearOne(kind)}
                 sx={{

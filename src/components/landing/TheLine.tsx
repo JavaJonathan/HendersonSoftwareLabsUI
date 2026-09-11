@@ -32,7 +32,8 @@ import {
   type Mood,
   type StationKind,
 } from './line/lineModel';
-import { Conveyor, type Ghost, type LaneView } from './line/Conveyor';
+import { Conveyor, type LaneView } from './line/Conveyor';
+import { ActivityFeed, type FeedRow } from './line/ActivityFeed';
 import { KindPanel } from './line/KindPanel';
 import { TaskCounter } from './line/TaskCounter';
 import { useLineClicks } from './line/useLineClicks';
@@ -63,13 +64,17 @@ const LEGACY_KEY = 'hsl_line_station';
 
 const CONTACT_HREF = 'mailto:jonathan@HendersonSoftwareLabs.com?subject=Booking%20a%20Call';
 
-/** The backlog is recomputed from the clock, so the view needs a heartbeat to show arrivals. */
-const TICK_MS = 500;
+/**
+ * The backlog is recomputed from the clock, so the view needs a heartbeat to show arrivals. Work
+ * arrives once every five seconds per kind, so a one-second tick is already finer than anything
+ * the model can change, and it re-renders the whole section, so there is no reason to go faster.
+ */
+const TICK_MS = 1000;
 const ANNOUNCE_THROTTLE_MS = 3000;
-const GHOST_LIFETIME_MS = 2200;
-/** A drop this large inside this window is what the machine visibly exhales at. */
-const RELIEF_DROP = 0.25;
-const RELIEF_WINDOW_MS = 2000;
+/** How long to gather a burst of the visitor's own clears into one feed line. */
+const FEED_COALESCE_MS = 800;
+/** The feed shows this many events; a newer one pushes the oldest out. */
+const FEED_MAX_ROWS = 4;
 
 function loadLocal(now: number): LocalProgress {
   try {
@@ -152,10 +157,7 @@ export function TheLine() {
   const [, setTick] = useState(0);
 
   const [mood, setMood] = useState<Mood>('calm');
-  const [partyNonce, setPartyNonce] = useState(0);
-  const [reliefNonce, setReliefNonce] = useState(0);
-  const [gulpNonce, setGulpNonce] = useState(0);
-  const [ghosts, setGhosts] = useState<Ghost[]>([]);
+  const [feedRows, setFeedRows] = useState<FeedRow[]>([]);
   const [announcement, setAnnouncement] = useState('');
   const [arrival, setArrival] = useState('');
   const [unsent, setUnsent] = useState(false);
@@ -163,8 +165,15 @@ export function TheLine() {
   const [interactionNonce, setInteractionNonce] = useState(0);
 
   const seenUnlocks = useRef<Set<StationKind>>(loadSeenUnlocks());
-  const ghostId = useRef(0);
-  const stressHistory = useRef<Array<{ at: number; value: number }>>([]);
+  const feedId = useRef(0);
+  const feedBuffer = useRef<Map<StationKind, number>>(new Map());
+  const feedTimer = useRef<number | null>(null);
+  /** The last snapshot whose deltas were fed to the activity feed. Kept out of React state so */
+  /** the feed side effects run once, not twice under StrictMode's updater double-invoke. */
+  const lastFedSnapshot = useRef<LineSnapshot | null>(null);
+  /** How much of this visitor's own flushed clears the feed has already netted out of poll deltas. */
+  const ghostAccounted = useRef<Partial<Record<StationKind, number>>>({});
+  const getFlushedRef = useRef<(kind: StationKind) => number>(() => 0);
   const announceAt = useRef(0);
   const announceBuffer = useRef<{ tasks: number; kinds: Set<StationKind> }>({ tasks: 0, kinds: new Set() });
   const announceTimer = useRef<number | null>(null);
@@ -185,29 +194,76 @@ export function TheLine() {
     }
   }, []);
 
+  /** Append one line to the activity feed, keeping only the most recent few. */
+  const pushFeed = useCallback((kind: StationKind | null, text: string) => {
+    setFeedRows((rows) => [{ id: (feedId.current += 1), kind, text }, ...rows].slice(0, FEED_MAX_ROWS));
+  }, []);
+
+  /**
+   * Gather a burst of the visitor's own clears into one feed line.
+   *
+   * At a couple of clicks a second, one line per click is spam. Each kind's count accumulates and
+   * one line lands after a short quiet, or when a different kind is cleared. Other people's clears
+   * arrive already batched by the poll, so they go straight through.
+   */
+  const feedOwnClear = useCallback(
+    (kind: StationKind, count: number) => {
+      if (!(count > 0)) return;
+      const buffer = feedBuffer.current;
+      buffer.set(kind, (buffer.get(kind) ?? 0) + count);
+
+      const flush = () => {
+        for (const [k, n] of feedBuffer.current) {
+          pushFeed(k, `you cleared ${n} ${STATION_KINDS[k].label}`);
+        }
+        feedBuffer.current = new Map();
+        feedTimer.current = null;
+      };
+
+      if (feedTimer.current !== null) window.clearTimeout(feedTimer.current);
+      feedTimer.current = window.setTimeout(flush, FEED_COALESCE_MS);
+    },
+    [pushFeed],
+  );
+
   /**
    * Applies a snapshot, refusing anything stale.
    *
    * The API caches its read for a couple of seconds, so a poll can easily land after a write that
-   * already included our contribution. Without this guard that reads as the shared counter
-   * stuttering backwards, which is exactly the kind of small wrongness that makes a page feel
-   * broken.
+   * already included our contribution. Without the freshness guard that reads as the shared
+   * counter stuttering backwards, which is exactly the kind of small wrongness that makes a page
+   * feel broken.
+   *
+   * The feed deltas are computed here against a ref rather than inside the `setSnapshot` updater,
+   * because React double-invokes updaters under StrictMode and a persistent feed would then show
+   * every other-visitor clear twice.
    */
-  const applySnapshot = useCallback((next: LineSnapshot) => {
-    setSnapshot((current) => {
-      if (!isFresher(next, current)) return current;
+  const applySnapshot = useCallback(
+    (next: LineSnapshot) => {
+      const prev = lastFedSnapshot.current;
+      if (!isFresher(next, prev)) return;
+      lastFedSnapshot.current = next;
 
-      const deltas = ghostDelta(current, next);
-      if (deltas.length > 0) {
-        const stamped = deltas.map((d) => ({ id: (ghostId.current += 1), kind: d.kind, count: d.count }));
-        setGhosts((existing) => [...existing, ...stamped]);
-        const ids = new Set(stamped.map((g) => g.id));
-        window.setTimeout(() => setGhosts((existing) => existing.filter((g) => !ids.has(g.id))), GHOST_LIFETIME_MS);
+      for (const delta of ghostDelta(prev, next)) {
+        // Net out this visitor's own flushed clears, so their action does not echo back a few
+        // seconds later as a stranger's.
+        const mineAvailable = Math.max(
+          0,
+          getFlushedRef.current(delta.kind) - (ghostAccounted.current[delta.kind] ?? 0),
+        );
+        const mine = Math.min(delta.count, mineAvailable);
+        ghostAccounted.current[delta.kind] = (ghostAccounted.current[delta.kind] ?? 0) + mine;
+
+        const others = delta.count - mine;
+        if (others > 0) {
+          pushFeed(delta.kind, `someone cleared ${others} ${STATION_KINDS[delta.kind].label}`);
+        }
       }
 
-      return next;
-    });
-  }, []);
+      setSnapshot(next);
+    },
+    [pushFeed],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -229,12 +285,13 @@ export function TheLine() {
 
   useLinePoll({ active: inView, onSnapshot: applySnapshot, interactionNonce });
 
-  const { registerClears, myClears } = useLineClicks({
+  const { registerClears, myClears, getFlushed } = useLineClicks({
     snapshot,
     active: inView,
     onSnapshot: applySnapshot,
     onUnsent: setUnsent,
   });
+  getFlushedRef.current = getFlushed;
 
   // The heartbeat. The backlog is a function of the clock, so without this nothing would appear to
   // arrive until something else caused a render.
@@ -266,19 +323,6 @@ export function TheLine() {
   useEffect(() => {
     setMood((previous) => moodFor(stress, previous));
   }, [stress]);
-
-  // A sharp drop is the machine's cue to exhale. Comparing against a short history rather than the
-  // previous frame means a steady grind does not trigger it, only actually getting on top of things.
-  useEffect(() => {
-    const history = stressHistory.current;
-    history.push({ at: now, value: stress });
-    while (history.length > 0 && now - history[0].at > RELIEF_WINDOW_MS) history.shift();
-
-    if (history.length > 1 && history[0].value - stress > RELIEF_DROP) {
-      stressHistory.current = [{ at: now, value: stress }];
-      setReliefNonce((n) => n + 1);
-    }
-  }, [stress, now]);
 
   /** One utterance per few seconds, coalesced, so a burst of clearing does not flood a screen reader. */
   const announceCleared = useCallback((kind: StationKind, count: number) => {
@@ -325,12 +369,12 @@ export function TheLine() {
         return next;
       });
       registerClears(kind, count);
-      setGulpNonce((n) => n + 1);
       setInteractionNonce((n) => n + 1);
       setEverCleared(true);
+      feedOwnClear(kind, count);
       if (options?.announce !== false) announceCleared(kind, count);
     },
-    [announceCleared, persistLocal, registerClears],
+    [announceCleared, feedOwnClear, persistLocal, registerClears],
   );
 
   /** A single token tapped on the belt. Never announced: one utterance per token is the firehose. */
@@ -370,8 +414,8 @@ export function TheLine() {
     [clear, local, snapshot],
   );
 
-  // An unlock is the one moment worth interrupting for. It is celebrated once per browser, so a
-  // reload does not replay someone else's confetti.
+  // An unlock is the one moment worth interrupting for. It is marked seen once per browser, so a
+  // reload does not replay someone else's.
   useEffect(() => {
     if (!snapshot) return;
 
@@ -385,7 +429,7 @@ export function TheLine() {
         /* ignore */
       }
 
-      setPartyNonce((n) => n + 1);
+      pushFeed(kind, `${STATION_KINDS[kind].label} is automated now, it clears itself from here on`);
       setAnnouncement(
         `${STATION_KINDS[kind].label} is now automated. It clears itself from here on, for everyone.`,
       );
@@ -396,7 +440,7 @@ export function TheLine() {
         return next;
       });
     }
-  }, [snapshot, persistLocal]);
+  }, [snapshot, persistLocal, pushFeed]);
 
   useEffect(() => {
     if (!inView || !snapshot || arrival) return;
@@ -410,6 +454,11 @@ export function TheLine() {
     );
   }, [inView, snapshot, arrival, waitingTotal]);
 
+  useEffect(() => () => {
+    if (feedTimer.current !== null) window.clearTimeout(feedTimer.current);
+    if (announceTimer.current !== null) window.clearTimeout(announceTimer.current);
+  }, []);
+
   function selectPreset(id: PresetId) {
     setPresetId(id);
     try {
@@ -418,6 +467,20 @@ export function TheLine() {
       /* ignore */
     }
   }
+
+  const feedShown: FeedRow[] =
+    feedRows.length > 0
+      ? feedRows
+      : [
+          {
+            id: -1,
+            kind: null,
+            text:
+              waitingTotal === 0 && capTotal > 0
+                ? 'nothing waiting, the line is clear'
+                : "your clears and other visitors' show up here",
+          },
+        ];
 
   return (
     <Container ref={sectionRef} maxWidth="lg" id="the-line" sx={{ py: { xs: 4, md: 5 } }}>
@@ -522,19 +585,16 @@ export function TheLine() {
             </Box>
 
             {snapshot ? (
-              <Conveyor
-                lanes={lanes}
-                ghosts={ghosts}
-                stress={stress}
-                mood={mood}
-                active={inView}
-                reduce={reduce}
-                layout={compact ? 'narrow' : 'wide'}
-                partyNonce={partyNonce}
-                reliefNonce={reliefNonce}
-                gulpNonce={gulpNonce}
-                onClearOne={clearOne}
-              />
+              <>
+                <Conveyor
+                  lanes={lanes}
+                  active={inView}
+                  reduce={reduce}
+                  layout={compact ? 'narrow' : 'wide'}
+                  onClearOne={clearOne}
+                />
+                <ActivityFeed mood={mood} waiting={waitingTotal} rows={feedShown} reduce={reduce} />
+              </>
             ) : (
               <Skeleton variant="rectangular" height={190} />
             )}

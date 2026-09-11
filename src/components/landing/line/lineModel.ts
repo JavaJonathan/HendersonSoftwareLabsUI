@@ -147,7 +147,7 @@ export function manualKinds(snapshot: LineSnapshot): StationKind[] {
 /**
  * How many tasks of one kind are waiting in this browser.
  *
- * An automated kind is always zero: the machine takes them as they land. A manual kind fills at
+ * An automated kind is always zero: it clears them as they land. A manual kind fills at
  * the arrival rate from the moment it was last emptied, and stops at the cap. The cap is what
  * makes a week away and eight hours away identical, and it is why an absence costs nothing: the
  * pile is never written down, it is only ever recomputed.
@@ -179,7 +179,7 @@ export function totalCap(snapshot: LineSnapshot): number {
   return manualKinds(snapshot).length * CAP_PER_KIND;
 }
 
-/** How buried the machine is, 0 to 1. Zero rather than NaN when there is nothing left to do by hand. */
+/** How buried the line is, 0 to 1. Zero rather than NaN when there is nothing left to do by hand. */
 export function stressLevel(snapshot: LineSnapshot, local: LocalProgress, now: number): number {
   const cap = totalCap(snapshot);
   if (cap <= 0) return 0;
@@ -350,9 +350,13 @@ export function seedSnapshot(now: number): LineSnapshot {
   };
 }
 
+/**
+ * The line's load state. The name is historical (an earlier version drew a machine with a face);
+ * it is now just the three words the activity feed's header carries.
+ */
 export type Mood = 'calm' | 'busy' | 'swamped';
 
-/** What the machine's mood chip says, so the state is never carried by colour alone. */
+/** The words the feed header shows, so the state is never carried by colour alone. */
 export const MOOD_LABELS: Record<Mood, string> = {
   calm: 'Keeping up',
   busy: 'Falling behind',
@@ -360,12 +364,12 @@ export const MOOD_LABELS: Record<Mood, string> = {
 };
 
 /**
- * The machine's mood, with hysteresis.
+ * The load state, with hysteresis.
  *
  * Anything that picks buckets off a continuous value flickers when it sits on a boundary, and a
- * face that twitches between calm and worried twenty times a second is both ugly and unreadable.
- * Crossing a threshold therefore requires overshooting it, so a mood change means something
- * actually happened.
+ * status word that flips between "Keeping up" and "Falling behind" twice a second is unreadable.
+ * Crossing a threshold therefore requires overshooting it, so a change means something actually
+ * happened.
  */
 export function moodFor(stress: number, previous: Mood): Mood {
   const value = Number.isFinite(stress) ? stress : 0;
