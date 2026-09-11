@@ -168,8 +168,10 @@ export function TheLine() {
   const feedId = useRef(0);
   const feedBuffer = useRef<Map<StationKind, number>>(new Map());
   const feedTimer = useRef<number | null>(null);
-  /** The last snapshot whose deltas were fed to the activity feed. Kept out of React state so */
-  /** the feed side effects run once, not twice under StrictMode's updater double-invoke. */
+  /**
+   * The last snapshot whose deltas were fed to the activity feed. Kept out of React state so the
+   * feed side effects run once, not twice under StrictMode's updater double-invoke.
+   */
   const lastFedSnapshot = useRef<LineSnapshot | null>(null);
   /** How much of this visitor's own flushed clears the feed has already netted out of poll deltas. */
   const ghostAccounted = useRef<Partial<Record<StationKind, number>>>({});

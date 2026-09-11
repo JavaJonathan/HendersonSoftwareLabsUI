@@ -6,13 +6,16 @@ import { serverClearBound, type LineSnapshot, type StationKind } from './lineMod
  * Batches a visitor's clears and gets them to the server.
  *
  * Clicks are frequent and individually worthless, so nothing is sent per click. Counts accumulate
- * locally and flush on a handful of natural boundaries, which keeps a busy visitor to a couple of
- * requests for a whole session.
+ * locally in `pending` and flush on a handful of natural boundaries (idle, a size threshold,
+ * leaving the section, or the page hiding), which keeps a busy visitor to a couple of requests for
+ * a whole session. `inflight` tracks a batch between the moment it leaves `pending` and the moment
+ * its request resolves, purely so a second batch can start accumulating in `pending` without
+ * double-counting the first; nothing on screen reads it directly; the section's own displayed
+ * total is just the server's own snapshot plus the personal `myClears` counter below.
  *
- * The shared counter shown on screen is `server + pending + inflight`, and the four transitions
- * below keep that sum continuous. On success the server's total already includes what it credited,
- * so the same number leaves `inflight` in the same commit: no double count and no dip. On failure
- * the inflight amount returns to pending and waits for the next trigger.
+ * On success, the server's own returned snapshot is applied as the new truth (see `onSnapshot`),
+ * so `inflight` simply empties: no dip, no double count. On failure, the inflight amount returns
+ * to `pending` and waits for the next trigger.
  */
 
 const IDLE_FLUSH_MS = 5000;
@@ -52,23 +55,10 @@ export function useLineClicks({ snapshot, active, onSnapshot, onUnsent }: Option
   const cooldownUntil = useRef(0);
   const sending = useRef(false);
 
-  // Mirrors of the refs, so the optimistic display can re-render without the refs driving renders.
-  const [optimistic, setOptimistic] = useState<Counts>({});
   const [myClears, setMyClears] = useState(0);
 
   const snapshotRef = useRef(snapshot);
   snapshotRef.current = snapshot;
-
-  const syncOptimistic = useCallback(() => {
-    const merged: Counts = {};
-    for (const [kind, n] of Object.entries(pending.current)) {
-      merged[kind as StationKind] = (merged[kind as StationKind] ?? 0) + (n ?? 0);
-    }
-    for (const [kind, n] of Object.entries(inflight.current)) {
-      merged[kind as StationKind] = (merged[kind as StationKind] ?? 0) + (n ?? 0);
-    }
-    setOptimistic(merged);
-  }, []);
 
   const clearTimers = useCallback(() => {
     if (idleTimer.current !== null) window.clearTimeout(idleTimer.current);
@@ -92,7 +82,6 @@ export function useLineClicks({ snapshot, active, onSnapshot, onUnsent }: Option
     for (const [kind, n] of Object.entries(sent)) {
       inflight.current[kind as StationKind] = (inflight.current[kind as StationKind] ?? 0) + (n ?? 0);
     }
-    syncOptimistic();
 
     const firstTime = (Object.keys(sent) as StationKind[]).filter((kind) => !contributed.current.has(kind));
 
@@ -101,13 +90,21 @@ export function useLineClicks({ snapshot, active, onSnapshot, onUnsent }: Option
 
       for (const kind of firstTime) contributed.current.add(kind);
 
-      // Remove exactly what the server credited. Anything it declined is dropped rather than
+      // The request has resolved, so its whole `sent` amount leaves `inflight` regardless of the
+      // outcome: `onSnapshot` below applies the server's own truthful total, and anything the
+      // server declined (the per-kind clamp, or the per-IP daily budget) is dropped rather than
       // returned to pending, so a clamped request can never loop forever.
+      //
+      // `flushed` is different: it exists only so the activity feed can recognise the visitor's
+      // own contribution in a later poll and not report it back as a stranger's, so it must track
+      // what the server actually confirmed (`result.accepted`), not what was merely attempted. The
+      // two can differ under the daily budget, and crediting the attempt instead of the outcome
+      // would let a stranger's later clear be silently netted out as the visitor's own.
       for (const [kind, n] of Object.entries(sent)) {
         const k = kind as StationKind;
         inflight.current[k] = Math.max(0, (inflight.current[k] ?? 0) - (n ?? 0));
         if (inflight.current[k] === 0) delete inflight.current[k];
-        flushed.current[k] = (flushed.current[k] ?? 0) + (n ?? 0);
+        flushed.current[k] = (flushed.current[k] ?? 0) + (result.accepted[k] ?? 0);
       }
 
       retryIndex.current = 0;
@@ -136,9 +133,8 @@ export function useLineClicks({ snapshot, active, onSnapshot, onUnsent }: Option
       onUnsent(true);
     } finally {
       sending.current = false;
-      syncOptimistic();
     }
-  }, [onSnapshot, onUnsent, syncOptimistic]);
+  }, [onSnapshot, onUnsent]);
 
   /** Record cleared tasks. Called once per column clear, not once per token. */
   const registerClears = useCallback(
@@ -159,7 +155,6 @@ export function useLineClicks({ snapshot, active, onSnapshot, onUnsent }: Option
       if (take <= 0) return;
 
       pending.current[kind] = already + take;
-      syncOptimistic();
 
       if (total(pending.current) >= FLUSH_AT_PENDING) {
         clearTimers();
@@ -170,7 +165,7 @@ export function useLineClicks({ snapshot, active, onSnapshot, onUnsent }: Option
       if (idleTimer.current !== null) window.clearTimeout(idleTimer.current);
       idleTimer.current = window.setTimeout(() => void flush(), IDLE_FLUSH_MS);
     },
-    [clearTimers, flush, syncOptimistic],
+    [clearTimers, flush],
   );
 
   // Leaving the section is a natural boundary: send what is held rather than waiting for a timer
@@ -192,6 +187,11 @@ export function useLineClicks({ snapshot, active, onSnapshot, onUnsent }: Option
       const sent = pending.current;
       const firstTime = (Object.keys(sent) as StationKind[]).filter((k) => !contributed.current.has(k));
       if (beaconClears(current.ticket, sent as ClearCounts, firstTime)) {
+        // A beacon has no response, so unlike the flush path there is no `accepted` figure to
+        // credit `flushed` with: this optimistically assumes the full send was counted. Being
+        // wrong here costs at most a few clears mislabelled in the activity feed on this
+        // visitor's own next poll, which is the same order of inaccuracy the beacon path already
+        // accepts elsewhere for not knowing its own outcome.
         for (const [kind, n] of Object.entries(sent)) {
           flushed.current[kind as StationKind] = (flushed.current[kind as StationKind] ?? 0) + (n ?? 0);
         }
@@ -220,5 +220,5 @@ export function useLineClicks({ snapshot, active, onSnapshot, onUnsent }: Option
   /** Cumulative per-kind total this visitor has sent to the server, for the feed to net out. */
   const getFlushed = useCallback((kind: StationKind) => flushed.current[kind] ?? 0, []);
 
-  return { registerClears, optimistic, myClears, getFlushed };
+  return { registerClears, myClears, getFlushed };
 }

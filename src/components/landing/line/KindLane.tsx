@@ -118,7 +118,6 @@ export function KindLane({
           {automated ? 'runs itself' : taskLabel}
         </Typography>
       </Box>
-
     </Box>
   );
 
@@ -158,7 +157,7 @@ export function KindLane({
             aria-hidden
             sx={{
               position: 'absolute',
-              left: narrow ? pileWidth(cols) / 2 - TOKEN_W / 2 : pileWidth(cols) / 2 - TOKEN_W / 2,
+              left: pileWidth(cols) / 2 - TOKEN_W / 2,
               top: pileHeight(cols) / 2 - TOKEN_H / 2,
               width: TOKEN_W,
               height: TOKEN_H,
@@ -169,53 +168,49 @@ export function KindLane({
             }}
           />
         ) : (
-          [0].map((i) => (
-            <Box
-              key={`auto-${i}`}
-              component={motion.div}
-              aria-hidden
-              animate={
-                narrow
-                  ? {
-                      x: [pileWidth(cols) - TOKEN_W, pileWidth(cols) * 0.6, TOKEN_W * 0.3, 0],
-                      opacity: [0, 1, 1, 0],
-                      scale: [0.9, 1, 1, 0.4],
-                    }
-                  : {
-                      y: [pileHeight(cols) - TOKEN_H, pileHeight(cols) * 0.5, TOKEN_H * 0.3, 0],
-                      opacity: [0, 1, 1, 0],
-                      scale: [0.9, 1, 1, 0.4],
-                    }
-              }
-              transition={{
-                duration: 1.25,
-                times: [0, 0.12, 0.72, 1],
-                repeat: Infinity,
-                // The gap is the point: the tray sits empty most of the time, which is what
-                // "clears itself" actually looks like.
-                repeatDelay: 1.6,
-                delay: i * 0.4,
-                ease: 'linear',
-              }}
-              sx={{
-                position: 'absolute',
-                left: narrow ? 0 : pileWidth(cols) / 2 - TOKEN_W / 2,
-                top: narrow ? pileHeight(cols) / 2 - TOKEN_H / 2 : 0,
-                width: TOKEN_W,
-                height: TOKEN_H,
-                borderRadius: '3px',
-                bgcolor: '#ffffff',
-                border: '1px solid',
-                borderColor: TOKEN_BORDER,
-                boxShadow: '0 1px 2px rgba(15, 23, 42, 0.12)',
-                overflow: 'hidden',
-              }}
-            >
-              <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, bgcolor: theme.ink }} />
-              <Box sx={{ position: 'absolute', left: 7, top: 5, width: 15, height: 2, borderRadius: 9999, bgcolor: '#b6c2d1' }} />
-              <Box sx={{ position: 'absolute', left: 7, top: 10, width: 10, height: 2, borderRadius: 9999, bgcolor: '#ced8e4' }} />
-            </Box>
-          ))
+          <Box
+            component={motion.div}
+            aria-hidden
+            animate={
+              narrow
+                ? {
+                    x: [pileWidth(cols) - TOKEN_W, pileWidth(cols) * 0.6, TOKEN_W * 0.3, 0],
+                    opacity: [0, 1, 1, 0],
+                    scale: [0.9, 1, 1, 0.4],
+                  }
+                : {
+                    y: [pileHeight(cols) - TOKEN_H, pileHeight(cols) * 0.5, TOKEN_H * 0.3, 0],
+                    opacity: [0, 1, 1, 0],
+                    scale: [0.9, 1, 1, 0.4],
+                  }
+            }
+            transition={{
+              duration: 1.25,
+              times: [0, 0.12, 0.72, 1],
+              repeat: Infinity,
+              // The gap is the point: the tray sits empty most of the time, which is what
+              // "clears itself" actually looks like.
+              repeatDelay: 1.6,
+              ease: 'linear',
+            }}
+            sx={{
+              position: 'absolute',
+              left: narrow ? 0 : pileWidth(cols) / 2 - TOKEN_W / 2,
+              top: narrow ? pileHeight(cols) / 2 - TOKEN_H / 2 : 0,
+              width: TOKEN_W,
+              height: TOKEN_H,
+              borderRadius: '3px',
+              bgcolor: '#ffffff',
+              border: '1px solid',
+              borderColor: TOKEN_BORDER,
+              boxShadow: '0 1px 2px rgba(15, 23, 42, 0.12)',
+              overflow: 'hidden',
+            }}
+          >
+            <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, bgcolor: theme.ink }} />
+            <Box sx={{ position: 'absolute', left: 7, top: 5, width: 15, height: 2, borderRadius: 9999, bgcolor: '#b6c2d1' }} />
+            <Box sx={{ position: 'absolute', left: 7, top: 10, width: 10, height: 2, borderRadius: 9999, bgcolor: '#ced8e4' }} />
+          </Box>
         ))}
 
       <AnimatePresence initial={false}>

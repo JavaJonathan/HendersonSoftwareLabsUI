@@ -32,9 +32,6 @@ export const CAP_PER_KIND = 6;
 /** An emptied kind is full again in exactly this long, which is why any absence beyond it looks the same. */
 export const FILL_MS = (CAP_PER_KIND / ARRIVAL_PER_SEC) * 1000;
 
-/** How long an automated kind takes to eat a task once it lands. Presentation only. */
-export const AUTO_DRAIN_MS = 900;
-
 /** Hand-cleared totals that unlock the next automation, in order. */
 export const UNLOCK_THRESHOLDS: readonly number[] = [250, 750, 2000, 5000];
 
@@ -135,12 +132,13 @@ export function isUnlocked(snapshot: LineSnapshot, kind: StationKind): boolean {
   return typeof at === 'string' && Number.isFinite(Date.parse(at));
 }
 
-export function unlockedCount(snapshot: LineSnapshot): number {
+/** Used only to seed `nextUnlockTarget`'s threshold when the server has not sent one. */
+function unlockedCount(snapshot: LineSnapshot): number {
   return STATION_KIND_ORDER.filter((kind) => isUnlocked(snapshot, kind)).length;
 }
 
-/** The kinds still done by hand, in display order. */
-export function manualKinds(snapshot: LineSnapshot): StationKind[] {
+/** The kinds still done by hand, in display order. Not exported: only `totalCap` needs it. */
+function manualKinds(snapshot: LineSnapshot): StationKind[] {
   return STATION_KIND_ORDER.filter((kind) => !isUnlocked(snapshot, kind));
 }
 

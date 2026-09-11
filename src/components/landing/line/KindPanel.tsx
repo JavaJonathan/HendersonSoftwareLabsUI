@@ -74,123 +74,124 @@ export function KindPanel({ lanes, totalWaiting, onClearKind, onClearAll }: Kind
             alignItems: 'center',
           }}
         >
-        {lanes.map((lane, index) => {
-          const Icon = STATION_ICONS[lane.kind];
-          const meta = STATION_KINDS[lane.kind];
-          const empty = lane.waiting === 0;
+          {lanes.map((lane, index) => {
+            const Icon = STATION_ICONS[lane.kind];
+            const meta = STATION_KINDS[lane.kind];
+            const empty = lane.waiting === 0;
 
-          return (
-            <Box
-              key={lane.kind}
-              component="button"
-              type="button"
-              ref={(el: HTMLButtonElement | null) => {
-                refs.current[index] = el;
-              }}
-              tabIndex={focusIndex === index ? 0 : -1}
-              // aria-disabled rather than disabled: a disabled control drops out of the tab order
-              // and explains nothing, where this one stays reachable and says why it is inert.
-              aria-disabled={lane.automated || empty}
-              aria-label={
-                lane.automated
-                  ? `${meta.label} is automated. It clears itself.`
-                  : `Clear ${meta.label}. ${lane.waiting} ${lane.waiting === 1 ? 'task' : 'tasks'} waiting.`
-              }
-              onClick={() => {
-                setFocusIndex(index);
-                if (!lane.automated && !empty) onClearKind(lane.kind, false);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault();
-                  if (!lane.automated && !empty) onClearKind(lane.kind, true);
-                  return;
+            return (
+              <Box
+                key={lane.kind}
+                component="button"
+                type="button"
+                ref={(el: HTMLButtonElement | null) => {
+                  refs.current[index] = el;
+                }}
+                tabIndex={focusIndex === index ? 0 : -1}
+                // aria-disabled rather than disabled: a disabled control drops out of the tab
+                // order and explains nothing, where this one stays reachable and says why it is
+                // inert.
+                aria-disabled={lane.automated || empty}
+                aria-label={
+                  lane.automated
+                    ? `${meta.label} is automated. It clears itself.`
+                    : `Clear ${meta.label}. ${lane.waiting} ${lane.waiting === 1 ? 'task' : 'tasks'} waiting.`
                 }
-                handleKeyDown(event, index);
-              }}
-              sx={{
-                px: { xs: 0.75, sm: 1 },
-                py: 0.5,
-                minHeight: 26,
-                borderRadius: 9999,
-                fontFamily: 'inherit',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: { xs: 0.35, sm: 0.5 },
-                cursor: lane.automated || empty ? 'default' : 'pointer',
-                border: '1px solid',
-                borderColor: lane.automated ? '#e2e8f0' : '#e2e8f0',
-                bgcolor: lane.automated ? '#f8fafc' : '#ffffff',
-                color: lane.automated ? 'text.disabled' : 'text.secondary',
-                opacity: empty && !lane.automated ? 0.5 : 1,
-                transition: 'opacity 0.2s ease, border-color 0.2s ease',
-                outline: 'none',
-                '&:hover': { borderColor: lane.automated || empty ? undefined : 'primary.main' },
-                '&:focus-visible': { boxShadow: '0 0 0 3px rgba(37, 99, 235, 0.35)' },
-              }}
-            >
-              <Icon sx={{ fontSize: 13, color: STATION_THEME[lane.kind].ink, opacity: lane.automated ? 0.45 : 1 }} />
-              <Typography component="span" sx={{ fontSize: 11, fontWeight: 700 }}>
-                {meta.label}
-              </Typography>
-              {!lane.automated && (
-                <Typography
-                  component="span"
-                  sx={{ fontSize: 10.5, fontWeight: 800, color: 'text.disabled', fontVariantNumeric: 'tabular-nums' }}
-                >
-                  {lane.waiting}
+                onClick={() => {
+                  setFocusIndex(index);
+                  if (!lane.automated && !empty) onClearKind(lane.kind, false);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    if (!lane.automated && !empty) onClearKind(lane.kind, true);
+                    return;
+                  }
+                  handleKeyDown(event, index);
+                }}
+                sx={{
+                  px: { xs: 0.75, sm: 1 },
+                  py: 0.5,
+                  minHeight: 26,
+                  borderRadius: 9999,
+                  fontFamily: 'inherit',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: { xs: 0.35, sm: 0.5 },
+                  cursor: lane.automated || empty ? 'default' : 'pointer',
+                  border: '1px solid',
+                  borderColor: '#e2e8f0',
+                  bgcolor: lane.automated ? '#f8fafc' : '#ffffff',
+                  color: lane.automated ? 'text.disabled' : 'text.secondary',
+                  opacity: empty && !lane.automated ? 0.5 : 1,
+                  transition: 'opacity 0.2s ease, border-color 0.2s ease',
+                  outline: 'none',
+                  '&:hover': { borderColor: lane.automated || empty ? undefined : 'primary.main' },
+                  '&:focus-visible': { boxShadow: '0 0 0 3px rgba(37, 99, 235, 0.35)' },
+                }}
+              >
+                <Icon sx={{ fontSize: 13, color: STATION_THEME[lane.kind].ink, opacity: lane.automated ? 0.45 : 1 }} />
+                <Typography component="span" sx={{ fontSize: 11, fontWeight: 700 }}>
+                  {meta.label}
                 </Typography>
-              )}
-            </Box>
-          );
-        })}
+                {!lane.automated && (
+                  <Typography
+                    component="span"
+                    sx={{ fontSize: 10.5, fontWeight: 800, color: 'text.disabled', fontVariantNumeric: 'tabular-nums' }}
+                  >
+                    {lane.waiting}
+                  </Typography>
+                )}
+              </Box>
+            );
+          })}
 
-        <Box
-          component="button"
-          type="button"
-          ref={(el: HTMLButtonElement | null) => {
-            refs.current[lanes.length] = el;
-          }}
-          tabIndex={focusIndex === lanes.length ? 0 : -1}
-          aria-disabled={totalWaiting === 0}
-          aria-label={`Clear all ${totalWaiting} waiting ${totalWaiting === 1 ? 'task' : 'tasks'}.`}
-          onClick={() => {
-            setFocusIndex(lanes.length);
-            if (totalWaiting > 0) onClearAll(false);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              if (totalWaiting > 0) onClearAll(true);
-              return;
-            }
-            handleKeyDown(event, lanes.length);
-          }}
-          sx={{
-            px: 1.25,
-            py: 0.5,
-            minHeight: 26,
-            borderRadius: 9999,
-            fontFamily: 'inherit',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 0.6,
-            cursor: totalWaiting === 0 ? 'default' : 'pointer',
-            border: '1px solid',
-            borderColor: 'primary.main',
-            bgcolor: totalWaiting === 0 ? '#ffffff' : 'primary.main',
-            color: totalWaiting === 0 ? 'text.disabled' : 'primary.contrastText',
-            opacity: totalWaiting === 0 ? 0.6 : 1,
-            transition: 'background-color 0.2s ease, opacity 0.2s ease',
-            outline: 'none',
-            '&:focus-visible': { boxShadow: '0 0 0 3px rgba(37, 99, 235, 0.35)' },
-          }}
-        >
-          <BoltRounded sx={{ fontSize: 13 }} />
-          <Typography component="span" sx={{ fontSize: 11, fontWeight: 800 }}>
-            Clear everything
-          </Typography>
-        </Box>
+          <Box
+            component="button"
+            type="button"
+            ref={(el: HTMLButtonElement | null) => {
+              refs.current[lanes.length] = el;
+            }}
+            tabIndex={focusIndex === lanes.length ? 0 : -1}
+            aria-disabled={totalWaiting === 0}
+            aria-label={`Clear all ${totalWaiting} waiting ${totalWaiting === 1 ? 'task' : 'tasks'}.`}
+            onClick={() => {
+              setFocusIndex(lanes.length);
+              if (totalWaiting > 0) onClearAll(false);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                if (totalWaiting > 0) onClearAll(true);
+                return;
+              }
+              handleKeyDown(event, lanes.length);
+            }}
+            sx={{
+              px: 1.25,
+              py: 0.5,
+              minHeight: 26,
+              borderRadius: 9999,
+              fontFamily: 'inherit',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 0.6,
+              cursor: totalWaiting === 0 ? 'default' : 'pointer',
+              border: '1px solid',
+              borderColor: 'primary.main',
+              bgcolor: totalWaiting === 0 ? '#ffffff' : 'primary.main',
+              color: totalWaiting === 0 ? 'text.disabled' : 'primary.contrastText',
+              opacity: totalWaiting === 0 ? 0.6 : 1,
+              transition: 'background-color 0.2s ease, opacity 0.2s ease',
+              outline: 'none',
+              '&:focus-visible': { boxShadow: '0 0 0 3px rgba(37, 99, 235, 0.35)' },
+            }}
+          >
+            <BoltRounded sx={{ fontSize: 13 }} />
+            <Typography component="span" sx={{ fontSize: 11, fontWeight: 800 }}>
+              Clear everything
+            </Typography>
+          </Box>
         </Box>
       </Box>
     </Box>
