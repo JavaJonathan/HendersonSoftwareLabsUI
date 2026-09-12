@@ -29,10 +29,15 @@ interface PaybackChartProps {
   horizonMonths: number;
 }
 
-/** Roughly six x-axis ticks, on a month boundary a person would actually pick. */
-function tickStep(horizon: number): number {
+/**
+ * Roughly six x-axis ticks, on a month boundary a person would actually pick, but not more
+ * than the plot is wide enough to label without adjacent ticks overlapping: at ~45px per
+ * label, a phone-width chart fits three or four, not seven.
+ */
+function tickStep(horizon: number, plotW: number): number {
+  const maxTicks = Math.min(7, Math.max(3, Math.floor(plotW / 45)));
   for (const step of [1, 2, 3, 6, 12, 24]) {
-    if (horizon / step <= 6) return step;
+    if (horizon / step + 1 <= maxTicks) return step;
   }
   return 24;
 }
@@ -62,7 +67,7 @@ export function PaybackChart({ projection, horizonMonths }: PaybackChartProps) {
   const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${xFor(p.month)},${yFor(p.cumulative)}`).join(' ');
   const areaPath = `${linePath} L${xFor(horizon)},${yZero} L${xFor(0)},${yZero} Z`;
 
-  const step = tickStep(horizon);
+  const step = tickStep(horizon, plotW);
   const ticks: number[] = [];
   for (let m = 0; m <= horizon; m += step) ticks.push(m);
   if (ticks[ticks.length - 1] !== horizon) ticks.push(horizon);

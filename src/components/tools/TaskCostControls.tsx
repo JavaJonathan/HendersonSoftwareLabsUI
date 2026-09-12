@@ -270,9 +270,9 @@ export function TaskCostControls({
                 fullWidth
                 aria-labelledby="frequency-label"
               >
-                <ToggleButton value="workday">Per workday</ToggleButton>
-                <ToggleButton value="week">Per week</ToggleButton>
-                <ToggleButton value="month">Per month</ToggleButton>
+                <ToggleButton value="workday">Workday</ToggleButton>
+                <ToggleButton value="week">Week</ToggleButton>
+                <ToggleButton value="month">Month</ToggleButton>
               </ToggleButtonGroup>
             </Box>
           </Stack>

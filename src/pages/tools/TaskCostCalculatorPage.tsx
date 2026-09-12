@@ -326,13 +326,21 @@ export function TaskCostCalculatorPage() {
         <Box
           sx={{
             display: 'grid',
-            // The main track is `minmax(0, 1fr)`, not bare `1fr`: a plain `1fr` track is
+            // Every track is `minmax(0, 1fr)`, not bare `1fr`: a plain `1fr` track is
             // shorthand for `minmax(auto, 1fr)`, so if anything inside it (the dual-headline
-            // row, the tornado chart's labels) has a wider natural minimum than its fair
-            // share of the row, the whole grid overflows the viewport instead of shrinking.
-            // Caught at 960px, just past the `md` breakpoint where the two-column layout is
-            // tightest.
-            gridTemplateColumns: { xs: '1fr', md: 'minmax(320px, 380px) minmax(0, 1fr)' },
+            // row, the tornado chart's labels, `PaybackChart`'s `useElementWidth`-sized SVG)
+            // has a wider natural minimum than its fair share of the row, the whole grid
+            // overflows the viewport instead of shrinking. Caught at 960px, just past the
+            // `md` breakpoint where the two-column layout is tightest, and separately at
+            // `xs`: a bare `1fr` there left the single mobile column free to grow to fit
+            // `PaybackChart`'s SVG, which measures its own wrapper's width via
+            // `getBoundingClientRect` to size itself, so an unconstrained wrapper and the
+            // SVG's intrinsic width lock each other into staying wide instead of converging
+            // on the viewport's actual width.
+            gridTemplateColumns: {
+              xs: 'minmax(0, 1fr)',
+              md: 'minmax(320px, 380px) minmax(0, 1fr)',
+            },
             gap: { xs: 3, md: 4 },
             alignItems: 'start',
             '@media print': { display: 'block' },
