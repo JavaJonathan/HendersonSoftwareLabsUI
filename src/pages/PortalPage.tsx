@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth } from '../auth/useAuth';
 import { getMyProjects } from '../api/portal';
 import { ProjectGrid } from '../components/portal/ProjectGrid';
 import { Reveal } from '../components/motion/Reveal';

@@ -14,7 +14,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { motion } from 'framer-motion';
-import { useAuth } from '../auth/AuthContext';
+import { useAuth } from '../auth/useAuth';
 import { ApiError, getApiErrorMessage } from '../api/client';
 import { Reveal } from '../components/motion/Reveal';
 import { GradientBackdrop } from '../components/motion/GradientBackdrop';

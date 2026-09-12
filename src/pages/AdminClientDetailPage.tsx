@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
@@ -25,7 +25,7 @@ export function AdminClientDetailPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
-  function loadData() {
+  const loadData = useCallback(() => {
     if (!clientId) return;
     setStatus('loading');
     Promise.all([getClient(clientId), getClientProjects(clientId)])
@@ -35,11 +35,11 @@ export function AdminClientDetailPage() {
         setStatus('ready');
       })
       .catch(() => setStatus('error'));
-  }
+  }, [clientId]);
 
   useEffect(() => {
     loadData();
-  }, [clientId]);
+  }, [loadData]);
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: SURFACE_SUBTLE }}>

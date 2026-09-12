@@ -5,7 +5,7 @@ import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
-import { useAuth } from '../../auth/AuthContext';
+import { useAuth } from '../../auth/useAuth';
 import { useScrolled } from '../../hooks/useScrolled';
 import hslIcon from '../../assets/branding/icon-dark.png';
 

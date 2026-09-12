@@ -35,6 +35,17 @@ import {
  * path lives in KindPanel, where one press clears a whole column.
  */
 
+/** A task drawn as a little document: a coloured tab and a couple of lines of nothing in particular. */
+function DocumentGlyph({ ink }: { ink: string }) {
+  return (
+    <>
+      <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, bgcolor: ink }} />
+      <Box sx={{ position: 'absolute', left: 7, top: 5, width: 15, height: 2, borderRadius: 9999, bgcolor: '#b6c2d1' }} />
+      <Box sx={{ position: 'absolute', left: 7, top: 10, width: 10, height: 2, borderRadius: 9999, bgcolor: '#ced8e4' }} />
+    </>
+  );
+}
+
 interface KindLaneProps {
   kind: StationKind;
   waiting: number;
@@ -207,9 +218,7 @@ export function KindLane({
               overflow: 'hidden',
             }}
           >
-            <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, bgcolor: theme.ink }} />
-            <Box sx={{ position: 'absolute', left: 7, top: 5, width: 15, height: 2, borderRadius: 9999, bgcolor: '#b6c2d1' }} />
-            <Box sx={{ position: 'absolute', left: 7, top: 10, width: 10, height: 2, borderRadius: 9999, bgcolor: '#ced8e4' }} />
+            <DocumentGlyph ink={theme.ink} />
           </Box>
         ))}
 
@@ -278,10 +287,7 @@ export function KindLane({
                   '&:hover': { borderColor: STATION_THEME[kind].ink },
                 }}
               >
-                {/* a document: a coloured tab and a couple of lines of nothing in particular */}
-                <Box sx={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, bgcolor: STATION_THEME[kind].ink }} />
-                <Box sx={{ position: 'absolute', left: 7, top: 5, width: 15, height: 2, borderRadius: 9999, bgcolor: '#b6c2d1' }} />
-                <Box sx={{ position: 'absolute', left: 7, top: 10, width: 10, height: 2, borderRadius: 9999, bgcolor: '#ced8e4' }} />
+                <DocumentGlyph ink={STATION_THEME[kind].ink} />
               </Box>
             );
           })}

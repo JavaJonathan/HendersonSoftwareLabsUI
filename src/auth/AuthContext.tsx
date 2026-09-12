@@ -1,16 +1,8 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { getMe, login as apiLogin } from '../api/auth';
 import { setUnauthorizedHandler } from '../api/client';
 import type { MeResponse } from '../types';
-
-interface AuthContextValue {
-  user: MeResponse | null;
-  loading: boolean;
-  login: (email: string, password: string) => Promise<MeResponse>;
-  logout: () => void;
-}
-
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+import { AuthContext } from './useAuth';
 
 const TOKEN_KEY = 'hsl_token';
 
@@ -56,12 +48,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return ctx;
 }

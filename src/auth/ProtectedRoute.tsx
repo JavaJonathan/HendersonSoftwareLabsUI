@@ -2,7 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import { useAuth } from './AuthContext';
+import { useAuth } from './useAuth';
 
 interface ProtectedRouteProps {
   children: ReactNode;
