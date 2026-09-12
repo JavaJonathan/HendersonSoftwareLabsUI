@@ -11,17 +11,20 @@ import { Reveal } from '../motion/Reveal';
 const ITEMS = [
   {
     title: 'Workflow Automation',
-    description: 'Eliminate repetitive admin work and streamline recurring processes.',
+    description:
+      'Eliminate repetitive admin work and streamline recurring processes - like spreadsheet updates you re-type every week.',
     icon: SettingsOutlinedIcon,
   },
   {
     title: 'System Integrations',
-    description: "Connect the tools your business already uses so data flows where it should.",
+    description:
+      "Connect the tools your business already uses so data flows where it should - like keeping order and shipping information in sync.",
     icon: ExtensionOutlinedIcon,
   },
   {
     title: 'Custom Internal Tools',
-    description: 'Build lightweight software tailored to your operations and team.',
+    description:
+      'Build lightweight software tailored to your operations and team - like searching several systems from one screen.',
     icon: ViewModuleOutlinedIcon,
   },
 ];

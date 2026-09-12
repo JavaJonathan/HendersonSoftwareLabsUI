@@ -5,6 +5,7 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Link from '@mui/material/Link';
+import { Link as RouterLink } from 'react-router-dom';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Reveal } from '../motion/Reveal';
 import { GradientBackdrop } from '../motion/GradientBackdrop';
@@ -100,7 +101,18 @@ export function Hero() {
                 sx={{ mt: { xs: 2.5, md: 3 }, color: 'text.secondary', display: 'flex', alignItems: 'flex-start', gap: 1 }}
               >
                 <Box sx={{ width: 5, height: 5, borderRadius: '50%', bgcolor: 'primary.main', flexShrink: 0, mt: '7px' }} />
-                Built by a senior engineer - 7+ years shipping production software.
+                <Box component="span">
+                  Built by{' '}
+                  <Link
+                    component={RouterLink}
+                    to="/portfolio"
+                    underline="hover"
+                    sx={{ color: 'primary.main', fontWeight: 700 }}
+                  >
+                    Jonathan Henderson
+                  </Link>
+                  , a senior engineer in Maryland - 7+ years shipping production software.
+                </Box>
               </Typography>
             </Reveal>
           </Box>

@@ -498,10 +498,9 @@ export function TheLine() {
             Work piles up. Clear some.
           </Typography>
           <Typography sx={{ mt: 1.5, color: 'text.secondary', maxWidth: 620, mx: 'auto' }}>
-            Live, and shared with everyone on this page right now, not just you. Three lanes clear
-            themselves; the rest wait for a person, so click one to help. Every hand-cleared task
-            counts toward automating another lane for good, for every visitor after you: a small,
-            playable version of what automation actually buys a business.
+            Live and shared with everyone here right now, not just you. Click to clear a lane by
+            hand, or let the automated ones handle themselves - a small, playful demo of what
+            automation buys a business.
           </Typography>
         </Box>
       </Reveal>
