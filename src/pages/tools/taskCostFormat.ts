@@ -6,7 +6,7 @@
  * result render as a flat "0".
  */
 
-import type { DisplayPeriod, Frequency } from './taskCostModel';
+import type { DisplayPeriod, Frequency } from './taskCostModel.ts';
 
 /** Decimals to show for an hours/days figure, scaled to its magnitude. */
 function decimalsFor(abs: number): number {
@@ -51,10 +51,53 @@ export function formatMoney(value: number): string {
   });
 }
 
+/**
+ * A short money label for chart axes and tight chips: "$0", "$8.5k", "$1.2M".
+ * Loses precision on purpose - the exact figure is always available elsewhere.
+ */
+export function formatMoneyCompact(value: number): string {
+  if (!Number.isFinite(value) || value === 0) return '$0';
+  const abs = Math.abs(value);
+  const sign = value < 0 ? '-' : '';
+  if (abs >= 1000000) return `${sign}$${trimZero(abs / 1000000)}M`;
+  if (abs >= 1000) return `${sign}$${trimZero(abs / 1000)}k`;
+  return `${sign}$${Math.round(abs).toLocaleString('en-US')}`;
+}
+
+/** One decimal place, with a trailing ".0" removed. */
+function trimZero(value: number): string {
+  const text = value.toFixed(1);
+  return text.endsWith('.0') ? text.slice(0, -2) : text;
+}
+
 /** Format a count of task runs (may be fractional, e.g. 0.5 per week). */
 export function formatCount(value: number): string {
   if (!Number.isFinite(value)) return '0';
   return value.toLocaleString('en-US', { maximumFractionDigits: 2 });
+}
+
+/** "62%" - a 0-1 fraction as a whole-number percentage. */
+export function formatPercent(fraction: number, decimals = 0): string {
+  if (!Number.isFinite(fraction)) return '0%';
+  return `${(fraction * 100).toLocaleString('en-US', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  })}%`;
+}
+
+/**
+ * "7 months", "1 month", "2 yrs 3 mo" - a payback period in the unit that reads best.
+ * Anything under a month is reported as "under a month" rather than a misleading "0".
+ */
+export function formatMonths(months: number): string {
+  if (!Number.isFinite(months) || months <= 0) return 'immediately';
+  if (months < 1) return 'under a month';
+  const whole = Math.round(months);
+  if (whole < 12) return `${whole} ${whole === 1 ? 'month' : 'months'}`;
+  const years = Math.floor(whole / 12);
+  const rest = whole % 12;
+  const yearPart = `${years} ${years === 1 ? 'yr' : 'yrs'}`;
+  return rest === 0 ? yearPart : `${yearPart} ${rest} mo`;
 }
 
 /** "5m 00s", "30s", "1h 05m 00s" - a duration in seconds, spelled out compactly. */
@@ -90,6 +133,10 @@ export function perPeriodLabel(period: DisplayPeriod): string {
 
 export function hoursUnit(period: DisplayPeriod): string {
   return `hrs${PERIOD_SUFFIX[period]}`;
+}
+
+export function moneyUnit(period: DisplayPeriod): string {
+  return PERIOD_SUFFIX[period];
 }
 
 const FREQUENCY_PHRASE: Record<Frequency, string> = {
