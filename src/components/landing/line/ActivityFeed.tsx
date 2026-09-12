@@ -45,7 +45,7 @@ const MOOD_TONE: Record<Mood, string> = {
 const MOOD_ASIDE: Record<Mood, { emoji: string; text: string }> = {
   calm: { emoji: '🙂', text: 'all clear, nothing urgent' },
   busy: { emoji: '😅', text: 'starting to stack up' },
-  swamped: { emoji: '😩', text: 'buried, could use a hand' },
+  swamped: { emoji: '😰', text: 'buried, could use a hand' },
 };
 
 interface ActivityFeedProps {
