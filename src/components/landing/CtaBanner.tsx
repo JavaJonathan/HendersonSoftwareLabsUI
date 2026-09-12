@@ -55,8 +55,8 @@ export function CtaBanner() {
                 Let's simplify how your business runs.
               </Typography>
               <Typography sx={{ mt: 1, color: 'rgba(255,255,255,0.7)' }}>
-                Get custom software built around your workflow - without hiring a full-time
-                engineering team.
+                That's what automation buys you: less busywork, no new hire. Let's talk about
+                what's piling up in yours.
               </Typography>
             </Box>
 
