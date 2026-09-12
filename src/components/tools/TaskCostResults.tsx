@@ -7,6 +7,7 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import ArrowUpwardRoundedIcon from '@mui/icons-material/ArrowUpwardRounded';
 import { useReducedMotion } from 'framer-motion';
+import { CountUp } from './CountUp';
 import { Expandable } from './Expandable';
 import {
   forPeriod,
@@ -18,8 +19,10 @@ import {
   formatCount,
   formatDuration,
   formatMoney,
+  formatPercent,
   formatQuantity,
   hoursUnit,
+  moneyUnit,
   perPeriodLabel,
   periodNoun,
 } from '../../pages/tools/taskCostFormat';
@@ -72,10 +75,6 @@ export function TaskCostResults({
     results.annualValueDelta === null ? null : forPeriod(results.annualValueDelta, period);
 
   const noun = periodNoun(period);
-  const headlineLabel = isFlat
-    ? 'No change in time'
-    : `${isIncrease ? 'Extra hours required' : 'Hours recovered'} ${perPeriodLabel(period)}`;
-
   const currentVal = forPeriod(results.currentAnnualHours, period);
   const improvedVal = forPeriod(results.improvedAnnualHours, period);
 
@@ -105,6 +104,10 @@ export function TaskCostResults({
     return () => window.clearTimeout(id);
   }, [liveSummary]);
 
+  const headlineColor = isIncrease ? ADDED_COLOR : 'primary.main';
+  const hoursRange = results.annualHoursRange;
+  const valueRange = results.annualValueRange;
+
   return (
     <Paper variant="outlined" sx={{ p: { xs: 2.5, md: 3.5 }, borderRadius: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
@@ -116,6 +119,7 @@ export function TaskCostResults({
             if (value) onPeriodChange(value);
           }}
           aria-label="Show results per year or per month"
+          sx={{ '@media print': { display: 'none' } }}
         >
           <ToggleButton value="year">Yearly</ToggleButton>
           <ToggleButton value="month">Monthly</ToggleButton>
@@ -123,14 +127,7 @@ export function TaskCostResults({
       </Box>
 
       {!hasInput ? (
-        <Box
-          sx={{
-            py: { xs: 4, md: 6 },
-            px: 2,
-            textAlign: 'center',
-            color: 'text.secondary',
-          }}
-        >
+        <Box sx={{ py: { xs: 4, md: 6 }, px: 2, textAlign: 'center', color: 'text.secondary' }}>
           <Typography sx={{ fontWeight: 700, color: 'text.primary' }}>
             Add the task details to see hours recovered
           </Typography>
@@ -140,46 +137,88 @@ export function TaskCostResults({
         </Box>
       ) : (
         <>
-          {/* Headline counter */}
-          <Box sx={{ textAlign: { xs: 'left', md: 'center' } }}>
-            <Typography
-              component="p"
-              sx={{
-                fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif',
-                fontWeight: 800,
-                fontSize: { xs: 48, md: 60 },
-                lineHeight: 1,
-                letterSpacing: '-0.02em',
-                color: isIncrease ? ADDED_COLOR : 'primary.main',
-                fontVariantNumeric: 'tabular-nums',
-              }}
-            >
-              {isFlat ? '0' : formatQuantity(Math.abs(deltaDisplay))}
-              <Typography
-                component="span"
-                sx={{ ml: 1, fontSize: { xs: 18, md: 22 }, fontWeight: 700, color: 'text.secondary' }}
+          {/* Headline: hours always, money alongside it once a rate is known. */}
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: hasCost ? { xs: '1fr', sm: '1fr 1fr' } : '1fr',
+              gap: { xs: 2, sm: 3 },
+              alignItems: 'start',
+              textAlign: hasCost ? 'left' : { xs: 'left', md: 'center' },
+            }}
+          >
+            <Headline
+              value={isFlat ? 0 : Math.abs(deltaDisplay)}
+              format={formatQuantity}
+              unit={hoursUnit(period)}
+              color={headlineColor}
+              label={
+                isFlat
+                  ? 'No change in time'
+                  : `${isIncrease ? 'Extra hours required' : 'Hours recovered'} ${perPeriodLabel(period)}`
+              }
+              range={
+                isFlat || hoursRange.low === hoursRange.high
+                  ? null
+                  : `${formatQuantity(Math.abs(forPeriod(hoursRange.low, period)))} to ${formatQuantity(
+                      Math.abs(forPeriod(hoursRange.high, period)),
+                    )} ${hoursUnit(period)}`
+              }
+              sub={
+                isFlat
+                  ? 'The improved time matches the current time.'
+                  : `${formatQuantity(Math.abs(daysDisplay))} eight-hour ${
+                      Math.abs(daysDisplay) === 1 ? 'workday' : 'workdays'
+                    }, ${formatPercent(Math.abs(results.reductionFraction))} of the task`
+              }
+            />
+
+            {hasCost && valueDisplay !== null && (
+              <Box
+                sx={{
+                  borderLeft: { xs: 'none', sm: '1px solid' },
+                  borderTop: { xs: '1px solid', sm: 'none' },
+                  borderColor: { xs: 'divider', sm: 'divider' },
+                  pl: { xs: 0, sm: 3 },
+                  pt: { xs: 2, sm: 0 },
+                }}
               >
-                {hoursUnit(period)}
-              </Typography>
-            </Typography>
-            <Typography sx={{ mt: 1, fontWeight: 700, color: 'text.primary' }}>
-              {headlineLabel}
-            </Typography>
-            <Typography variant="body2" sx={{ mt: 0.5, color: 'text.secondary' }}>
-              {isFlat
-                ? 'The improved time matches the current time.'
-                : `≈ ${formatQuantity(Math.abs(daysDisplay))} eight-hour ${
-                    Math.abs(daysDisplay) === 1 ? 'workday' : 'workdays'
-                  }`}
-            </Typography>
-            {hasCost && !isFlat && valueDisplay !== null && (
-              <Typography variant="body2" sx={{ mt: 0.25, color: 'text.secondary' }}>
-                {`≈ ${formatMoney(Math.abs(valueDisplay))} ${
-                  isIncrease ? 'in added labor cost' : 'estimated value of recovered time'
-                }`}
-              </Typography>
+                <Headline
+                  value={isFlat ? 0 : Math.abs(valueDisplay)}
+                  format={formatMoney}
+                  unit={moneyUnit(period)}
+                  color={isIncrease ? ADDED_COLOR : RECOVERED_COLOR}
+                  label={
+                    isIncrease
+                      ? `Added labor cost ${perPeriodLabel(period)}`
+                      : `Value of that time ${perPeriodLabel(period)}`
+                  }
+                  range={
+                    isFlat || valueRange === null
+                      ? null
+                      : `${formatMoney(Math.abs(forPeriod(valueRange.low, period)))} to ${formatMoney(
+                          Math.abs(forPeriod(valueRange.high, period)),
+                        )}`
+                  }
+                  sub={
+                    results.effectiveHourlyCost === null
+                      ? ''
+                      : `at ${formatMoney(results.effectiveHourlyCost)} per hour, fully loaded`
+                  }
+                />
+              </Box>
             )}
           </Box>
+
+          {!hasCost && (
+            <Typography
+              variant="body2"
+              sx={{ mt: 1.5, color: 'text.secondary', textAlign: { xs: 'left', md: 'center' } }}
+            >
+              Add an hourly labor cost on the left to see what that time is worth, when it pays
+              for itself, and the return on the spend.
+            </Typography>
+          )}
 
           {/* Before / after bars */}
           <Box sx={{ mt: 3.5 }} role="img" aria-label={textEquivalent}>
@@ -216,6 +255,35 @@ export function TaskCostResults({
             </Stack>
           )}
 
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(3, 1fr)' },
+              gap: 1.5,
+              mt: 3,
+            }}
+          >
+            <StatTile label="Runs per year" value={formatCount(results.annualExecutions)} />
+            <StatTile
+              label="Time per run today"
+              value={formatDuration(inputs.currentSeconds)}
+              note={
+                inputs.assumptions.reworkPct > 0
+                  ? `plus ${formatCount(inputs.assumptions.reworkPct)}% rework`
+                  : undefined
+              }
+            />
+            <StatTile
+              label="Time per run after"
+              value={formatDuration(inputs.improvedSeconds)}
+              note={
+                inputs.assumptions.adoptionPct < 100
+                  ? `on ${formatCount(inputs.assumptions.adoptionPct)}% of runs`
+                  : undefined
+              }
+            />
+          </Box>
+
           <Typography variant="caption" sx={{ display: 'block', mt: 2, color: 'text.secondary' }}>
             {textEquivalent}
           </Typography>
@@ -231,6 +299,91 @@ export function TaskCostResults({
         </Expandable>
       </Box>
     </Paper>
+  );
+}
+
+interface HeadlineProps {
+  value: number;
+  format: (value: number) => string;
+  unit: string;
+  color: string;
+  label: string;
+  range: string | null;
+  sub: string;
+}
+
+function Headline({ value, format, unit, color, label, range, sub }: HeadlineProps) {
+  return (
+    <Box>
+      <Typography
+        component="p"
+        sx={{
+          fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif',
+          fontWeight: 800,
+          fontSize: { xs: 40, sm: 42, md: 52 },
+          lineHeight: 1,
+          letterSpacing: '-0.02em',
+          color,
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        <CountUp value={value} format={format} />
+        <Typography
+          component="span"
+          sx={{ ml: 0.75, fontSize: { xs: 16, md: 19 }, fontWeight: 700, color: 'text.secondary' }}
+        >
+          {unit}
+        </Typography>
+      </Typography>
+      <Typography sx={{ mt: 1, fontWeight: 700, color: 'text.primary', fontSize: 15 }}>
+        {label}
+      </Typography>
+      {range && (
+        <Typography
+          variant="body2"
+          sx={{ mt: 0.5, color: 'text.secondary', fontVariantNumeric: 'tabular-nums' }}
+        >
+          Likely {range}
+        </Typography>
+      )}
+      {sub && (
+        <Typography variant="body2" sx={{ mt: 0.25, color: 'text.secondary' }}>
+          {sub}
+        </Typography>
+      )}
+    </Box>
+  );
+}
+
+function StatTile({ label, value, note }: { label: string; value: string; note?: string }) {
+  return (
+    <Box
+      sx={{
+        p: 1.5,
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: 'divider',
+        bgcolor: 'background.default',
+      }}
+    >
+      <Typography sx={{ fontSize: 11.5, fontWeight: 700, color: 'text.secondary' }}>
+        {label}
+      </Typography>
+      <Typography
+        sx={{
+          fontSize: 18,
+          fontWeight: 800,
+          color: 'text.primary',
+          fontVariantNumeric: 'tabular-nums',
+          mt: 0.25,
+        }}
+      >
+        {value}
+      </Typography>
+      {note && (
+        <Typography sx={{ fontSize: 11.5, color: 'text.secondary', mt: 0.25 }}>{note}</Typography>
+      )}
+    </Box>
   );
 }
 
@@ -381,6 +534,7 @@ function MathBreakdown({
   inputs: TaskCostInputs;
   hasCost: boolean;
 }) {
+  const a = inputs.assumptions;
   const execs = formatCount(inputs.executionsPerPeriod);
   const runsPerYear = formatCount(results.annualExecutions);
   const twoDp = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 2 });
@@ -399,28 +553,82 @@ function MathBreakdown({
 
   const rows: { label: string; expr: string }[] = [
     { label: 'Runs per year', expr: `${frequencyMath} = ${runsPerYear} runs` },
+  ];
+
+  if (a.reworkPct > 0) {
+    rows.push({
+      label: 'Rework today',
+      expr: `${durationExpr(inputs.currentSeconds)} × (1 + ${formatCount(a.reworkPct)}%) = ${twoDp(
+        inputs.currentSeconds * (1 + a.reworkPct / 100),
+      )}s really spent per run`,
+    });
+  }
+
+  rows.push({
+    label: 'Current time per year',
+    expr: `${durationExpr(inputs.currentSeconds)}${
+      a.reworkPct > 0 ? ' + rework' : ''
+    } × ${runsPerYear} ÷ 3,600 = ${twoDp(results.currentAnnualHours)} hrs`,
+  });
+
+  if (a.adoptionPct < 100) {
+    rows.push({
+      label: 'Adoption',
+      expr: `${formatCount(a.adoptionPct)}% of ${runsPerYear} runs = ${formatCount(
+        results.adoptedExecutions,
+      )} runs move to the new way; the rest stay on the old one`,
+    });
+  }
+
+  rows.push(
     {
-      label: 'Current time per year',
-      expr: `${durationExpr(inputs.currentSeconds)} × ${runsPerYear} ÷ 3,600 = ${twoDp(results.currentAnnualHours)} hrs`,
-    },
-    {
-      label: 'Improved time per year',
-      expr: `${durationExpr(inputs.improvedSeconds)} × ${runsPerYear} ÷ 3,600 = ${twoDp(results.improvedAnnualHours)} hrs`,
+      label: 'Time per year after',
+      expr: `${durationExpr(inputs.improvedSeconds)}${
+        a.improvedReworkPct > 0 ? ' + rework' : ''
+      }, blended across all runs = ${twoDp(results.improvedAnnualHours)} hrs`,
     },
     {
       label: results.isIncrease ? 'Extra time per year' : 'Recovered per year',
-      expr: `${twoDp(results.currentAnnualHours)} - ${twoDp(results.improvedAnnualHours)} = ${twoDp(results.annualHoursDelta)} hrs`,
+      expr: `${twoDp(results.currentAnnualHours)} - ${twoDp(results.improvedAnnualHours)} = ${twoDp(
+        results.annualHoursDelta,
+      )} hrs`,
     },
     {
       label: 'In eight-hour workdays',
       expr: `${twoDp(results.annualHoursDelta)} ÷ 8 = ${twoDp(results.annualEightHourDays)} days`,
     },
-  ];
+  );
 
   if (hasCost && results.annualValueDelta !== null) {
+    const loadingPart =
+      a.loadingMultiplier === 1
+        ? `${formatMoney(inputs.hourlyCost ?? 0)}/hr`
+        : `${formatMoney(inputs.hourlyCost ?? 0)}/hr × ${a.loadingMultiplier}x loaded = ${formatMoney(
+            results.effectiveHourlyCost ?? 0,
+          )}/hr`;
+    rows.push({ label: 'Hourly cost used', expr: loadingPart });
+
+    if (a.realizationPct < 100) {
+      rows.push({
+        label: 'Value realization',
+        expr: `only ${formatCount(a.realizationPct)}% of the recovered hours are counted as value`,
+      });
+    }
+
     rows.push({
       label: 'Estimated value',
-      expr: `${twoDp(results.annualHoursDelta)} hrs × ${formatMoney(inputs.hourlyCost ?? 0)}/hr = ${formatMoney(results.annualValueDelta)}`,
+      expr: `${twoDp(results.annualHoursDelta)} hrs${
+        a.realizationPct < 100 ? ` × ${formatCount(a.realizationPct)}%` : ''
+      } × ${formatMoney(results.effectiveHourlyCost ?? 0)}/hr = ${formatMoney(
+        results.annualValueDelta,
+      )}`,
+    });
+  }
+
+  if (a.uncertaintyPct > 0) {
+    rows.push({
+      label: 'Range shown',
+      expr: `the headline ± ${formatCount(a.uncertaintyPct)}%, because every figure above is an estimate`,
     });
   }
 

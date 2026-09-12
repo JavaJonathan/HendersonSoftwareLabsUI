@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Do not use em dashes (`—`) anywhere: not in code, comments, docs, commit messages, or user-facing copy (marketing text, `aria-label`s, portfolio content). Rewrite with a comma, parentheses, a colon, or two sentences; a spaced hyphen (` - `) is an acceptable last resort. This applies to en dashes (`–`) in prose too; a plain hyphen is fine for ranges.
 
-## Project Status (as of 2026-08-28)
+## Project Status (as of 2026-09-12)
 
-Active development is paused here. Everything below is deployed and live in production (see "Production Deployment") with no known bugs or unfinished work. The most recent work was a design pass on `LoginPage.tsx` - branding assets, layout, and polish - see "Branding assets" and the `Reveal` `fullWidth` gotcha below for what changed and why it's worth reading before touching that page again. This file and the API repo's `CLAUDE.md` are both kept current as of the pause - read both before resuming.
+Everything below is deployed and live in production (see "Production Deployment") with no known bugs or unfinished work. The most recent work was a substantial rebuild of the public task cost calculator at `/tools/task-cost-calculator` - see "The task cost calculator" below, which is the section to read before touching anything under `src/pages/tools/` or `src/components/tools/`. Before that, a design pass on `LoginPage.tsx` (branding assets, layout, polish) - see "Branding assets" and the `Reveal` `fullWidth` gotcha. This file and the API repo's `CLAUDE.md` are both kept current - read both before resuming.
 
 ## Commands
 
@@ -54,6 +54,50 @@ There is **no self-service signup**. Client accounts exist only because an admin
 **Route guards**: `ProtectedRoute.tsx` requires any authenticated user (redirects to `/login` otherwise); `AdminRoute.tsx` additionally requires `user.isAdmin` (redirects a logged-in non-admin to `/portal` rather than `/login`, since they're a valid user, just not authorized for that route). `LoginPage.tsx` routes admins to `/admin` and everyone else to `/portal` after a successful login (unless a deep-linked `from` location takes precedence).
 
 **Data isolation is enforced server-side, not just hidden in the UI** - `PortalPage.tsx` can only ever render the logged-in client's own projects because the backend's `/api/portal/projects` endpoint filters by the caller's JWT claim; there's no client-side-only gate to bypass.
+
+## The task cost calculator
+
+The public tool at `/tools/task-cost-calculator` (lazy-loaded in `App.tsx`, linked only from the `Footer`). It is the one part of the site meant to be used rather than read, so it is built to beat the obvious alternative of asking a chat assistant the same question: it is interactive, it is honest about its own uncertainty, and it produces an artifact you can send to whoever signs off on the spend.
+
+**Layering is strict, and worth preserving.** `src/pages/tools/` holds pure logic with no React in it at all; `src/components/tools/` holds the presentation.
+
+- `taskCostModel.ts` - all the arithmetic. Inputs, results, the month-by-month payback `projectCashflow`, and `sensitivity` (the tornado chart's data). **Design rule: every assumption is a no-op at its default**, so the four-field version of the tool produces exactly the naive `time x runs` answer and the advanced panels only ever make the estimate more specific. `tests/taskCostAssumptions.test.ts` pins that rule; do not add an assumption that violates it.
+- `taskCostFormat.ts` - every string the tool renders. Round for display only, and never let a small non-zero result print as a flat "0".
+- `taskCostScenario.ts` - the `Scenario` type, the unit that gets shared, exported and round-tripped.
+- `taskCostUrl.ts` - `Scenario` <-> query string. **The URL is the tool's save file** (no account, no storage), so only non-default values are written and decoding clamps everything it reads.
+- `taskCostForm.ts` - the bridge between raw form strings and a clean `Scenario`. Text fields keep their raw string so a half-typed "1." is never clobbered; `resolveForm` always returns usable numbers plus per-field errors, so the results panel can keep drawing while a field is invalid.
+- `taskCostExport.ts` - the paste-ready summary and CSV.
+
+**The default surface is deliberately shallow.** A first pass shipped 18 inputs across three
+collapsed panels plus an always-visible sensitivity chart, and a look at it side by side with
+the original 7-input tool made clear that was too much for a public lead-gen page. The fix
+was UI-only (the model already treats every assumption as a no-op at its default, so nothing
+about correctness changed): `TaskCostControls.tsx`'s "How realistic is this?" panel shows only
+Adoption and Confidence band by default, with rework/realization tucked behind a nested
+`MoreToggle` (a plain text button + `Collapse`, not a second `Expandable` - two nested bordered
+boxes read as clutter); "Cost of the fix" shows only build cost and monthly cost, with ramp and
+horizon behind their own `MoreToggle`. `SensitivityPanel.tsx`'s tornado chart is opt-in (an
+`open`/`onOpen` pair): its heading stays visible while scrolling past, but the chart itself only
+renders once someone clicks "Show the breakdown". Each `MoreToggle`'s `useState` is lazily
+initialized from the `form` prop at mount, mirroring the trick `initialState()` already uses for
+the outer panels, so a shared link that sets a nested-only value (rework, realization, ramp,
+horizon) still opens the control holding it rather than hiding a number the recipient can't
+see or account for. The task name field moved out of the top of `TaskCostControls.tsx` (prime
+first-impression space for something that only matters at share time) into `ShareBar.tsx`
+itself, right next to Copy link.
+
+**There is no preset picker.** One was tried (`PresetPicker.tsx`, `taskCostPresets.ts`, six
+starting scenarios) and then removed: the tool already loads with a worked example, so the
+"blank page" problem a preset picker solves didn't really exist, and clicking one silently
+overwrote whatever a visitor had already typed with no confirmation, the opposite of what a
+lead-gen tool wants. If starting-point scenarios come back, build in an are-you-sure before
+overwriting a touched form.
+
+**Charts are hand-rolled**, not a library: `PaybackChart.tsx` is SVG, `SensitivityChart.tsx` is boxes. This keeps the lazy chunk near 100 kB and avoids adding a dependency for two charts. `PaybackChart` uses a 1:1 user-unit-to-pixel viewBox driven by `useElementWidth` rather than a fixed viewBox that scales, specifically so axis labels stay readable on a phone instead of shrinking with the drawing.
+
+### Gotcha: the pure modules in `src/pages/tools/` import each other with an explicit `.ts` extension
+
+`npm test` runs `node --test` directly against the TypeScript sources, and Node's ESM resolver does not guess extensions. The older files here got away with extensionless imports only because theirs were type-only and erased by type stripping. Anything importing a *value* from a sibling needs `from './taskCostModel.ts'`. `allowImportingTsExtensions` is already on in `tsconfig.app.json`, and Vite resolves the explicit extension fine. The `.tsx` consumers are bundler-only and stay extensionless.
 
 ## Production Deployment
 
