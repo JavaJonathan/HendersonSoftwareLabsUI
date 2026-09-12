@@ -1,3 +1,8 @@
+# Response headers for the Amplify-hosted SPA.
+#
+# These live here rather than in amplify.yml: a customHeaders block in the build spec is silently
+# ignored (it applied cleanly and did nothing, job 20). customHttp.yml is the mechanism AWS
+# supports now.
 customHeaders:
   - pattern: '**/*'
     headers:
@@ -11,3 +16,17 @@ customHeaders:
         value: 'no-referrer'
       - key: 'Permissions-Policy'
         value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()'
+
+  # Amplify's default is `public, max-age=0, s-maxage=31536000` on everything: CloudFront caches
+  # for a year, the browser caches nothing, so every repeat visit re-fetches the whole payload and
+  # Amplify bills the egress at $0.15/GB.
+  #
+  # Everything Vite emits into /assets is content-hashed (index-Bmq0nkRj.js, the woff2 faces, the
+  # imported logo images), so the filename changes whenever the bytes do and they can be cached forever.
+  # This block is deliberately scoped to /assets: unhashed files served from public/ (index.html,
+  # favicon.png, social-card.png, resume.pdf) keep the short-cache default, which is what lets a
+  # deploy go live immediately.
+  - pattern: '/assets/**'
+    headers:
+      - key: 'Cache-Control'
+        value: 'public, max-age=31536000, immutable'

@@ -11,7 +11,7 @@ import CheckRoundedIcon from '@mui/icons-material/CheckRounded';
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import BoltRoundedIcon from '@mui/icons-material/BoltRounded';
 import { motion, useInView, useReducedMotion } from 'framer-motion';
-import wordmark from '../../assets/branding/wordmark-light.png';
+import wordmark from '../../assets/branding/wordmark-light.webp';
 import { SURFACE_DARK } from '../../theme';
 import { GradientBackdrop } from '../motion/GradientBackdrop';
 

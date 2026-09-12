@@ -7,7 +7,7 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import { useAuth } from '../../auth/useAuth';
 import { useScrolled } from '../../hooks/useScrolled';
-import hslIcon from '../../assets/branding/icon-dark.png';
+import hslIcon from '../../assets/branding/icon-dark.webp';
 
 /** Sticky, scroll-blurred AppBar shared by every authenticated page (Portal, Admin, AdminClientDetail). */
 export function AuthedAppBar({ subtitle }: { subtitle: string }) {

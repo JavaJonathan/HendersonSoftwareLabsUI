@@ -7,7 +7,7 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Link from '@mui/material/Link';
 import Container from '@mui/material/Container';
-import hslIcon from '../../assets/branding/icon-dark.png';
+import hslIcon from '../../assets/branding/icon-dark.webp';
 import { useScrolled } from '../../hooks/useScrolled';
 
 const NAV_LINKS = [

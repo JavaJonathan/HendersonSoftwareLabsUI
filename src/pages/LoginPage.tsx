@@ -19,8 +19,8 @@ import { ApiError, getApiErrorMessage } from '../api/client';
 import { Reveal } from '../components/motion/Reveal';
 import { GradientBackdrop } from '../components/motion/GradientBackdrop';
 import { SURFACE_SUBTLE, SURFACE_DARK } from '../theme';
-import wordmarkLight from '../assets/branding/wordmark-light.png';
-import wordmarkDark from '../assets/branding/wordmark-dark.png';
+import wordmarkLight from '../assets/branding/wordmark-light.webp';
+import wordmarkDark from '../assets/branding/wordmark-dark.webp';
 
 export function LoginPage() {
   const { login } = useAuth();
