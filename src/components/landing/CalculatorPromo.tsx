@@ -97,7 +97,7 @@ function ExamplePreviewCard() {
         </Typography>
       </Stack>
 
-      <Box aria-hidden sx={{ display: 'flex', alignItems: 'flex-end', gap: 3, height: 96, px: 1 }}>
+      <Box aria-hidden sx={{ display: 'flex', gap: 3, px: 1 }}>
         <BarColumn label="Before" heightPct={100} color="#94a3b8" />
         <BarColumn label="After" heightPct={12} color="primary.main" />
       </Box>
@@ -113,7 +113,9 @@ function ExamplePreviewCard() {
 function BarColumn({ label, heightPct, color }: { label: string; heightPct: number; color: string }) {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.75, flex: 1 }}>
-      <Box sx={{ width: '100%', maxWidth: 56, height: `${heightPct}%`, bgcolor: color, borderRadius: 1 }} />
+      <Box sx={{ height: 72, width: '100%', maxWidth: 56, display: 'flex', alignItems: 'flex-end' }}>
+        <Box sx={{ width: '100%', height: `${heightPct}%`, bgcolor: color, borderRadius: 1 }} />
+      </Box>
       <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
         {label}
       </Typography>
