@@ -33,9 +33,10 @@ export function ProjectCard({ project }: { project: SoftwareProject }) {
   const { color, icon: StatusIcon, bg, fg } = STATUS_META[project.status];
 
   return (
-    <Card>
+    <Card sx={{ '&:hover .portal-project-icon': { transform: 'scale(1.08) rotate(-4deg)' } }}>
       <CardContent sx={{ p: 3 }}>
         <Box
+          className="portal-project-icon"
           sx={{
             width: 44,
             height: 44,
@@ -46,6 +47,7 @@ export function ProjectCard({ project }: { project: SoftwareProject }) {
             alignItems: 'center',
             justifyContent: 'center',
             mb: 1.5,
+            transition: 'transform 0.25s ease, background-color 0.25s ease, color 0.25s ease',
           }}
         >
           <StatusIcon />

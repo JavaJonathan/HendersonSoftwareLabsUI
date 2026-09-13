@@ -2,15 +2,18 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link as RouterLink, useParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
+import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Link from '@mui/material/Link';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import AddIcon from '@mui/icons-material/Add';
 import KeyOutlinedIcon from '@mui/icons-material/KeyOutlined';
+import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
 import { getClient, getClientProjects } from '../api/admin';
 import { ProjectGrid } from '../components/portal/ProjectGrid';
 import { Reveal } from '../components/motion/Reveal';
+import { GradientBackdrop } from '../components/motion/GradientBackdrop';
 import { AuthedAppBar } from '../components/layout/AuthedAppBar';
 import { SURFACE_SUBTLE } from '../theme';
 import { CreateProjectDialog } from '../components/admin/CreateProjectDialog';
@@ -57,33 +60,46 @@ export function AdminClientDetailPage() {
           Clients
         </Link>
 
-        <Reveal>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
-            <Box>
-              <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary' }}>
-                {client?.companyName ?? 'Client'}
+        <Box sx={{ position: 'relative', overflow: 'hidden' }}>
+          <GradientBackdrop variant="light" />
+
+          <Reveal>
+            <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
+              <PeopleAltOutlinedIcon sx={{ color: 'primary.main', fontSize: 20 }} />
+              <Typography variant="overline" sx={{ color: 'primary.main' }}>
+                Admin
               </Typography>
-              <Typography sx={{ mt: 0.5, color: 'text.secondary' }}>
-                {client?.email}
-                {client?.contactName ? ` · ${client.contactName}` : ''}
-              </Typography>
+            </Stack>
+          </Reveal>
+
+          <Reveal delay={0.08}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+              <Box>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary' }}>
+                  {client?.companyName ?? 'Client'}
+                </Typography>
+                <Typography sx={{ mt: 0.5, color: 'text.secondary' }}>
+                  {client?.email}
+                  {client?.contactName ? ` · ${client.contactName}` : ''}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                <Button
+                  variant="outlined"
+                  color="warning"
+                  startIcon={<KeyOutlinedIcon />}
+                  onClick={() => setResetDialogOpen(true)}
+                  disabled={!clientId}
+                >
+                  Reset Password
+                </Button>
+                <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)} disabled={!clientId}>
+                  Add Project
+                </Button>
+              </Box>
             </Box>
-            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
-              <Button
-                variant="outlined"
-                color="warning"
-                startIcon={<KeyOutlinedIcon />}
-                onClick={() => setResetDialogOpen(true)}
-                disabled={!clientId}
-              >
-                Reset Password
-              </Button>
-              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)} disabled={!clientId}>
-                Add Project
-              </Button>
-            </Box>
-          </Box>
-        </Reveal>
+          </Reveal>
+        </Box>
 
         <ProjectGrid
           status={status}
