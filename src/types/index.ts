@@ -66,7 +66,7 @@ export interface ResetPasswordResult {
   generatedPassword: string;
 }
 
-export interface CreateProjectPayload {
+export interface ProjectPayload {
   name: string;
   description: string;
   status: SoftwareProject['status'];

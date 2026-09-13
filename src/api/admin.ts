@@ -3,7 +3,7 @@ import type {
   AdminClient,
   CreateClientPayload,
   CreateClientResult,
-  CreateProjectPayload,
+  ProjectPayload,
   ResetPasswordResult,
   SoftwareProject,
 } from '../types';
@@ -33,9 +33,16 @@ export function getClientProjects(clientId: string) {
   return apiFetch<SoftwareProject[]>(`/api/admin/clients/${clientId}/projects`);
 }
 
-export function createProject(clientId: string, payload: CreateProjectPayload) {
+export function createProject(clientId: string, payload: ProjectPayload) {
   return apiFetch<SoftwareProject>(`/api/admin/clients/${clientId}/projects`, {
     method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateProject(clientId: string, projectId: number, payload: ProjectPayload) {
+  return apiFetch<SoftwareProject>(`/api/admin/clients/${clientId}/projects/${projectId}`, {
+    method: 'PUT',
     body: JSON.stringify(payload),
   });
 }

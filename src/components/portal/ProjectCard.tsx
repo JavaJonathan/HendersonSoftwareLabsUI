@@ -4,6 +4,9 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import Link from '@mui/material/Link';
+import Stack from '@mui/material/Stack';
+import IconButton from '@mui/material/IconButton';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import type { ChipProps } from '@mui/material/Chip';
 import PlaylistAddCheckOutlinedIcon from '@mui/icons-material/PlaylistAddCheckOutlined';
 import AutorenewOutlinedIcon from '@mui/icons-material/AutorenewOutlined';
@@ -29,7 +32,7 @@ const STATUS_META: Record<SoftwareProject['status'], StatusMeta> = {
   Completed: { color: 'default', icon: DoneAllOutlinedIcon, bg: '#f1f5f9', fg: '#64748b' },
 };
 
-export function ProjectCard({ project }: { project: SoftwareProject }) {
+export function ProjectCard({ project, onEdit }: { project: SoftwareProject; onEdit?: () => void }) {
   const { color, icon: StatusIcon, bg, fg } = STATUS_META[project.status];
 
   return (
@@ -55,12 +58,19 @@ export function ProjectCard({ project }: { project: SoftwareProject }) {
 
         <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1.5 }}>
           <Typography sx={{ fontWeight: 700, color: 'text.primary' }}>{project.name}</Typography>
-          <Chip
-            label={PROJECT_STATUS_LABELS[project.status]}
-            color={color}
-            size="small"
-            sx={{ flexShrink: 0 }}
-          />
+          <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0, alignItems: 'center' }}>
+            <Chip
+              label={PROJECT_STATUS_LABELS[project.status]}
+              color={color}
+              size="small"
+              sx={{ flexShrink: 0 }}
+            />
+            {onEdit && (
+              <IconButton size="small" aria-label={`Edit ${project.name}`} onClick={onEdit}>
+                <EditOutlinedIcon fontSize="small" />
+              </IconButton>
+            )}
+          </Stack>
         </Box>
         <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
           {project.description}

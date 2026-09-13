@@ -18,6 +18,7 @@ interface ProjectGridProps {
   emptyMessage: string;
   loadingMessage?: string;
   errorMessage?: string;
+  onEditProject?: (project: SoftwareProject) => void;
 }
 
 /** Status-branching project grid shared by PortalPage and AdminClientDetailPage. */
@@ -27,6 +28,7 @@ export function ProjectGrid({
   emptyMessage,
   loadingMessage = 'Loading projects…',
   errorMessage = 'Something went wrong loading projects. Please try again later.',
+  onEditProject,
 }: ProjectGridProps) {
   return (
     <Box sx={{ mt: 4 }}>
@@ -76,7 +78,7 @@ export function ProjectGrid({
         <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: GRID_COLUMNS }}>
           {projects.map((project, index) => (
             <Reveal key={project.id} delay={index * 0.08} y={16}>
-              <ProjectCard project={project} />
+              <ProjectCard project={project} onEdit={onEditProject ? () => onEditProject(project) : undefined} />
             </Reveal>
           ))}
         </Box>

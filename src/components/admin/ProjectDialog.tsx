@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -8,18 +8,20 @@ import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
-import { createProject } from '../../api/admin';
+import { createProject, updateProject } from '../../api/admin';
 import { getApiErrorMessage } from '../../api/client';
 import { PROJECT_STATUSES, PROJECT_STATUS_LABELS, type SoftwareProject } from '../../types';
 
-interface CreateProjectDialogProps {
+interface ProjectDialogProps {
   open: boolean;
   clientId: string;
+  project?: SoftwareProject | null;
   onClose: () => void;
-  onCreated: () => void;
+  onSaved: () => void;
 }
 
-export function CreateProjectDialog({ open, clientId, onClose, onCreated }: CreateProjectDialogProps) {
+export function ProjectDialog({ open, clientId, project, onClose, onSaved }: ProjectDialogProps) {
+  const isEditing = Boolean(project);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<SoftwareProject['status']>('Planning');
@@ -27,11 +29,16 @@ export function CreateProjectDialog({ open, clientId, onClose, onCreated }: Crea
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (!open) return;
+    setName(project?.name ?? '');
+    setDescription(project?.description ?? '');
+    setStatus(project?.status ?? 'Planning');
+    setUrl(project?.url ?? '');
+    setError(null);
+  }, [open, project]);
+
   function resetAndClose() {
-    setName('');
-    setDescription('');
-    setStatus('Planning');
-    setUrl('');
     setError(null);
     onClose();
   }
@@ -42,8 +49,13 @@ export function CreateProjectDialog({ open, clientId, onClose, onCreated }: Crea
     setSubmitting(true);
 
     try {
-      await createProject(clientId, { name, description, status, url: url || undefined });
-      onCreated();
+      const payload = { name, description, status, url: url || undefined };
+      if (project) {
+        await updateProject(clientId, project.id, payload);
+      } else {
+        await createProject(clientId, payload);
+      }
+      onSaved();
       resetAndClose();
     } catch (err) {
       setError(getApiErrorMessage(err, 'Something went wrong. Please try again.'));
@@ -54,7 +66,7 @@ export function CreateProjectDialog({ open, clientId, onClose, onCreated }: Crea
 
   return (
     <Dialog open={open} onClose={resetAndClose} maxWidth="xs" fullWidth>
-      <DialogTitle>Add Project</DialogTitle>
+      <DialogTitle>{isEditing ? 'Edit Project' : 'Add Project'}</DialogTitle>
       <Stack component="form" onSubmit={handleSubmit}>
         <DialogContent>
           <Stack spacing={2.5}>
@@ -102,7 +114,7 @@ export function CreateProjectDialog({ open, clientId, onClose, onCreated }: Crea
             Cancel
           </Button>
           <Button type="submit" variant="contained" disabled={submitting}>
-            {submitting ? 'Adding…' : 'Add Project'}
+            {submitting ? 'Saving…' : isEditing ? 'Save Changes' : 'Add Project'}
           </Button>
         </DialogActions>
       </Stack>

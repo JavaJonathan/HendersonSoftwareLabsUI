@@ -16,7 +16,7 @@ import { Reveal } from '../components/motion/Reveal';
 import { GradientBackdrop } from '../components/motion/GradientBackdrop';
 import { AuthedAppBar } from '../components/layout/AuthedAppBar';
 import { SURFACE_SUBTLE } from '../theme';
-import { CreateProjectDialog } from '../components/admin/CreateProjectDialog';
+import { ProjectDialog } from '../components/admin/ProjectDialog';
 import { ResetPasswordDialog } from '../components/admin/ResetPasswordDialog';
 import type { AdminClient, SoftwareProject } from '../types';
 
@@ -26,6 +26,7 @@ export function AdminClientDetailPage() {
   const [projects, setProjects] = useState<SoftwareProject[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingProject, setEditingProject] = useState<SoftwareProject | null>(null);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
   const loadData = useCallback(() => {
@@ -93,7 +94,15 @@ export function AdminClientDetailPage() {
                 >
                   Reset Password
                 </Button>
-                <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)} disabled={!clientId}>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    setEditingProject(null);
+                    setDialogOpen(true);
+                  }}
+                  disabled={!clientId}
+                >
                   Add Project
                 </Button>
               </Box>
@@ -106,15 +115,20 @@ export function AdminClientDetailPage() {
           projects={projects}
           errorMessage="Something went wrong loading this client. Please try again later."
           emptyMessage="No software assigned to this client yet."
+          onEditProject={(project) => {
+            setEditingProject(project);
+            setDialogOpen(true);
+          }}
         />
       </Container>
 
       {clientId && (
-        <CreateProjectDialog
+        <ProjectDialog
           open={dialogOpen}
           clientId={clientId}
+          project={editingProject}
           onClose={() => setDialogOpen(false)}
-          onCreated={loadData}
+          onSaved={loadData}
         />
       )}
 
