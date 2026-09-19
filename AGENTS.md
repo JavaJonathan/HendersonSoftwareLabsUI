@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository. `AGENTS.md` in this repo mirrors this file for other AI tools - update both together.
+This file provides guidance to AI coding agents when working with code in this repository. `CLAUDE.md` in this repo mirrors this file for Claude Code - update both together.
 
 ## Writing style
 
@@ -8,7 +8,7 @@ Do not use em dashes (`—`) anywhere: not in code, comments, docs, commit messa
 
 ## Project Status (as of 2026-09-12)
 
-Everything below is deployed and live in production (see "Production Deployment") with no known bugs or unfinished work. The most recent work was a substantial rebuild of the public task cost calculator at `/tools/task-cost-calculator` - see "The task cost calculator" below, which is the section to read before touching anything under `src/pages/tools/` or `src/components/tools/`. Before that, a design pass on `LoginPage.tsx` (branding assets, layout, polish) - see "Branding assets" and the `Reveal` `fullWidth` gotcha. This file and the API repo's `CLAUDE.md` are both kept current - read both before resuming.
+Everything below is deployed and live in production (see "Production Deployment") with no known bugs or unfinished work. The most recent work was a substantial rebuild of the public task cost calculator at `/tools/task-cost-calculator` - see "The task cost calculator" below, which is the section to read before touching anything under `src/pages/tools/` or `src/components/tools/`. Before that, a design pass on `LoginPage.tsx` (branding assets, layout, polish) - see "Branding assets" and the `Reveal` `fullWidth` gotcha. This file and the API repo's `AGENTS.md` are both kept current - read both before resuming.
 
 ## Commands
 
@@ -103,7 +103,7 @@ overwriting a touched form.
 
 ## Production Deployment
 
-Hosted on **AWS Amplify** (app `henderson-software-labs-ui`, id `d2qschmehrzw1m`), connected to this repo's `master` branch - a push triggers an automatic build (`amplify.yml` in this repo) and deploy, no manual step. Live at `https://hendersonsoftwarelabs.com` and `https://www.hendersonsoftwarelabs.com` (the original `https://master.d2qschmehrzw1m.amplifyapp.com` still resolves too). The backend is a separate repo/deployment (`HendersonSoftwareLabsAPI`, on EC2) - see its `CLAUDE.md` for that infrastructure.
+Hosted on **AWS Amplify** (app `henderson-software-labs-ui`, id `d2qschmehrzw1m`), connected to this repo's `master` branch - a push triggers an automatic build (`amplify.yml` in this repo) and deploy, no manual step. Live at `https://hendersonsoftwarelabs.com` and `https://www.hendersonsoftwarelabs.com` (the original `https://master.d2qschmehrzw1m.amplifyapp.com` still resolves too). The backend is a separate repo/deployment (`HendersonSoftwareLabsAPI`, on EC2) - see its `AGENTS.md` for that infrastructure.
 
 **`VITE_API_BASE_URL`** is set as an Amplify branch environment variable (not committed here) pointing at `https://api.hendersonsoftwarelabs.com`.
 
