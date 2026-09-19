@@ -74,21 +74,9 @@ export const theme = createTheme({
         },
       },
     },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          borderRadius: 16,
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
-          transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease',
-          '&:hover': {
-            transform: 'translateY(-3px)',
-            boxShadow: '0 16px 32px -12px rgba(15, 23, 42, 0.16)',
-            borderColor: '#bfdbfe',
-          },
-        },
-      },
-    },
+    // No `MuiCard` override on purpose. Nothing in the app renders a `Card`: every surface is a
+    // `Paper variant="outlined"` that opts into the hover lift itself. A Card recipe here would
+    // be dead code that silently hands the next surface a 16px radius against the site's 42px.
     MuiPaper: {
       styleOverrides: {
         root: {

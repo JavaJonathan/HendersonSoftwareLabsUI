@@ -5,6 +5,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { AuthProvider } from './auth/AuthContext';
 import { ProtectedRoute } from './auth/ProtectedRoute';
 import { ScrollToTop } from './components/layout/ScrollToTop';
+import { SURFACE_SUBTLE } from './theme';
+import hslIcon from './assets/branding/icon-dark.webp';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { PortalPage } from './pages/PortalPage';
@@ -18,10 +20,14 @@ const TaskCostCalculatorPage = lazy(() =>
   import('./pages/tools/TaskCostCalculatorPage').then((m) => ({ default: m.TaskCostCalculatorPage })),
 );
 
+/** Matches the auth-gate splash in `ProtectedRoute` so the app only ever has one loading screen. */
 function RouteFallback() {
   return (
-    <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
-      <CircularProgress aria-label="Loading" />
+    <Box sx={{ minHeight: '100vh', bgcolor: SURFACE_SUBTLE, display: 'grid', placeItems: 'center' }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2.5 }}>
+        <Box component="img" src={hslIcon} alt="Henderson Software Labs" sx={{ height: 36, width: 'auto' }} />
+        <CircularProgress size={22} aria-label="Loading" />
+      </Box>
     </Box>
   );
 }
