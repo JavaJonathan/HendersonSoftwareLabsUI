@@ -57,6 +57,17 @@ There is **no self-service signup**. Client accounts exist only because an admin
 
 **Data isolation is enforced server-side, not just hidden in the UI** - `PortalPage.tsx` can only ever render the logged-in client's own projects because the backend's `/api/portal/projects` endpoint filters by the caller's JWT claim; there's no client-side-only gate to bypass.
 
+## Admin dialog conventions
+
+Every dialog in the authenticated app (`ResetPasswordDialog.tsx`, `ProjectDialog.tsx`, `CreateClientDialog.tsx`, and the inquiry detail dialog in `AdminInquiriesPage.tsx`) follows one shared recipe. A new dialog should match it rather than falling back to MUI's bare defaults, and an existing one that doesn't match it is a bug, not a style choice:
+- A 5px `linear-gradient(90deg, #2563eb, #60a5fa)` accent bar as the first element inside the dialog `Paper`, before `DialogTitle`.
+- `useMediaQuery(theme.breakpoints.down('sm'))` drives `fullScreen` on the `Dialog`, paired with `slotProps={{ paper: { sx: { borderRadius: fullScreen ? 0 : 4, overflow: 'hidden' } } }}`, so it goes edge-to-edge on a phone instead of shrinking to a small rounded box.
+- `DialogTitle` uses the shared `TITLE_SX` shape (Plus Jakarta Sans, weight 800, size 20, flex row with a close `IconButton` at the end), not the plain MUI default with no close affordance.
+- Any status-like value (inquiry status, project status) gets one consistent color mapping, applied identically everywhere it's rendered (list chip, dialog chip, any picker); it is never left as an uncolored default `Chip`.
+- Long-form or quoted content a user typed (an inquiry message, a project description) renders inside its own `Paper variant="outlined"` with `bgcolor: SURFACE_SUBTLE`, not as bare `Typography` at the same visual weight as the surrounding chrome.
+
+This is here because the inquiry detail dialog originally shipped without any of it (bare `Dialog`, no accent bar, uncolored status, message rendered as plain text indistinguishable from the name/email above it), and it took a dedicated cleanup pass on 2026-09-20 to bring it in line with the other three dialogs. Check a new dialog against this list before calling it done.
+
 ## The task cost calculator
 
 The public tool at `/tools/task-cost-calculator` (lazy-loaded in `App.tsx`, linked only from the `Footer`). It is the one part of the site meant to be used rather than read, so it is built to beat the obvious alternative of asking a chat assistant the same question: it is interactive, it is honest about its own uncertainty, and it produces an artifact you can send to whoever signs off on the spend.
@@ -123,6 +134,6 @@ Hosted on **AWS Amplify** (app `henderson-software-labs-ui`, id `d2qschmehrzw1m`
 
 The public `/contact` page saves name, email and message through anonymous `POST /api/contact`. It uses plain fetch without auth tokens, keeps a submission UUID across retries, and generates a new UUID if the visitor changes the payload. Drafts stay in component memory. No email is sent by the application. The two main homepage CTAs link here; the FAQ sits above the final CTA.
 
-Admins open `/admin/inquiries` from the Clients page. The inbox defaults to New, supports 25-row pagination and New/Contacted/Archived/All filters, and provides a detail dialog, copy-email action and mailto reply. Status changes are explicit; opening a draft never marks an inquiry Contacted. Archived inquiries can return to New. The inbox requires the existing admin route guard and admin API authorization.
+Admins open `/admin/inquiries` from the Clients page. The inbox defaults to New, supports 25-row pagination and New/Contacted/Archived/All filters, and provides a detail dialog, copy-email action and mailto reply. Status changes are explicit; opening a draft never marks an inquiry Contacted. Archived inquiries can return to New. The inbox requires the existing admin route guard and admin API authorization. The detail dialog follows the shared "Admin dialog conventions" above as of a 2026-09-20 cleanup pass.
 
 Verification: `npm run build`, `npm run lint`, `npm test`, plus browser checks for contact validation, submission, mobile layout and inbox status changes.
