@@ -114,10 +114,19 @@ export function AdminPage() {
                   Create client accounts and assign them software.
                 </Typography>
               </Box>
-              <Button component={RouterLink} to="/admin/inquiries" variant="outlined">Inquiries{newInquiries === null ? '' : ` (${newInquiries} new)`}</Button>
-              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
-                New Client
-              </Button>
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={1.5}
+                useFlexGap
+                sx={{ flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}
+              >
+                <Button component={RouterLink} to="/admin/inquiries" variant="outlined">
+                  Inquiries{newInquiries === null ? '' : ` (${newInquiries} new)`}
+                </Button>
+                <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
+                  New Client
+                </Button>
+              </Stack>
             </Box>
           </Reveal>
         </Container>

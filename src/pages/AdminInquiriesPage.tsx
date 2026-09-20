@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Alert, Box, Button, Chip, Container, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, InputLabel, Link, MenuItem, Pagination, Paper, Select, Stack, Typography } from '@mui/material';
 import { AuthedAppBar } from '../components/layout/AuthedAppBar';
+import { SURFACE_SUBTLE } from '../theme';
 import { getInquiries, getInquiry, updateInquiryStatus, type Inquiry, type InquiryList, type InquiryStatus } from '../api/inquiries';
 
 export function AdminInquiriesPage() {
@@ -44,15 +45,21 @@ export function AdminInquiriesPage() {
     finally { setBusy(false); }
   }
 
-  return <><AuthedAppBar /><Container component="main" maxWidth="md" sx={{ py: 5 }}>
+  return <Box sx={{ minHeight: '100vh', bgcolor: SURFACE_SUBTLE }}><AuthedAppBar /><Container component="main" maxWidth="lg" sx={{ py: { xs: 4, md: 6 } }}>
     <Link component={RouterLink} to="/admin">Back to clients</Link>
-    <Typography component="h1" variant="h4" sx={{ mt: 2, mb: 3 }}>Inquiries{list ? ` (${list.newCount} new)` : ''}</Typography>
+    <Stack direction="row" spacing={1.5} useFlexGap sx={{ mt: 2, mb: 3, alignItems: 'center', flexWrap: 'wrap' }}>
+      <Typography component="h1" variant="h4" sx={{ fontSize: { xs: 26, md: 34 } }}>Inquiries</Typography>
+      {list && <Chip label={`${list.newCount} new`} size="small" sx={{ bgcolor: 'primary.light', color: 'primary.main' }} />}
+    </Stack>
     <Stack direction="row" spacing={2} sx={{ mb: 3 }}><FormControl size="small" sx={{ minWidth: 160 }}><InputLabel id="inquiry-filter">Status</InputLabel><Select labelId="inquiry-filter" label="Status" value={filter} onChange={e => { setFilter(e.target.value); setPage(1); }}>{['New', 'Contacted', 'Archived', 'All'].map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}</Select></FormControl><Button onClick={() => setRefresh(x => x + 1)} disabled={loading}>Refresh</Button></Stack>
     {error && <Alert severity="error" action={<Button onClick={() => setRefresh(x => x + 1)}>Retry</Button>}>{error}</Alert>}
     {loading ? <Typography role="status">Loading inquiries…</Typography> : !error && <>
-      {!list?.items.length && <Typography color="text.secondary">No inquiries in this view.</Typography>}
+      {!list?.items.length && <Paper variant="outlined" sx={{ p: 3 }}><Typography color="text.secondary">No inquiries in this view.</Typography></Paper>}
       <Stack spacing={2}>{list?.items.map(item => <Paper variant="outlined" key={item.id} sx={{ p: 2.5 }}>
-        <Stack direction="row" sx={{ justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}><Button onClick={() => view(item.id)} sx={{ fontWeight: 700, textAlign: 'left', overflowWrap: 'anywhere' }}>{item.name}</Button><Chip size="small" label={item.status} /></Stack>
+        <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 1.5 }}>
+          <Link component="button" type="button" onClick={() => view(item.id)} underline="hover" sx={{ font: 'inherit', fontWeight: 700, textAlign: 'left', minWidth: 0, overflowWrap: 'anywhere', '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 3 } }}>{item.name}</Link>
+          <Chip size="small" label={item.status} sx={{ flexShrink: 0 }} />
+        </Stack>
         <Typography sx={{ overflowWrap: 'anywhere' }}>{item.email}</Typography><Typography variant="body2" color="text.secondary">{new Date(item.createdAt).toLocaleString()}</Typography>
         <Typography sx={{ mt: 1, overflowWrap: 'anywhere' }}>{item.preview}</Typography>
       </Paper>)}</Stack>
@@ -65,13 +72,15 @@ export function AdminInquiriesPage() {
         {selected && <Stack spacing={2}>
           <Typography sx={{ overflowWrap: 'anywhere' }}>{selected.email}</Typography><Typography variant="body2" color="text.secondary">Received {new Date(selected.createdAt).toLocaleString()}</Typography>
           <Box sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{selected.message}</Box>
-          <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}><Button href={`mailto:${encodeURIComponent(selected.email)}?subject=Your%20Henderson%20Software%20Labs%20inquiry`}>Reply by email</Button><Button onClick={async () => { try { await navigator.clipboard.writeText(selected.email); setCopied('Email copied.'); } catch { setCopied('Unable to copy. Select and copy the address above.'); } }}>Copy email</Button></Stack>
-          <Typography role="status" variant="body2">{copied}</Typography>
+          <Box>
+            <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}><Button variant="outlined" href={`mailto:${encodeURIComponent(selected.email)}?subject=Your%20Henderson%20Software%20Labs%20inquiry`}>Reply by email</Button><Button onClick={async () => { try { await navigator.clipboard.writeText(selected.email); setCopied('Email copied.'); } catch { setCopied('Unable to copy. Select and copy the address above.'); } }}>Copy email</Button></Stack>
+            <Typography role="status" variant="body2" sx={{ mt: copied ? 1 : 0 }}>{copied}</Typography>
+          </Box>
           <Typography variant="body2">Mark Contacted after you have replied. Opening an email draft does not change the status.</Typography>
           <FormControl fullWidth><InputLabel id="inquiry-status-label">Status</InputLabel><Select labelId="inquiry-status-label" label="Status" value={selected.status} disabled={busy} onChange={e => void changeStatus(e.target.value as InquiryStatus)}>{(['New', 'Contacted', 'Archived'] as const).map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}</Select></FormControl>
           {busy && <Typography role="status">Saving status…</Typography>}
         </Stack>}
       </DialogContent><DialogActions><Button onClick={close} disabled={busy}>Close</Button></DialogActions>
     </Dialog>
-  </Container></>;
+  </Container></Box>;
 }
