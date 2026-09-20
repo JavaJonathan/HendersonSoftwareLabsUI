@@ -81,6 +81,7 @@ export function Hero() {
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 0.5,
+                    pl: { xs: '20px', sm: 0 },
                     fontWeight: 600,
                     fontSize: 15,
                     color: 'text.secondary',

@@ -19,7 +19,7 @@ const REVEAL_MS = 3000;
 const bigNumberSx: SxProps<Theme> = {
   fontFamily: HEADING_FONT,
   fontWeight: 800,
-  fontSize: { xs: 40, md: 52 },
+  fontSize: { xs: 32, md: 52 },
   lineHeight: 1,
   color: 'primary.main',
   fontVariantNumeric: 'tabular-nums',
@@ -29,12 +29,12 @@ const bigNumberSx: SxProps<Theme> = {
 const plusSx: SxProps<Theme> = {
   fontFamily: HEADING_FONT,
   fontWeight: 800,
-  fontSize: { xs: 22, md: 26 },
+  fontSize: { xs: 18, md: 26 },
   color: 'primary.main',
   lineHeight: 1,
 };
 
-const cellSx: SxProps<Theme> = { p: { xs: 3, md: 3.5 } };
+const cellSx: SxProps<Theme> = { flex: 1, minWidth: 0, px: { xs: 2.5, md: 3.5 }, py: { xs: 2.5, md: 3.5 } };
 const labelSx: SxProps<Theme> = { mt: 1.25, fontWeight: 700, color: 'text.primary', fontSize: 16 };
 const subSx: SxProps<Theme> = { mt: 0.25, color: 'text.secondary' };
 
@@ -42,6 +42,8 @@ export function ImpactPanel() {
   return (
     <Box
       sx={{
+        display: 'flex',
+        flexDirection: { xs: 'row', md: 'column' },
         borderRadius: 4,
         border: '1px solid',
         borderColor: 'divider',
@@ -51,7 +53,16 @@ export function ImpactPanel() {
       }}
     >
       <HoursStat />
-      <Box sx={{ height: '1px', bgcolor: 'divider', mx: { xs: 3, md: 3.5 } }} />
+      <Box
+        sx={{
+          alignSelf: 'stretch',
+          bgcolor: 'divider',
+          width: { xs: '1px', md: 'auto' },
+          height: { xs: 'auto', md: '1px' },
+          my: { xs: 2.5, md: 0 },
+          mx: { xs: 0, md: 3.5 },
+        }}
+      />
       <WorkflowsStat />
     </Box>
   );
