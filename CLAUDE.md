@@ -118,3 +118,11 @@ Hosted on **AWS Amplify** (app `henderson-software-labs-ui`, id `d2qschmehrzw1m`
 - MUI icon component names don't always match intuitive guesses and differ between MUI major versions (e.g. `CheckCircleOutline` doesn't exist in the installed version, it's `CheckCircleOutlined`). Before importing an icon that isn't already used elsewhere in this codebase, verify it exists: `ls node_modules/@mui/icons-material | grep -i <name>`.
 - After installing/removing npm packages while the Vite dev server is running, kill it, delete `node_modules/.vite`, and restart - otherwise you'll see "Invalid hook call" / duplicate-React errors that look like real bugs but are just a stale dependency pre-bundle cache.
 - Never run two `npm install`/`npm uninstall` commands concurrently in this project - they can clobber each other's `package.json` writes (this has actually happened here).
+
+## Contact inquiries (2026-09-19)
+
+The public `/contact` page saves name, email and message through anonymous `POST /api/contact`. It uses plain fetch without auth tokens, keeps a submission UUID across retries, and generates a new UUID if the visitor changes the payload. Drafts stay in component memory. No email is sent by the application. The two main homepage CTAs link here; the FAQ sits above the final CTA.
+
+Admins open `/admin/inquiries` from the Clients page. The inbox defaults to New, supports 25-row pagination and New/Contacted/Archived/All filters, and provides a detail dialog, copy-email action and mailto reply. Status changes are explicit; opening a draft never marks an inquiry Contacted. Archived inquiries can return to New. The inbox requires the existing admin route guard and admin API authorization.
+
+Verification: `npm run build`, `npm run lint`, `npm test`, plus browser checks for contact validation, submission, mobile layout and inbox status changes.

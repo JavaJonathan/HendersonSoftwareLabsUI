@@ -18,6 +18,7 @@ import Alert from '@mui/material/Alert';
 import AddIcon from '@mui/icons-material/Add';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import PeopleAltOutlinedIcon from '@mui/icons-material/PeopleAltOutlined';
+import { getInquiries } from '../api/inquiries';
 import { getClients } from '../api/admin';
 import { Reveal } from '../components/motion/Reveal';
 import { GradientBackdrop } from '../components/motion/GradientBackdrop';
@@ -60,6 +61,12 @@ function ClientsTableHead() {
 
 export function AdminPage() {
   const navigate = useNavigate();
+  const [newInquiries, setNewInquiries] = useState<number | null>(null);
+  useEffect(() => {
+    let active = true;
+    getInquiries().then(data => { if (active) setNewInquiries(data.newCount); }).catch(() => {});
+    return () => { active = false; };
+  }, []);
   const [clients, setClients] = useState<AdminClient[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -107,6 +114,7 @@ export function AdminPage() {
                   Create client accounts and assign them software.
                 </Typography>
               </Box>
+              <Button component={RouterLink} to="/admin/inquiries" variant="outlined">Inquiries{newInquiries === null ? '' : ` (${newInquiries} new)`}</Button>
               <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
                 New Client
               </Button>

@@ -66,10 +66,11 @@ export function Hero() {
                   <Button
                     variant="contained"
                     size="large"
-                    href="mailto:jonathan@HendersonSoftwareLabs.com?subject=Booking%20a%20Call"
+                    component={RouterLink}
+              to="/contact"
                     endIcon={<ArrowForwardIcon />}
                   >
-                    Book a Call
+                    Tell me what’s slowing you down
                   </Button>
                 </MagneticWrap>
 

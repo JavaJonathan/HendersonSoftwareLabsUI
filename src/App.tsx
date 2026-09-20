@@ -7,6 +7,9 @@ import { ProtectedRoute } from './auth/ProtectedRoute';
 import { ScrollToTop } from './components/layout/ScrollToTop';
 import { SURFACE_SUBTLE } from './theme';
 import hslIcon from './assets/branding/icon-dark.webp';
+import { AdminInquiriesPage } from './pages/AdminInquiriesPage';
+const ContactPage = lazy(() => import('./pages/ContactPage').then(m => ({ default: m.ContactPage })));
+
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { PortalPage } from './pages/PortalPage';
@@ -39,6 +42,8 @@ function App() {
         <ScrollToTop />
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/contact" element={<Suspense fallback={<RouteFallback />}><ContactPage /></Suspense>} />
+          <Route path="/admin/inquiries" element={<ProtectedRoute requireAdmin><AdminInquiriesPage /></ProtectedRoute>} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/portfolio" element={<PortfolioPage />} />
           <Route

@@ -5,6 +5,7 @@ import { CalculatorPromo } from '../components/landing/CalculatorPromo';
 import { WhatWeDo } from '../components/landing/WhatWeDo';
 import { TheLine } from '../components/landing/TheLine';
 import { HowItWorks } from '../components/landing/HowItWorks';
+import { Faq } from '../components/landing/Faq';
 import { CtaBanner } from '../components/landing/CtaBanner';
 import { ScrollProgressBar } from '../components/motion/ScrollProgressBar';
 
@@ -18,6 +19,7 @@ export function HomePage() {
       <HowItWorks />
       <CalculatorPromo />
       <TheLine />
+      <Faq />
       <CtaBanner />
       <Footer />
     </>

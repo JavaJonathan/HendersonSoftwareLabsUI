@@ -11,8 +11,8 @@ import hslIcon from '../../assets/branding/icon-dark.webp';
 import { useScrolled } from '../../hooks/useScrolled';
 
 const NAV_LINKS = [
-  { label: 'Services', href: '#what-we-do' },
-  { label: 'How It Works', href: '#how-it-works' },
+  { label: 'Services', href: '/#what-we-do' },
+  { label: 'How It Works', href: '/#how-it-works' },
 ];
 
 export function NavBar() {

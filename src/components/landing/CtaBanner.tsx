@@ -1,3 +1,4 @@
+import { Link as RouterLink } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
@@ -63,11 +64,12 @@ export function CtaBanner() {
             <Button
               variant="contained"
               size="large"
-              href="mailto:jonathan@HendersonSoftwareLabs.com?subject=Booking%20a%20Call"
+              component={RouterLink}
+              to="/contact"
               endIcon={<ArrowForwardIcon />}
-              sx={{ flexShrink: 0, bgcolor: 'primary.main', '&:hover': { bgcolor: 'primary.dark' } }}
+              sx={{ flexShrink: 1, maxWidth: '100%', textAlign: 'center', bgcolor: 'primary.main', '&:hover': { bgcolor: 'primary.dark' } }}
             >
-              Schedule a Consultation
+              Tell me what’s slowing you down
             </Button>
           </Stack>
         </Box>
