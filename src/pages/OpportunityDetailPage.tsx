@@ -1,13 +1,18 @@
 import { Fragment, useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 import {
-  Alert, Box, Button, Chip, Container, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, IconButton,
-  InputLabel, Link, MenuItem, Paper, Select, Stack, TextField, Typography, useMediaQuery,
+  Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, Chip, Container,
+  Link, Paper, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography, useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import CloseIcon from '@mui/icons-material/Close';
+import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
+import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
+import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
+import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
+import SearchOffOutlinedIcon from '@mui/icons-material/SearchOffOutlined';
 import { AuthedAppBar } from '../components/layout/AuthedAppBar';
+import { RadarDialog } from '../components/opportunities/RadarDialog';
 import { SURFACE_SUBTLE } from '../theme';
 import {
   getOpportunity, getOpportunityComparison, updateOpportunityReview, deleteOpportunity, clearOpportunityDuplicate,
@@ -15,11 +20,6 @@ import {
   type ActiveProjectDecision, type BusinessProspectDecision, type OpportunityComparison, type OpportunityDetail,
 } from '../api/opportunities';
 import { getApiErrorMessage } from '../api/client';
-
-const DIALOG_TITLE_SX = {
-  fontFamily: '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif', fontWeight: 800, fontSize: 20,
-  display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2,
-};
 
 const ACTIVE_PROJECT_DECISIONS: ActiveProjectDecision[] = ['Pursue', 'Investigate', 'Pass'];
 const BUSINESS_PROSPECT_DECISIONS: BusinessProspectDecision[] = ['Prioritize', 'Watch', 'Skip'];
@@ -29,12 +29,15 @@ export function OpportunityDetailPage() {
   const navigate = useNavigate();
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const desktopReview = useMediaQuery(theme.breakpoints.up('lg'));
   const [item, setItem] = useState<OpportunityDetail | null>(null);
   const [comparison, setComparison] = useState<OpportunityComparison | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [decision, setDecision] = useState<ActiveProjectDecision | BusinessProspectDecision | ''>('');
   const [notes, setNotes] = useState('');
+  const [savedDecision, setSavedDecision] = useState<ActiveProjectDecision | BusinessProspectDecision | ''>('');
+  const [savedNotes, setSavedNotes] = useState('');
   const [busy, setBusy] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -48,13 +51,15 @@ export function OpportunityDetailPage() {
       setItem(data); setComparison(comparisonData);
       setDecision(data.activeProject?.userDecision ?? data.businessProspect?.userDecision ?? '');
       setNotes(data.notes);
+      setSavedDecision(data.activeProject?.userDecision ?? data.businessProspect?.userDecision ?? '');
+      setSavedNotes(data.notes);
     }).catch(() => { if (active) setError('Unable to load this opportunity.'); });
     return () => { active = false; };
   }, [id]);
 
   async function save() {
     if (!item) return; setBusy(true); setError(''); setNotice('');
-    try { await updateOpportunityReview(item.id, decision || null, notes); setNotice('Decision and notes saved.'); }
+    try { await updateOpportunityReview(item.id, decision || null, notes); setSavedDecision(decision); setSavedNotes(notes); setNotice('Decision and notes saved.'); }
     catch (err) { setError(getApiErrorMessage(err, 'Unable to save your review.')); }
     finally { setBusy(false); }
   }
@@ -82,6 +87,15 @@ export function OpportunityDetailPage() {
   const evaluation = item.evaluation;
   const result = evaluation?.result;
   const evidenceIds = new Set(result?.factors.map(factor => factor.evidencePassageId) ?? []);
+  const reviewPanel = <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, borderColor: 'rgba(37,99,235,.24)', boxShadow: '0 20px 45px -38px rgba(37,99,235,.75)' }}>
+    <Typography variant="overline" color="primary.main">Your call</Typography><Typography variant="h6">Record the decision</Typography>
+    <Stack spacing={2} sx={{ mt: 2 }}>
+      <ToggleButtonGroup exclusive fullWidth value={decision} onChange={(_, value) => { if (value !== null) setDecision(value); }} size="small" aria-label="Review decision" sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', '& .MuiToggleButtonGroup-grouped': { borderRadius: '8px !important', border: '1px solid !important', borderColor: 'divider !important', m: 0.25 } }}><ToggleButton value="">Unreviewed</ToggleButton>{decisionOptions.map(value => <ToggleButton key={value} value={value}>{value}</ToggleButton>)}</ToggleButtonGroup>
+      <TextField label="Review notes" value={notes} onChange={event => setNotes(event.target.value)} multiline minRows={5} slotProps={{ htmlInput: { maxLength: 5000 } }} helperText={`${notes.length.toLocaleString()} / 5,000`} />
+      <Button variant="contained" onClick={save} disabled={busy || (decision === savedDecision && notes === savedNotes)}>{busy ? 'Saving...' : decision === savedDecision && notes === savedNotes ? 'Review saved' : 'Save review'}</Button>
+      {(decision !== savedDecision || notes !== savedNotes) && <Typography variant="caption" color="warning.main" sx={{ textAlign: 'center', fontWeight: 700 }}>Unsaved changes</Typography>}
+    </Stack>
+  </Paper>;
 
   return <Box sx={{ minHeight: '100vh', bgcolor: SURFACE_SUBTLE }}>
     <AuthedAppBar subtitle="Opportunity Radar" />
@@ -115,123 +129,45 @@ export function OpportunityDetailPage() {
       {notice && <Alert severity="success" onClose={() => setNotice('')} sx={{ mb: 2 }}>{notice}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.65fr) minmax(300px, .85fr)' }, gap: 2.5, alignItems: 'start' }}>
-        <Stack spacing={2.5}>
-          {evaluation?.status === 'Failed' ? <Alert severity="error">Evaluation failed without changing the opportunity score. {evaluation.errorMessage ?? 'Retry when the provider is available.'}</Alert> : evaluation ? <Paper variant="outlined" sx={{ p: { xs: 2.5, md: 3 }, borderRadius: 3 }}>
-            <Typography variant="overline" color="primary.main">Recommendation</Typography>
-            <Typography variant="h5" sx={{ mt: 0.5 }}>{evaluation.summary}</Typography>
-            <Typography sx={{ mt: 2, fontWeight: 700 }}>Next step</Typography>
-            <Typography color="text.secondary" sx={{ mt: 0.5 }}>{evaluation.nextStep}</Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>{evaluation.provider === 'Jev'
-              ? `Recommendation assembled deterministically from stored Jev judgments and source evidence. Usage: ${evaluation.inputTokens?.toLocaleString() ?? 'unknown'} input tokens.`
-              : 'Generated deterministically from a simulated evaluation. It is not a Jev result.'}</Typography>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.65fr) minmax(310px, .85fr)' }, gap: 2.5, alignItems: 'start' }}>
+        <Stack spacing={2.5} sx={{ minWidth: 0 }}>
+          {evaluation?.status === 'Failed' ? <Alert severity="error">Evaluation failed without changing the opportunity score. {evaluation.errorMessage ?? 'Retry when the provider is available.'}</Alert> : evaluation ? <Paper variant="outlined" sx={{ p: { xs: 2.5, md: 3.5 }, borderRadius: 3, background: 'linear-gradient(145deg, #ffffff 25%, #eff6ff 100%)', borderColor: 'rgba(37,99,235,.22)' }}>
+            <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}><Typography variant="overline" color="primary.main">Radar recommendation</Typography>{evaluation.recommendation && <Chip size="small" label={evaluation.recommendation} color={RECOMMENDATION_META[evaluation.recommendation].chipColor} />}{evaluation.priorityBand && <Chip size="small" variant="outlined" label={`${evaluation.priorityBand} priority`} />}</Stack>
+            <Typography variant="h5" sx={{ mt: 1.25, maxWidth: 760, lineHeight: 1.35 }}>{evaluation.summary}</Typography>
+            <Box sx={{ mt: 2.5, pl: 2, borderLeft: '3px solid', borderColor: 'primary.main' }}><Typography variant="overline" color="text.secondary">Recommended next step</Typography><Typography sx={{ mt: 0.25, fontWeight: 650 }}>{evaluation.nextStep}</Typography></Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2.5 }}>{evaluation.provider === 'Jev' ? `Assembled deterministically from stored Jev judgments and source evidence. Usage: ${evaluation.inputTokens?.toLocaleString() ?? 'unknown'} input tokens.` : 'Generated deterministically from a simulated evaluation. It is not a Jev result.'}</Typography>
           </Paper> : <Alert severity="info">This record has not been evaluated yet. Return to the inbox and choose an evaluation provider.</Alert>}
 
-          {!isActiveProject && item.businessProspect && <Section title="Business details">
-            <Stack spacing={1}>
-              <Typography variant="body2"><strong>Website:</strong> {item.businessProspect.websiteUrl
-                ? <Link href={item.businessProspect.websiteUrl} target="_blank" rel="noopener noreferrer">{item.businessProspect.websiteUrl}</Link>
-                : 'No website found'}</Typography>
-              <Typography variant="body2"><strong>Geography:</strong> {item.businessProspect.geography ?? 'Unknown'}</Typography>
-              <Typography variant="body2"><strong>Industry:</strong> {item.businessProspect.industry ?? 'Unknown'}</Typography>
-            </Stack>
-          </Section>}
+          {!desktopReview && reviewPanel}
 
-          {!!result?.factors.length && <Section title="Fit factors">
-            <Stack spacing={1.5}>{result.factors.map(factor => <Paper key={factor.key} variant="outlined" sx={{ p: 2, bgcolor: SURFACE_SUBTLE }}>
-              <Stack direction="row" sx={{ justifyContent: 'space-between', gap: 2 }}><Typography sx={{ fontWeight: 700 }}>{factor.label}</Typography><Chip size="small" label={`${factor.score} / 3`} /></Stack>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>{factor.explanation}</Typography>
-              {factor.evidencePassageId !== 'none' && <Typography variant="caption" color="primary.main">Evidence: {factor.evidencePassageId}</Typography>}
-            </Paper>)}</Stack>
-          </Section>}
+          {!isActiveProject && item.businessProspect && <Section title="Business details"><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 2 }}><DetailMetric label="Website" value={item.businessProspect.websiteUrl ? <Link href={item.businessProspect.websiteUrl} target="_blank" rel="noopener noreferrer">Visit website</Link> : 'No website found'} /><DetailMetric label="Geography" value={item.businessProspect.geography ?? 'Unknown'} /><DetailMetric label="Industry" value={item.businessProspect.industry ?? 'Unknown'} /></Box></Section>}
 
-          {comparison && (comparison.baseline || comparison.semantic) && <Section title={isActiveProject ? 'Semantic evaluation vs keyword baseline' : 'Semantic evaluation'}>
+          {!!result?.factors.length && <Section title="Fit factors"><Stack divider={<Box sx={{ borderTop: 1, borderColor: 'divider' }} />}>{result.factors.map(factor => <FactorScore key={factor.key} label={factor.label} score={factor.score} explanation={factor.explanation} evidencePassageId={factor.evidencePassageId} />)}</Stack></Section>}
+
+          {result && <Box><Typography variant="h6" sx={{ mb: 1.5 }}>Decision signals</Typography><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 1.5 }}><SignalCard title="Known facts" values={result.knownFacts} empty="No additional facts were extracted." icon={<FlagOutlinedIcon />} /><SignalCard title="Model hypotheses" values={result.hypotheses} empty="No hypotheses." tone="info" icon={<LightbulbOutlinedIcon />} /><SignalCard title="Missing information" values={result.missingInformation} empty="No major missing fields detected." tone="warning" icon={<SearchOffOutlinedIcon />} /><SignalCard title="Concerns" values={result.concerns} empty="No hard concerns detected." tone="error" icon={<ReportProblemOutlinedIcon />} /></Box></Box>}
+
+          {comparison && (comparison.baseline || comparison.semantic) && <SupportingSection key="comparison" title={isActiveProject ? 'Evaluation comparison' : 'Semantic evaluation'} defaultExpanded={isActiveProject}>
             {comparison.isIllustration && <Alert severity="info" sx={{ mb: 2 }}>Illustration only. This synthetic comparison is not an accuracy benchmark.</Alert>}
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: comparison.baseline ? '1fr 1fr' : '1fr' }, gap: 2 }}>
-              <Paper variant="outlined" sx={{ p: 2.25, bgcolor: SURFACE_SUBTLE }}>
-                <Typography variant="overline" color="primary.main">Semantic evaluation</Typography>
-                <Stack direction="row" spacing={1} sx={{ alignItems: 'center', my: 1 }}>
-                  {comparison.semantic?.recommendation ? <Chip size="small" label={comparison.semantic.recommendation} color={RECOMMENDATION_META[comparison.semantic.recommendation].chipColor} /> : <Chip size="small" label={comparison.semantic?.status ?? 'Not evaluated'} />}
-                  {comparison.semantic?.priorityBand && <Chip size="small" variant="outlined" label={`${comparison.semantic.priorityBand} priority`} />}
-                </Stack>
-                <Typography variant="body2" color="text.secondary">{comparison.semantic?.summary ?? 'No semantic result is available.'}</Typography>
-                {comparison.semantic && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>{comparison.semantic.provider === 'Jev' ? `Jev model: ${comparison.semantic.model}` : 'Deterministic demonstration evaluator'}</Typography>}
-              </Paper>
-              {comparison.baseline ? <Paper variant="outlined" sx={{ p: 2.25, bgcolor: SURFACE_SUBTLE }}>
-                <Typography variant="overline" color="text.secondary">Literal keyword baseline</Typography>
-                <Stack direction="row" spacing={1} sx={{ alignItems: 'center', my: 1 }}><Chip size="small" label={comparison.baseline.recommendation} color={RECOMMENDATION_META[comparison.baseline.recommendation].chipColor} /><Chip size="small" variant="outlined" label={`${comparison.baseline.keywordScore} / 3 keyword score`} /></Stack>
-                <Typography variant="body2" color="text.secondary">{comparison.baseline.summary}</Typography>
-                <Typography variant="body2" sx={{ mt: 1.5, fontWeight: 700 }}>Matched terms</Typography>
-                <Stack direction="row" spacing={0.75} useFlexGap sx={{ mt: 0.75, flexWrap: 'wrap' }}>{comparison.baseline.matchedTerms.length
-                  ? comparison.baseline.matchedTerms.map(term => <Chip key={term} size="small" variant="outlined" label={term} />)
-                  : <Typography variant="body2" color="text.secondary">None</Typography>}</Stack>
-                <Typography variant="body2" sx={{ mt: 1.5, fontWeight: 700 }}>Hard rules</Typography>
-                <Stack spacing={0.5} sx={{ mt: 0.75 }}>{comparison.baseline.hardRules.map(rule => <Typography key={rule.key} variant="caption" color={rule.triggered ? 'error.main' : 'text.secondary'}>{rule.triggered ? 'Triggered: ' : 'Clear: '}{rule.explanation}</Typography>)}</Stack>
-              </Paper> : comparison.baselineUnavailableReason && <Alert severity="info" sx={{ alignSelf: 'start' }}>{comparison.baselineUnavailableReason}</Alert>}
-            </Box>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>{comparison.note}</Typography>
-          </Section>}
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: comparison.baseline ? '1fr 1fr' : '1fr' }, gap: 2 }}><Paper variant="outlined" sx={{ p: 2.25, bgcolor: SURFACE_SUBTLE }}><Typography variant="overline" color="primary.main">Semantic evaluation</Typography><Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', my: 1, flexWrap: 'wrap' }}>{comparison.semantic?.recommendation ? <Chip size="small" label={comparison.semantic.recommendation} color={RECOMMENDATION_META[comparison.semantic.recommendation].chipColor} /> : <Chip size="small" label={comparison.semantic?.status ?? 'Not evaluated'} />}{comparison.semantic?.priorityBand && <Chip size="small" variant="outlined" label={`${comparison.semantic.priorityBand} priority`} />}</Stack><Typography variant="body2" color="text.secondary">{comparison.semantic?.summary ?? 'No semantic result is available.'}</Typography>{comparison.semantic && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>{comparison.semantic.provider === 'Jev' ? `Jev model: ${comparison.semantic.model}` : 'Deterministic demonstration evaluator'}</Typography>}</Paper>
+              {comparison.baseline ? <Paper variant="outlined" sx={{ p: 2.25, bgcolor: SURFACE_SUBTLE }}><Typography variant="overline" color="text.secondary">Literal keyword baseline</Typography><Stack direction="row" spacing={1} useFlexGap sx={{ alignItems: 'center', my: 1, flexWrap: 'wrap' }}><Chip size="small" label={comparison.baseline.recommendation} color={RECOMMENDATION_META[comparison.baseline.recommendation].chipColor} /><Chip size="small" variant="outlined" label={`${comparison.baseline.keywordScore} / 3 keyword score`} /></Stack><Typography variant="body2" color="text.secondary">{comparison.baseline.summary}</Typography><Typography variant="body2" sx={{ mt: 1.5, fontWeight: 700 }}>Matched terms</Typography><Stack direction="row" spacing={0.75} useFlexGap sx={{ mt: 0.75, flexWrap: 'wrap' }}>{comparison.baseline.matchedTerms.length ? comparison.baseline.matchedTerms.map(term => <Chip key={term} size="small" variant="outlined" label={term} />) : <Typography variant="body2" color="text.secondary">None</Typography>}</Stack><Typography variant="body2" sx={{ mt: 1.5, fontWeight: 700 }}>Hard rules</Typography><Stack spacing={0.5} sx={{ mt: 0.75 }}>{comparison.baseline.hardRules.map(rule => <Typography key={rule.key} variant="caption" color={rule.triggered ? 'error.main' : 'text.secondary'}>{rule.triggered ? 'Triggered: ' : 'Clear: '}{rule.explanation}</Typography>)}</Stack></Paper> : comparison.baselineUnavailableReason && <Alert severity="info" sx={{ alignSelf: 'start' }}>{comparison.baselineUnavailableReason}</Alert>}
+            </Box><Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>{comparison.note}</Typography>
+          </SupportingSection>}
 
-          <Section title="Original description">
-            <Paper variant="outlined" sx={{ p: 2.5, bgcolor: SURFACE_SUBTLE, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{item.description}</Paper>
-            {(item.sourceDate || item.externalId) && <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>{item.sourceDate && `Source date: ${new Date(item.sourceDate).toLocaleDateString()}`}{item.sourceDate && item.externalId && ' | '}{item.externalId && `External ID: ${item.externalId}`}</Typography>}
-          </Section>
+          <SupportingSection key="source" title="Original source" subtitle="The complete imported description and source metadata."><Paper variant="outlined" sx={{ p: 2.5, bgcolor: SURFACE_SUBTLE, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{item.description}</Paper>{(item.sourceDate || item.externalId) && <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>{item.sourceDate && `Source date: ${new Date(item.sourceDate).toLocaleDateString()}`}{item.sourceDate && item.externalId && ' | '}{item.externalId && `External ID: ${item.externalId}`}</Typography>}</SupportingSection>
 
-          <Section title="Stored evidence passages">
-            <Typography color="text.secondary" sx={{ mb: 1.5 }}>Quotations below come directly from the stored source text.</Typography>
-            <Stack spacing={1.25}>{item.passages.map(passage => <Paper key={passage.id} variant="outlined" sx={{ p: 2, borderColor: evidenceIds.has(passage.id) ? 'primary.main' : 'divider', bgcolor: evidenceIds.has(passage.id) ? 'primary.light' : 'background.paper' }}>
-              <Typography variant="overline" color="text.secondary">{passage.id}</Typography><Typography sx={{ whiteSpace: 'pre-wrap' }}>{passage.text}</Typography>
-            </Paper>)}</Stack>
-          </Section>
+          <SupportingSection key="evidence" title="Stored evidence" subtitle="Quoted passages come directly from the stored source text."><Stack spacing={1.25}>{item.passages.map(passage => <Paper id={`passage-${passage.id}`} key={passage.id} variant="outlined" sx={{ p: 2, scrollMarginTop: 96, borderColor: evidenceIds.has(passage.id) ? 'primary.main' : 'divider', bgcolor: evidenceIds.has(passage.id) ? 'primary.light' : 'background.paper', transition: 'box-shadow .2s ease', '&:target': { boxShadow: '0 0 0 3px rgba(37,99,235,.25)' } }}><Typography variant="overline" color="text.secondary">{passage.id}</Typography><Typography sx={{ whiteSpace: 'pre-wrap' }}>{passage.text}</Typography></Paper>)}</Stack></SupportingSection>
         </Stack>
 
-        <Stack spacing={2.5} sx={{ position: { lg: 'sticky' }, top: { lg: 88 } }}>
-          <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
-            <Typography variant="h6">Your review</Typography>
-            <Stack spacing={2} sx={{ mt: 2 }}>
-              <FormControl fullWidth><InputLabel>Decision</InputLabel><Select label="Decision" value={decision} onChange={event => setDecision(event.target.value as ActiveProjectDecision | BusinessProspectDecision | '')}><MenuItem value="">Unreviewed</MenuItem>{decisionOptions.map(value => <MenuItem key={value} value={value}>{value}</MenuItem>)}</Select></FormControl>
-              <TextField label="Notes" value={notes} onChange={event => setNotes(event.target.value)} multiline minRows={5} slotProps={{ htmlInput: { maxLength: 5000 } }} helperText={`${notes.length} / 5,000`} />
-              <Button variant="contained" onClick={save} disabled={busy}>{busy ? 'Saving...' : 'Save review'}</Button>
-            </Stack>
-          </Paper>
-          <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
-            <Typography variant="h6">Danger zone</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 2 }}>
-              Permanently delete this record, for example a bad import or a synthetic example. This cannot be undone.
-            </Typography>
-            <Button color="error" variant="outlined" onClick={() => setDeleteOpen(true)}>Delete opportunity</Button>
-          </Paper>
-          {result && [
-            <EvidenceList key="known" title="Known facts" values={result.knownFacts} empty="No additional facts were extracted." />,
-            <EvidenceList key="hypotheses" title="Model hypotheses" values={result.hypotheses} empty="No hypotheses." tone="info" />,
-            <EvidenceList key="missing" title="Missing information" values={result.missingInformation} empty="No major missing fields detected." tone="warning" />,
-            <EvidenceList key="concerns" title="Concerns" values={result.concerns} empty="No hard concerns detected." tone="error" />,
-          ]}
-        </Stack>
+        {desktopReview && <Stack spacing={2.5} sx={{ position: 'sticky', top: 88 }}>{reviewPanel}</Stack>}
       </Box>
+
+      <Paper variant="outlined" sx={{ mt: 4, p: { xs: 2.5, md: 3 }, borderRadius: 3, borderColor: '#fecaca', bgcolor: '#fffafa' }}><Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ justifyContent: 'space-between', alignItems: { sm: 'center' } }}><Box><Typography variant="h6" color="error.main">Danger zone</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 0.35 }}>Delete a bad import or synthetic example and its evaluation history. This cannot be undone.</Typography></Box><Button color="error" variant="outlined" onClick={() => setDeleteOpen(true)} sx={{ flexShrink: 0 }}>Delete opportunity</Button></Stack></Paper>
     </Container>
 
-    <Dialog open={deleteOpen} onClose={() => { if (!deleting) { setDeleteOpen(false); setDeleteError(''); } }}
-      fullScreen={fullScreen} maxWidth="xs" fullWidth aria-labelledby="delete-opportunity-title"
-      slotProps={{ paper: { sx: { borderRadius: fullScreen ? 0 : 4, overflow: 'hidden' } } }}>
-      <Box sx={{ height: 5, background: 'linear-gradient(90deg, #2563eb, #60a5fa)' }} />
-      <DialogTitle id="delete-opportunity-title" sx={DIALOG_TITLE_SX}>
-        <Box component="span">Delete opportunity</Box>
-        <IconButton aria-label="Close" size="small" onClick={() => { setDeleteOpen(false); setDeleteError(''); }} disabled={deleting} sx={{ color: 'text.secondary', mr: -1 }}>
-          <CloseIcon fontSize="small" />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent sx={{ pt: 1 }}>
-        <Typography variant="body2" color="text.secondary">
-          This permanently deletes &quot;{item.title}&quot; and its evaluation history. This cannot be undone.
-        </Typography>
-        {deleteError && <Alert severity="error" sx={{ mt: 2 }}>{deleteError}</Alert>}
-      </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2.5 }}>
-        <Button onClick={() => { setDeleteOpen(false); setDeleteError(''); }} disabled={deleting}>Cancel</Button>
-        <Button variant="contained" color="error" onClick={confirmDelete} loading={deleting}>Delete</Button>
-      </DialogActions>
-    </Dialog>
+    <RadarDialog open={deleteOpen} fullScreen={fullScreen} maxWidth="xs" title="Delete opportunity" busy={deleting} onClose={() => { setDeleteOpen(false); setDeleteError(''); }} actions={<><Button onClick={() => { setDeleteOpen(false); setDeleteError(''); }} disabled={deleting}>Cancel</Button><Button variant="contained" color="error" onClick={confirmDelete} loading={deleting}>Delete</Button></>}>
+      <Typography variant="body2" color="text.secondary">This permanently deletes &quot;{item.title}&quot; and its evaluation history. This cannot be undone.</Typography>
+      {deleteError && <Alert severity="error" sx={{ mt: 2 }}>{deleteError}</Alert>}
+    </RadarDialog>
   </Box>;
 }
 
@@ -239,7 +175,19 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return <Paper variant="outlined" sx={{ p: { xs: 2.5, md: 3 }, borderRadius: 3 }}><Typography variant="h6" sx={{ mb: 2 }}>{title}</Typography>{children}</Paper>;
 }
 
-function EvidenceList({ title, values, empty, tone = 'default' }: { title: string; values: string[]; empty: string; tone?: 'default' | 'info' | 'warning' | 'error' }) {
-  const background = tone === 'info' ? 'primary.light' : tone === 'warning' ? '#fff7ed' : tone === 'error' ? '#fef2f2' : 'background.paper';
-  return <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, bgcolor: background }}><Typography sx={{ fontWeight: 800 }}>{title}</Typography>{values.length ? <Box component="ul" sx={{ pl: 2.5, mb: 0 }}>{values.map(value => <Typography component="li" key={value} variant="body2" sx={{ mt: 1 }}>{value}</Typography>)}</Box> : <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{empty}</Typography>}</Paper>;
+function DetailMetric({ label, value }: { label: string; value: React.ReactNode }) {
+  return <Box><Typography variant="overline" color="text.secondary">{label}</Typography><Typography variant="body2" sx={{ mt: 0.25, fontWeight: 650, overflowWrap: 'anywhere' }}>{value}</Typography></Box>;
+}
+
+function FactorScore({ label, score, explanation, evidencePassageId }: { label: string; score: number; explanation: string; evidencePassageId: string }) {
+  return <Box sx={{ py: 2, '&:first-of-type': { pt: 0 }, '&:last-of-type': { pb: 0 } }}><Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ justifyContent: 'space-between', alignItems: { sm: 'flex-start' } }}><Box sx={{ minWidth: 0 }}><Typography sx={{ fontWeight: 800 }}>{label}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.55 }}>{explanation}</Typography>{evidencePassageId !== 'none' && <Link href={`#passage-${evidencePassageId}`} underline="hover" variant="caption" sx={{ display: 'inline-block', mt: 0.75, fontWeight: 700 }}>View {evidencePassageId}</Link>}</Box><Stack direction="row" spacing={0.5} aria-label={`${score} out of 3`} sx={{ flexShrink: 0, pt: 0.25 }}>{[1, 2, 3].map(position => <Box key={position} sx={{ width: 26, height: 8, borderRadius: 99, bgcolor: position <= score ? 'primary.main' : 'divider' }} />)}</Stack></Stack></Box>;
+}
+
+function SignalCard({ title, values, empty, icon, tone = 'default' }: { title: string; values: string[]; empty: string; icon: React.ReactNode; tone?: 'default' | 'info' | 'warning' | 'error' }) {
+  const colors = tone === 'info' ? { bg: '#eff6ff', fg: '#2563eb', border: '#bfdbfe' } : tone === 'warning' ? { bg: '#fff7ed', fg: '#c2410c', border: '#fed7aa' } : tone === 'error' ? { bg: '#fef2f2', fg: '#b91c1c', border: '#fecaca' } : { bg: '#ffffff', fg: '#475569', border: '#e2e8f0' };
+  return <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 3, bgcolor: colors.bg, borderColor: colors.border }}><Stack direction="row" spacing={1} sx={{ alignItems: 'center', color: colors.fg }}><Box sx={{ display: 'flex', '& svg': { fontSize: 20 } }}>{icon}</Box><Typography sx={{ fontWeight: 800 }}>{title}</Typography><Chip size="small" label={values.length} sx={{ ml: 'auto !important', height: 22, bgcolor: 'rgba(255,255,255,.7)' }} /></Stack>{values.length ? <Box component="ul" sx={{ pl: 2.5, mb: 0 }}>{values.map(value => <Typography component="li" key={value} variant="body2" sx={{ mt: 1 }}>{value}</Typography>)}</Box> : <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{empty}</Typography>}</Paper>;
+}
+
+function SupportingSection({ title, subtitle, defaultExpanded = false, children }: { title: string; subtitle?: string; defaultExpanded?: boolean; children: React.ReactNode }) {
+  return <Accordion defaultExpanded={defaultExpanded} disableGutters variant="outlined" sx={{ borderRadius: '14px !important', overflow: 'hidden', '&::before': { display: 'none' } }}><AccordionSummary expandIcon={<ExpandMoreRoundedIcon />} sx={{ px: { xs: 2.5, md: 3 }, py: 0.75, '& .MuiAccordionSummary-content': { my: 1.25 } }}><Box><Typography variant="h6">{title}</Typography>{subtitle && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>{subtitle}</Typography>}</Box></AccordionSummary><AccordionDetails sx={{ px: { xs: 2.5, md: 3 }, pb: 3, pt: 0 }}>{children}</AccordionDetails></Accordion>;
 }
