@@ -18,7 +18,9 @@ export function setUnauthorizedHandler(handler: () => void) {
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('hsl_token');
   const headers = new Headers(options.headers);
-  headers.set('Content-Type', 'application/json');
+  if (!(options.body instanceof FormData)) {
+    headers.set('Content-Type', 'application/json');
+  }
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
   }
@@ -40,6 +42,22 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   }
 
   return response.json() as Promise<T>;
+}
+
+export async function apiFetchBlob(path: string): Promise<Blob> {
+  const token = localStorage.getItem('hsl_token');
+  const headers = new Headers();
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  const response = await fetch(`${API_BASE_URL}${path}`, { headers });
+  if (response.status === 401) {
+    onUnauthorized?.();
+    throw new ApiError(401, 'Unauthorized');
+  }
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({ message: response.statusText }));
+    throw new ApiError(response.status, body.message ?? 'Request failed');
+  }
+  return response.blob();
 }
 
 /** Shared fallback for submit-handler catch blocks: use the server's message when there is one. */

@@ -9,6 +9,9 @@ import { SURFACE_SUBTLE } from './theme';
 import hslIcon from './assets/branding/icon-dark.webp';
 import { AdminInquiriesPage } from './pages/AdminInquiriesPage';
 const ContactPage = lazy(() => import('./pages/ContactPage').then(m => ({ default: m.ContactPage })));
+const OpportunityRadarPage = lazy(() => import('./pages/OpportunityRadarPage').then(m => ({ default: m.OpportunityRadarPage })));
+const OpportunityDetailPage = lazy(() => import('./pages/OpportunityDetailPage').then(m => ({ default: m.OpportunityDetailPage })));
+const OpportunityDigestPage = lazy(() => import('./pages/OpportunityDigestPage').then(m => ({ default: m.OpportunityDigestPage })));
 
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
@@ -44,6 +47,10 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/contact" element={<Suspense fallback={<RouteFallback />}><ContactPage /></Suspense>} />
           <Route path="/admin/inquiries" element={<ProtectedRoute requireAdmin><AdminInquiriesPage /></ProtectedRoute>} />
+          <Route path="/admin/opportunities" element={<ProtectedRoute requireAdmin><Suspense fallback={<RouteFallback />}><OpportunityRadarPage entityType="ActiveProject" /></Suspense></ProtectedRoute>} />
+          <Route path="/admin/opportunities/prospects" element={<ProtectedRoute requireAdmin><Suspense fallback={<RouteFallback />}><OpportunityRadarPage entityType="BusinessProspect" /></Suspense></ProtectedRoute>} />
+          <Route path="/admin/opportunities/digest" element={<ProtectedRoute requireAdmin><Suspense fallback={<RouteFallback />}><OpportunityDigestPage /></Suspense></ProtectedRoute>} />
+          <Route path="/admin/opportunities/:id" element={<ProtectedRoute requireAdmin><Suspense fallback={<RouteFallback />}><OpportunityDetailPage /></Suspense></ProtectedRoute>} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/portfolio" element={<PortfolioPage />} />
           <Route

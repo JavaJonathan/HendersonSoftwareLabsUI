@@ -123,6 +123,9 @@ export function AdminPage() {
                 <Button component={RouterLink} to="/admin/inquiries" variant="outlined">
                   Inquiries{newInquiries === null ? '' : ` (${newInquiries} new)`}
                 </Button>
+                <Button component={RouterLink} to="/admin/opportunities" variant="outlined">
+                  Opportunity Radar
+                </Button>
                 <Button variant="contained" startIcon={<AddIcon />} onClick={() => setDialogOpen(true)}>
                   New Client
                 </Button>

@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Do not use em dashes (`—`) anywhere: not in code, comments, docs, commit messages, or user-facing copy (marketing text, `aria-label`s, portfolio content). Rewrite with a comma, parentheses, a colon, or two sentences; a spaced hyphen (` - `) is an acceptable last resort. This applies to en dashes (`–`) in prose too; a plain hyphen is fine for ranges.
 
-## Project Status (as of 2026-09-12)
+## Project Status (as of 2026-09-21)
 
-Everything below is deployed and live in production (see "Production Deployment") with no known bugs or unfinished work. The most recent work was a substantial rebuild of the public task cost calculator at `/tools/task-cost-calculator` - see "The task cost calculator" below, which is the section to read before touching anything under `src/pages/tools/` or `src/components/tools/`. Before that, a design pass on `LoginPage.tsx` (branding assets, layout, polish) - see "Branding assets" and the `Reveal` `fullWidth` gotcha. This file and the API repo's `CLAUDE.md` are both kept current - read both before resuming.
+Everything except Opportunity Radar below is deployed and live in production (see "Production Deployment") with no known bugs or unfinished work. Opportunity Radar (see its sections below, most recently "Opportunity Radar: review fixes") is implemented and locally verified end to end against the real API and a browser through the "split into ActiveProject / BusinessProspect" checkpoint, but **uncommitted** - it is staying local for Jonathan's review per the root `CLAUDE.md`'s review-before-committing rule. The most recent checkpoint's code changes are build- and lint-verified but not yet re-verified against a running API and browser (see that section) - do that pass before considering it settled. Before that, a substantial rebuild of the public task cost calculator at `/tools/task-cost-calculator` - see "The task cost calculator" below, which is the section to read before touching anything under `src/pages/tools/` or `src/components/tools/`. This file and the API repo's `CLAUDE.md` are both kept current - read both before resuming.
 
 ## Commands
 
@@ -137,3 +137,38 @@ The public `/contact` page saves name, email and message through anonymous `POST
 Admins open `/admin/inquiries` from the Clients page. The inbox defaults to New, supports 25-row pagination and New/Contacted/Archived/All filters, and provides a detail dialog, copy-email action and mailto reply. Status changes are explicit; opening a draft never marks an inquiry Contacted. Archived inquiries can return to New. The inbox requires the existing admin route guard and admin API authorization. The detail dialog follows the shared "Admin dialog conventions" above as of a 2026-09-20 cleanup pass.
 
 Verification: `npm run build`, `npm run lint`, `npm test`, plus browser checks for contact validation, submission, mobile layout and inbox status changes.
+
+## Opportunity Radar checkpoint 1 (2026-09-20)
+
+The private admin workflow lives at `/admin/opportunities` with detail routes at `/admin/opportunities/:id`. `src/api/opportunities.ts` owns the contract. The inbox supports paste and CSV import, synthetic examples, filters, simulated evaluation, screening preferences, near-duplicate warnings, and persistent decisions and notes.
+
+Every checkpoint 1 evaluation is simulated and must remain visibly labeled. Evidence quotations render only from stored source passages. Missing budget is distinct from an explicitly inadequate budget. The preferences dialog is the only UI source for the budget floor and scope window; saving preferences asks the API to rescore simulated evaluations.
+
+## Opportunity Radar checkpoint 2 (2026-09-20)
+
+The inbox fetches provider availability from the server. Evaluate all opens a preview dialog instead of immediately spending provider usage. Live Jev is disabled when the server key is absent; when available, the dialog shows record count, conservative maximum input tokens and cost, the server batch ceiling, and rolling token usage before the explicit confirmation button is enabled.
+
+Detail pages distinguish simulated, live, stale, and failed evaluations. A provider failure never appears as Pass. Budget and scope changes are rescored locally, while capability changes mark live results stale until Jev runs again. Browser code never receives the TypeSafe key.
+
+## Opportunity Radar checkpoint 3 (2026-09-20)
+
+The detail view compares semantic evaluation with the literal keyword baseline, including matched terms and every hard-rule outcome. Synthetic comparisons must retain the illustration label and must not be described as benchmarks.
+
+The inbox export dialog excludes synthetic examples by default and explains that exported copies are sanitized without changing stored data. The download must continue through the authenticated API helper. Do not build CSV in the browser or bypass the server sanitizer.
+
+## Opportunity Radar: split into ActiveProject / BusinessProspect (2026-09-21)
+
+Checkpoints 1-3 above shipped a single opportunity model. Before any migration was ever applied on the API side, it split into two lanes with their own routes: `/admin/opportunities` (Active Projects, default), `/admin/opportunities/prospects` (Business Prospects), `/admin/opportunities/digest` (today's best-ranked records per lane, a view only, no scheduled/emailed digest exists). `OpportunityLaneTabs` (new, `src/components/opportunities/`) renders the switcher on all three; this is the first use of MUI `Tabs` in this codebase (`variant="scrollable"` for narrow viewports), distinct from the paste/CSV button-pair toggle pattern still used inside `ImportDialog`.
+
+`OpportunityRadarPage` takes a required `entityType` prop rather than forking into two page files; `OpportunityRow` (new, `src/components/opportunities/`) is the shared row renderer used by both lanes and the digest page, its chip stack forks per `entityType` (source/budget chips for ActiveProject; industry/geography/website-domain chips for BusinessProspect). `ImportDialog` is similarly adaptive on the same prop (business name/evidence/website fields instead of title/description/source-type), and `PreferencesDialog` gained a "Business prospect screening" section (industries/geographies, its own 7-key weight row) plus two digest-count fields, alongside the unchanged "Active project screening" section.
+
+`OpportunityDetailPage` branches on `item.entityType`: decision `Select` options come from `ActiveProjectDecision` (Pursue/Investigate/Pass) or `BusinessProspectDecision` (Prioritize/Watch/Skip); a "Business details" block (website/geography/industry) renders only for BusinessProspect; the keyword-baseline half of the comparison section is replaced with `comparison.baselineUnavailableReason` when `comparison.baseline` is null (BusinessProspect has no keyword-baseline equivalent), while the semantic-evaluation half still renders. `RadarFactor`/`EvidenceList`/`Section` needed no changes, both rubrics already fit their existing generic shape.
+
+`src/api/opportunities.ts` is the single source of truth for the contract: `OpportunityEntityType`, the two decision unions plus the widened `OpportunityRecommendation`, `RECOMMENDATION_META`/`SOURCE_TYPE_LABELS` (centralized here, previously duplicated inline in both pages), split `RadarPreferences`, the four import functions (`importActiveProject`/`importActiveProjectCsv`/`importBusinessProspect`/`importBusinessProspectCsv`, replacing the old single pair), and `getOpportunityDigest`. Import responses are `{id, created, updated, nearDuplicateOfId}` (a resubmission that matches an existing record **updates** it and returns `updated: true`, it does not 409), never assume the old reject-on-duplicate shape.
+
+## Opportunity Radar: review fixes (2026-09-21)
+
+A review found the inbox had no way to remove a bad import or clear a false duplicate flag, and that `OpportunityRow` was a mouse-only clickable element. Both fixed here; see the API repo's `CLAUDE.md` for the corresponding server-side fixes (reimport matching, digest filtering, weight normalization, the list endpoint rewrite) this checkpoint pairs with.
+
+- **`OpportunityDetailPage.tsx`** gained a "Danger zone" panel (delete, with a confirmation dialog) and a "Not a duplicate" action on the existing duplicate `Alert`. `deleteOpportunity`/`clearOpportunityDuplicate` are new functions in `src/api/opportunities.ts`, following the existing `apiFetch<T>` pattern. The confirmation dialog is the first delete-confirmation dialog in this codebase; it follows the "Admin dialog conventions" above (accent bar, `TITLE_SX`-shaped title, close `IconButton`, `fullScreen` breakpoint) and is also the first use of `color="error"` on a `Button` here (existing status coloring elsewhere is chip-only) - match both when a future destructive action needs the same treatment. In-place editing of imported fields (title/description/source) was deliberately left out of scope; delete and reimport instead.
+- **`OpportunityRow.tsx`** is now keyboard-operable: `role="button"`, `tabIndex={0}`, and an `onKeyDown` handler activating on Enter/Space (with `preventDefault` on Space to stop page scroll), plus a `'&:focus-visible'` style since a `div` with `role="button"` gets no native focus ring. This is the first `role="button"`-on-a-non-button element in this codebase - the existing "clickable but not a real button" precedent (`Expandable.tsx`, the "Clear all" control in `landing/line/KindPanel.tsx`) uses `component="button"` (a real native button) instead, which didn't fit `OpportunityRow`'s chip-stack/title/description layout as cleanly. The row's duplicate-flag chip stays read-only and non-interactive on purpose, to avoid a second focus target and `stopPropagation` plumbing inside what is now semantically one button; the "not a duplicate" action lives only on the detail page.
