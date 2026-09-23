@@ -12,12 +12,14 @@ import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
 import SearchOffOutlinedIcon from '@mui/icons-material/SearchOffOutlined';
 import { AuthedAppBar } from '../components/layout/AuthedAppBar';
+import { EvaluationDialog } from '../components/opportunities/EvaluationDialog';
 import { RadarDialog } from '../components/opportunities/RadarDialog';
 import { SURFACE_SUBTLE } from '../theme';
 import {
-  getOpportunity, getOpportunityComparison, updateOpportunityReview, deleteOpportunity, clearOpportunityDuplicate,
+  getOpportunity, getOpportunityComparison, getRadarProvider, updateOpportunityReview, deleteOpportunity, clearOpportunityDuplicate,
   RECOMMENDATION_META, SOURCE_TYPE_LABELS,
   type ActiveProjectDecision, type BusinessProspectDecision, type OpportunityComparison, type OpportunityDetail,
+  type RadarProviderStatus,
 } from '../api/opportunities';
 import { getApiErrorMessage } from '../api/client';
 
@@ -43,19 +45,34 @@ export function OpportunityDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [clearingDuplicate, setClearingDuplicate] = useState(false);
+  const [evaluationOpen, setEvaluationOpen] = useState(false);
+  const [providerStatus, setProviderStatus] = useState<RadarProviderStatus | null>(null);
 
   useEffect(() => {
     if (!id) return; let active = true; setError('');
     Promise.all([getOpportunity(Number(id)), getOpportunityComparison(Number(id))]).then(([data, comparisonData]) => {
       if (!active) return;
       setItem(data); setComparison(comparisonData);
-      setDecision(data.activeProject?.userDecision ?? data.businessProspect?.userDecision ?? '');
-      setNotes(data.notes);
-      setSavedDecision(data.activeProject?.userDecision ?? data.businessProspect?.userDecision ?? '');
-      setSavedNotes(data.notes);
+      const nextDecision = data.activeProject?.userDecision ?? data.businessProspect?.userDecision ?? '';
+      setDecision(nextDecision); setNotes(data.notes);
+      setSavedDecision(nextDecision); setSavedNotes(data.notes);
     }).catch(() => { if (active) setError('Unable to load this opportunity.'); });
     return () => { active = false; };
   }, [id]);
+
+  useEffect(() => { getRadarProvider().then(setProviderStatus).catch(() => setProviderStatus(null)); }, []);
+
+  async function reloadAfterEvaluation() {
+    if (!item) return;
+    try {
+      const [data, comparisonData] = await Promise.all([getOpportunity(item.id), getOpportunityComparison(item.id)]);
+      setItem(data); setComparison(comparisonData);
+      const nextDecision = data.activeProject?.userDecision ?? data.businessProspect?.userDecision ?? '';
+      // Don't clobber an in-progress, unsaved review edit just because an evaluation finished in the background.
+      if (decision === savedDecision && notes === savedNotes) { setDecision(nextDecision); setNotes(data.notes); }
+      setSavedDecision(nextDecision); setSavedNotes(data.notes);
+    } catch { /* the success notice already fired; a failed refresh just leaves the page showing pre-eval data until next visit */ }
+  }
 
   async function save() {
     if (!item) return; setBusy(true); setError(''); setNotice('');
@@ -87,6 +104,7 @@ export function OpportunityDetailPage() {
   const evaluation = item.evaluation;
   const result = evaluation?.result;
   const evidenceIds = new Set(result?.factors.map(factor => factor.evidencePassageId) ?? []);
+  const liveAvailable = !!(isActiveProject ? providerStatus?.activeProject.liveAvailable : providerStatus?.businessProspect.liveAvailable);
   const reviewPanel = <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, borderColor: 'rgba(37,99,235,.24)', boxShadow: '0 20px 45px -38px rgba(37,99,235,.75)' }}>
     <Typography variant="overline" color="primary.main">Your call</Typography><Typography variant="h6">Record the decision</Typography>
     <Stack spacing={2} sx={{ mt: 2 }}>
@@ -131,12 +149,12 @@ export function OpportunityDetailPage() {
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.65fr) minmax(310px, .85fr)' }, gap: 2.5, alignItems: 'start' }}>
         <Stack spacing={2.5} sx={{ minWidth: 0 }}>
-          {evaluation?.status === 'Failed' ? <Alert severity="error">Evaluation failed without changing the opportunity score. {evaluation.errorMessage ?? 'Retry when the provider is available.'}</Alert> : evaluation ? <Paper variant="outlined" sx={{ p: { xs: 2.5, md: 3.5 }, borderRadius: 3, background: 'linear-gradient(145deg, #ffffff 25%, #eff6ff 100%)', borderColor: 'rgba(37,99,235,.22)' }}>
-            <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}><Typography variant="overline" color="primary.main">Radar recommendation</Typography>{evaluation.recommendation && <Chip size="small" label={evaluation.recommendation} color={RECOMMENDATION_META[evaluation.recommendation].chipColor} />}{evaluation.priorityBand && <Chip size="small" variant="outlined" label={`${evaluation.priorityBand} priority`} />}</Stack>
+          {evaluation?.status === 'Failed' ? <Alert severity="error" action={<Button color="inherit" size="small" onClick={() => setEvaluationOpen(true)}>Retry evaluation</Button>}>Evaluation failed without changing the opportunity score. {evaluation.errorMessage ?? 'Retry when the provider is available.'}</Alert> : evaluation ? <Paper variant="outlined" sx={{ p: { xs: 2.5, md: 3.5 }, borderRadius: 3, background: 'linear-gradient(145deg, #ffffff 25%, #eff6ff 100%)', borderColor: 'rgba(37,99,235,.22)' }}>
+            <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}><Typography variant="overline" color="primary.main">Radar recommendation</Typography>{evaluation.recommendation && <Chip size="small" label={evaluation.recommendation} color={RECOMMENDATION_META[evaluation.recommendation].chipColor} />}{evaluation.priorityBand && <Chip size="small" variant="outlined" label={`${evaluation.priorityBand} priority`} />}<Button size="small" onClick={() => setEvaluationOpen(true)} sx={{ ml: 'auto' }}>Re-evaluate</Button></Stack>
             <Typography variant="h5" sx={{ mt: 1.25, maxWidth: 760, lineHeight: 1.35 }}>{evaluation.summary}</Typography>
             <Box sx={{ mt: 2.5, pl: 2, borderLeft: '3px solid', borderColor: 'primary.main' }}><Typography variant="overline" color="text.secondary">Recommended next step</Typography><Typography sx={{ mt: 0.25, fontWeight: 650 }}>{evaluation.nextStep}</Typography></Box>
             <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2.5 }}>{evaluation.provider === 'Jev' ? `Assembled deterministically from stored Jev judgments and source evidence. Usage: ${evaluation.inputTokens?.toLocaleString() ?? 'unknown'} input tokens.` : 'Generated deterministically from a simulated evaluation. It is not a Jev result.'}</Typography>
-          </Paper> : <Alert severity="info">This record has not been evaluated yet. Return to the inbox and choose an evaluation provider.</Alert>}
+          </Paper> : <Alert severity="info" action={<Button color="inherit" size="small" onClick={() => setEvaluationOpen(true)}>Evaluate now</Button>}>This record has not been evaluated yet.</Alert>}
 
           {!desktopReview && reviewPanel}
 
@@ -168,6 +186,8 @@ export function OpportunityDetailPage() {
       <Typography variant="body2" color="text.secondary">This permanently deletes &quot;{item.title}&quot; and its evaluation history. This cannot be undone.</Typography>
       {deleteError && <Alert severity="error" sx={{ mt: 2 }}>{deleteError}</Alert>}
     </RadarDialog>
+
+    <EvaluationDialog open={evaluationOpen} fullScreen={fullScreen} opportunityIds={[item.id]} liveAvailable={liveAvailable} onClose={() => setEvaluationOpen(false)} onEvaluated={async message => { setEvaluationOpen(false); setNotice(message); await reloadAfterEvaluation(); }} />
   </Box>;
 }
 
