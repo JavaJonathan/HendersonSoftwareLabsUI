@@ -84,7 +84,7 @@ export function AdminInquiriesPage() {
       <Typography component="h1" variant="h4" sx={{ fontSize: { xs: 26, md: 34 } }}>Inquiries</Typography>
       {list && <Chip label={`${list.newCount} new`} size="small" sx={{ bgcolor: 'primary.light', color: 'primary.main' }} />}
     </Stack>
-    <Stack direction="row" spacing={2} sx={{ mb: 3 }}><FormControl size="small" sx={{ minWidth: 160 }}><InputLabel id="inquiry-filter">Status</InputLabel><Select labelId="inquiry-filter" label="Status" value={filter} onChange={e => { setFilter(e.target.value); setPage(1); }}>{['New', 'Contacted', 'Archived', 'All'].map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}</Select></FormControl><Button onClick={() => setRefresh(x => x + 1)} disabled={loading}>Refresh</Button></Stack>
+    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }}><FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 160 } }}><InputLabel id="inquiry-filter">Status</InputLabel><Select labelId="inquiry-filter" label="Status" value={filter} onChange={e => { setFilter(e.target.value); setPage(1); }}>{['New', 'Contacted', 'Archived', 'All'].map(s => <MenuItem key={s} value={s}>{s}</MenuItem>)}</Select></FormControl><Button onClick={() => setRefresh(x => x + 1)} disabled={loading} sx={{ alignSelf: { xs: 'flex-start', sm: 'center' } }}>Refresh</Button></Stack>
     {error && <Alert severity="error" action={<Button onClick={() => setRefresh(x => x + 1)}>Retry</Button>}>{error}</Alert>}
     {loading ? <Typography role="status">Loading inquiries…</Typography> : !error && <>
       {!list?.items.length && <Paper variant="outlined" sx={{ p: 3 }}><Typography color="text.secondary">No inquiries in this view.</Typography></Paper>}

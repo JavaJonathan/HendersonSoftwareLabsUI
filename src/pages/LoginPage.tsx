@@ -90,8 +90,8 @@ export function LoginPage() {
         }}
       >
         <GradientBackdrop variant="dark" />
-        <Reveal>
-          <Box sx={{ position: 'relative', textAlign: 'center', maxWidth: 640 }}>
+        <Reveal fullWidth>
+          <Box sx={{ position: 'relative', textAlign: 'center', maxWidth: 640, mx: 'auto' }}>
             <Box
               component={motion.div}
               animate={{ y: [0, -8, 0] }}
@@ -101,7 +101,7 @@ export function LoginPage() {
                 component="img"
                 src={wordmarkLight}
                 alt="Henderson Software Labs"
-                sx={{ width: { md: 480, lg: 640 }, height: 'auto', mx: 'auto' }}
+                sx={{ width: { md: 'min(480px, 100%)', lg: 'min(640px, 100%)' }, maxWidth: '100%', height: 'auto', mx: 'auto' }}
               />
             </Box>
             <Typography sx={{ mt: 5, color: 'rgba(255,255,255,0.8)', fontSize: 22, fontWeight: 500 }}>
@@ -130,7 +130,7 @@ export function LoginPage() {
         <GradientBackdrop />
 
         <Reveal y={16} fullWidth>
-          <Box sx={{ position: 'relative', width: '100%', maxWidth: 480 }}>
+          <Box sx={{ position: 'relative', width: '100%', maxWidth: 480, mx: 'auto' }}>
             <Stack sx={{ mb: 4, alignItems: 'center', display: { xs: 'flex', md: 'none' } }}>
               <Box component="img" src={wordmarkDark} alt="Henderson Software Labs" sx={{ width: 240, height: 'auto' }} />
             </Stack>

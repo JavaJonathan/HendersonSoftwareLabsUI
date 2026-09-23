@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
@@ -7,6 +8,11 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Link from '@mui/material/Link';
 import Container from '@mui/material/Container';
+import IconButton from '@mui/material/IconButton';
+import Drawer from '@mui/material/Drawer';
+import Divider from '@mui/material/Divider';
+import MenuIcon from '@mui/icons-material/Menu';
+import CloseIcon from '@mui/icons-material/Close';
 import hslIcon from '../../assets/branding/icon-dark.webp';
 import { useScrolled } from '../../hooks/useScrolled';
 
@@ -17,6 +23,7 @@ const NAV_LINKS = [
 
 export function NavBar() {
   const scrolled = useScrolled();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <AppBar
@@ -87,11 +94,57 @@ export function NavBar() {
             ))}
           </Stack>
 
+          <IconButton
+            aria-label="Open menu"
+            onClick={() => setMobileOpen(true)}
+            sx={{ display: { xs: 'flex', md: 'none' }, mr: 1, color: 'text.primary' }}
+          >
+            <MenuIcon />
+          </IconButton>
+
           <Button component={RouterLink} to="/login" variant="contained" color="primary">
             Client Login
           </Button>
         </Toolbar>
       </Container>
+
+      <Drawer
+        anchor="right"
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        slotProps={{ paper: { sx: { width: 280 } } }}
+      >
+        <Stack sx={{ px: 2, py: 1.5, alignItems: 'flex-end' }}>
+          <IconButton aria-label="Close menu" onClick={() => setMobileOpen(false)}>
+            <CloseIcon />
+          </IconButton>
+        </Stack>
+        <Stack spacing={0.5} sx={{ px: 2.5, pb: 3 }}>
+          {NAV_LINKS.map((link) => (
+            <Link
+              key={link.label}
+              href={link.href}
+              underline="none"
+              color="text.primary"
+              onClick={() => setMobileOpen(false)}
+              sx={{ py: 1.5, fontSize: 16, fontWeight: 600 }}
+            >
+              {link.label}
+            </Link>
+          ))}
+          <Divider sx={{ my: 1.5 }} />
+          <Button
+            component={RouterLink}
+            to="/login"
+            variant="contained"
+            color="primary"
+            fullWidth
+            onClick={() => setMobileOpen(false)}
+          >
+            Client Login
+          </Button>
+        </Stack>
+      </Drawer>
     </AppBar>
   );
 }
