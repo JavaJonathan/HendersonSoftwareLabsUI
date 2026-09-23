@@ -45,7 +45,6 @@ export function RadarPageHeader({
                 color={liveAvailable ? 'success' : 'warning'}
                 variant="outlined"
               />
-              <Chip size="small" label="Public, non-confidential inputs only" variant="outlined" />
             </Stack>
           )}
         </Box>
