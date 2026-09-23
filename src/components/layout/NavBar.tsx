@@ -102,7 +102,13 @@ export function NavBar() {
             <MenuIcon />
           </IconButton>
 
-          <Button component={RouterLink} to="/login" variant="contained" color="primary">
+          <Button
+            component={RouterLink}
+            to="/login"
+            variant="contained"
+            color="primary"
+            sx={{ display: { xs: 'none', md: 'inline-flex' } }}
+          >
             Client Login
           </Button>
         </Toolbar>

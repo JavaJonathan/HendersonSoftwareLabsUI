@@ -348,7 +348,11 @@ export function TaskCostCalculatorPage() {
         >
           <Box
             sx={{
-              order: { xs: 2, md: 1 },
+              // On mobile this puts Controls before Results (input before output, and
+              // right above the fields the `showSticky` strip is tracking as they're
+              // edited); on desktop it's just the left column. Same order value either
+              // way, since the two-column desktop split already matches it.
+              order: 1,
               // Controls has a ceiling: even every panel expanded, it tops out around
               // 1000-1200px. The result/payback/sensitivity/share column to the right has
               // none, it only grows. Pin the side with a ceiling, not the side that keeps
@@ -384,7 +388,7 @@ export function TaskCostCalculatorPage() {
               reads as a single continuous answer while `TaskCostControls` stays pinned
               beside it, rather than being separated into full-width sections that used to
               sit below the whole grid. */}
-          <Box sx={{ order: { xs: 1, md: 2 } }}>
+          <Box sx={{ order: 2 }}>
             <Reveal fullWidth>
               <TaskCostResults
                 results={results}
