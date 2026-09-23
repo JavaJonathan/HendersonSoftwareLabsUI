@@ -69,7 +69,7 @@ export function CtaBanner() {
               endIcon={<ArrowForwardIcon />}
               sx={{ flexShrink: 1, maxWidth: '100%', textAlign: 'center', bgcolor: 'primary.main', '&:hover': { bgcolor: 'primary.dark' } }}
             >
-              Tell me what’s slowing you down
+              What’s slowing you down?
             </Button>
           </Stack>
         </Box>

@@ -70,7 +70,7 @@ export function Hero() {
               to="/contact"
                     endIcon={<ArrowForwardIcon />}
                   >
-                    Tell me what’s slowing you down
+                    What’s slowing you down?
                   </Button>
                 </MagneticWrap>
 
