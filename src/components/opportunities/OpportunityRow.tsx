@@ -4,7 +4,7 @@ import LanguageOutlinedIcon from '@mui/icons-material/LanguageOutlined';
 import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
 import WorkOutlineRoundedIcon from '@mui/icons-material/WorkOutlineRounded';
 import { Link as RouterLink } from 'react-router-dom';
-import { RECOMMENDATION_META, SOURCE_TYPE_LABELS, type OpportunitySummary } from '../../api/opportunities';
+import { RECOMMENDATION_META, SOURCE_TYPE_LABELS, formatProspectType, type OpportunitySummary } from '../../api/opportunities';
 
 const accentByRecommendation: Record<string, string> = {
   Pursue: '#16a34a', Prioritize: '#16a34a', Investigate: '#d97706', Watch: '#d97706', Pass: '#94a3b8', Skip: '#94a3b8',
@@ -50,6 +50,10 @@ export function OpportunityRow({ item, to, rank, compact = false }: {
             <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap', mb: 1 }}>
               {item.recommendation && <Chip size="small" color={RECOMMENDATION_META[item.recommendation].chipColor} label={item.recommendation} />}
               {item.priorityBand && <Chip size="small" variant="outlined" label={`${item.priorityBand} priority`} />}
+              {item.opportunityScore != null && <Chip size="small" variant="outlined" label={`Score ${item.opportunityScore.toFixed(1)}`} />}
+              {item.jevConfidence != null && <Chip size="small" variant="outlined" label={`Jev confidence ${Math.round(item.jevConfidence * 100)}%`} />}
+              {item.prospectType && <Chip size="small" variant="outlined" label={formatProspectType(item.prospectType)} />}
+              {item.needsVerification && <Chip size="small" color="warning" label="Needs verification" />}
               {item.evaluationStatus === 'Failed' && <Chip size="small" color="error" label="Provider failure" />}
               {item.evaluationStatus === 'Stale' && <Chip size="small" color="warning" label="Reevaluation required" />}
               {item.duplicateOfId && <Chip size="small" color="warning" variant="outlined" label="Possible duplicate" />}

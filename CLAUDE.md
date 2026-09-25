@@ -180,3 +180,11 @@ The Radar UI was rebuilt as a decision cockpit without changing its API contract
 The detail page now leads with one recommendation panel, uses scored factor rows with direct evidence anchors, groups facts and risks into a decision-signals grid, and collapses supporting comparison/source/evidence sections. Review decisions use lane-specific toggle controls with unsaved-state feedback. The review panel stays sticky on desktop and moves directly below the recommendation on smaller screens; deletion is isolated at the page bottom. Preferences are split into Active Projects, Business Prospects, and Digest tabs, with free-entry chip fields, relative-weight guidance, and client-side validation.
 
 Verification: `npm run build`, `npm run lint`, and `npm test` pass. Desktop and 375px mobile layouts for the inbox and Active Project detail were browser-verified against a temporary local mock API. A real-API pass for both entity types and all mutation dialogs is still required when local API secrets are available.
+
+## Opportunity Radar Jev evaluation v2 (2026-09-23)
+
+Jev is the only user-facing evaluator. `OpportunityRadarV2` converts typed Jev judgments into a 0 to 100 score, separate Jev confidence, priority, recommendation, and deterministic Info, Review, or Block checks. Business Prospect classification precedence is human override, Jev, imported type, then Unknown. Imported sourcing-agent type and research confidence are stored for agreement and verification, but are excluded from Jev request state.
+
+Scoring uses three editable relative profiles: Active Project, Operational Pain, and Digital Presence. Hybrid uses Operational Pain. Each profile is normalized to 100, all-zero input falls back to versioned defaults, and the effective normalized profile is stored with the evaluation. Weight and local screening changes append immutable `LocalRecompose` history without provider usage. Active Project capability changes append Stale history because capabilities affect the Jev request.
+
+The old keyword comparison is removed from the API and UI. Detail views show agreement, checks, effective weights, rubric version, and evaluation origin. Legacy Ready evaluations become Stale in `AddOpportunityRadarJevV2`. Do not apply that migration outside a disposable local database or production without Jonathan's explicit approval.

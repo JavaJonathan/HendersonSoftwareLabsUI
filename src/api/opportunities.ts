@@ -8,6 +8,9 @@ export type OpportunityRecommendation = ActiveProjectDecision | BusinessProspect
 export type PriorityBand = 'High' | 'Medium' | 'Low';
 export type BudgetStatus = 'Unknown' | 'Compatible' | 'Incompatible';
 export type EvaluationProvider = 'Simulated' | 'Jev';
+export type BusinessProspectType = 'OperationalPain' | 'DigitalPresence' | 'Hybrid' | 'Unknown';
+export type ResearchConfidence = 'Low' | 'Medium' | 'High';
+export type EvaluationCheckSeverity = 'Info' | 'Review' | 'Block';
 
 export const SOURCE_TYPE_LABELS: Record<OpportunitySourceType, string> = {
   ExplicitDemand: 'Explicit demand', OperationalSignal: 'Operational signal',
@@ -17,6 +20,8 @@ export const RECOMMENDATION_META: Record<OpportunityRecommendation, { chipColor:
   Pursue: { chipColor: 'success' }, Investigate: { chipColor: 'warning' }, Pass: { chipColor: 'default' },
   Prioritize: { chipColor: 'success' }, Watch: { chipColor: 'warning' }, Skip: { chipColor: 'default' },
 };
+
+export const formatProspectType = (value: BusinessProspectType) => value.replace(/([a-z])([A-Z])/g, '$1 $2');
 
 export interface OpportunitySummary {
   id: number;
@@ -37,21 +42,31 @@ export interface OpportunitySummary {
   industry: string | null;
   geography: string | null;
   websiteDomain: string | null;
+  opportunityScore: number | null;
+  jevConfidence: number | null;
+  prospectType: BusinessProspectType | null;
+  needsVerification: boolean;
 }
 
 export interface OpportunityList { items: OpportunitySummary[]; total: number; page: number; pageSize: number }
 
 export interface RadarPassage { id: string; text: string }
 export interface RadarFactor { key: string; label: string; score: number; evidencePassageId: string; explanation: string }
+export interface EvaluationCheck { key: string; severity: EvaluationCheckSeverity; explanation: string; evidencePassageId: string }
 export interface RadarResult {
   factors: RadarFactor[];
-  knownFacts: string[];
   hypotheses: string[];
   missingInformation: string[];
   concerns: string[];
-  keywordMatches: string[];
   summary: string;
   nextStep: string;
+  opportunityScore: number | null;
+  jevConfidence: number | null;
+  prospectType: BusinessProspectType | null;
+  needsVerification: boolean;
+  checks: EvaluationCheck[];
+  effectiveWeights: Record<string, number>;
+  rubricVersion: string;
 }
 
 export interface OpportunityDetail {
@@ -63,6 +78,9 @@ export interface OpportunityDetail {
   sourceUrl: string | null;
   sourceDate: string | null;
   externalId: string | null;
+  researchConfidence: ResearchConfidence | null;
+  researchConfidenceReason: string | null;
+  researchAgent: string | null;
   passages: RadarPassage[];
   duplicateOfId: number | null;
   isSynthetic: boolean;
@@ -72,10 +90,13 @@ export interface OpportunityDetail {
   businessProspect: {
     businessName: string; websiteUrl: string | null; normalizedWebsiteDomain: string | null;
     geography: string | null; industry: string | null; userDecision: BusinessProspectDecision | null;
+    importedProspectType: BusinessProspectType | null; prospectTypeOverride: BusinessProspectType | null;
   } | null;
   evaluation: null | {
     id: number; provider: EvaluationProvider; status: string; model: string; questionSetVersion: string;
     recommendation: OpportunityRecommendation | null; priorityBand: PriorityBand | null; budgetStatus: BudgetStatus;
+    opportunityScore: number | null; jevConfidence: number | null; evaluatedProspectType: BusinessProspectType | null;
+    needsVerification: boolean; rubricVersion: string; origin: 'ProviderRun' | 'LocalRecompose'; effectiveWeights: Record<string, number>;
     result: RadarResult | null; summary: string; nextStep: string;
     inputTokens: number | null; outputTokens: number | null; errorMessage: string | null; createdAt: string;
   };
@@ -86,10 +107,11 @@ export interface ActiveProjectPreferences {
   preferredProjectTypes: string[];
   excludedProjectTypes: string[];
   minimumBudget: number;
-  minimumWeeks: number;
-  maximumWeeks: number;
   incompleteInformationTolerance: 'Low' | 'Medium' | 'High';
-  weights: { capabilityFit: number; problemClarity: number; independentScope: number; informationSufficiency: number };
+  weightsV2: {
+    problemClarity: number; hslDeliveryFit: number; independentScope: number; economicViability: number;
+    urgency: number; buyerReadiness: number; informationMarketFit: number;
+  };
 }
 
 export interface BusinessProspectPreferences {
@@ -97,9 +119,13 @@ export interface BusinessProspectPreferences {
   excludedIndustries: string[];
   preferredGeographies: string[];
   excludedGeographies: string[];
-  weights: {
-    businessStrength: number; digitalPresenceWeakness: number; reputationMismatch: number;
-    entryProjectStrength: number; geography: number; contactability: number; evidenceCompleteness: number;
+  operationalPainWeights: {
+    painEvidence: number; automationFeasibility: number; economicLeverage: number; containedEngagement: number;
+    urgency: number; hslDeliveryFit: number; buyerAccess: number; marketAccessFit: number;
+  };
+  digitalPresenceWeights: {
+    businessStrength: number; digitalWeakness: number; reputationMismatch: number; entryProjectStrength: number;
+    urgency: number; hslDeliveryFit: number; buyerAccess: number; marketAccessFit: number;
   };
 }
 
@@ -114,11 +140,13 @@ export interface RadarPreferences {
 export interface ImportActiveProjectRequest {
   title: string; description: string; sourceType: OpportunitySourceType;
   sourceName?: string; sourceUrl?: string; sourceDate?: string; externalId?: string;
+  researchConfidence?: ResearchConfidence; researchConfidenceReason?: string; researchAgent?: string;
 }
 
 export interface ImportBusinessProspectRequest {
   businessName: string; evidence: string; websiteUrl?: string; geography?: string; industry?: string;
   sourceName?: string; sourceUrl?: string; sourceDate?: string; externalId?: string;
+  prospectType?: BusinessProspectType; researchConfidence?: ResearchConfidence; researchConfidenceReason?: string; researchAgent?: string;
 }
 
 export interface ImportResult { id: number; created: boolean; updated: boolean; nearDuplicateOfId: number | null }
@@ -134,21 +162,6 @@ export interface EvaluationPreview {
   liveAvailable: boolean; allowed: boolean; reason: string | null; confirmationCode: string;
 }
 
-export interface KeywordRule { key: string; triggered: boolean; explanation: string }
-export interface OpportunityComparison {
-  baseline: null | {
-    matchedTerms: string[]; keywordScore: number; recommendation: ActiveProjectDecision; budgetStatus: BudgetStatus;
-    hardRules: KeywordRule[]; summary: string;
-  };
-  baselineUnavailableReason: string | null;
-  semantic: null | {
-    provider: EvaluationProvider; status: 'Ready' | 'Failed' | 'Stale'; model: string;
-    recommendation: OpportunityRecommendation | null; priorityBand: PriorityBand | null; summary: string; createdAt: string;
-  };
-  isIllustration: boolean;
-  note: string;
-}
-
 export interface OpportunityDigest {
   activeProjects: OpportunitySummary[]; activeProjectRequested: number; activeProjectReturned: number;
   businessProspects: OpportunitySummary[]; businessProspectRequested: number; businessProspectReturned: number;
@@ -157,14 +170,14 @@ export interface OpportunityDigest {
 const base = '/api/admin/opportunity-radar';
 
 export const getOpportunities = (params: {
-  entityType?: OpportunityEntityType; recommendation?: string; sourceType?: string; decision?: string; query?: string; page?: number;
+  entityType?: OpportunityEntityType; recommendation?: string; sourceType?: string; decision?: string;
+  prospectType?: string; verification?: string; query?: string; page?: number;
 } = {}) => {
   const query = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => { if (value !== undefined && value !== '') query.set(key, String(value)); });
   return apiFetch<OpportunityList>(`${base}?${query}`);
 };
 export const getOpportunity = (id: number) => apiFetch<OpportunityDetail>(`${base}/${id}`);
-export const getOpportunityComparison = (id: number) => apiFetch<OpportunityComparison>(`${base}/${id}/comparison`);
 export const getOpportunityDigest = (includeSynthetic = false) => apiFetch<OpportunityDigest>(`${base}/digest?includeSynthetic=${includeSynthetic}`);
 
 export const importActiveProject = (payload: ImportActiveProjectRequest) =>
@@ -184,14 +197,16 @@ export const importBusinessProspectCsv = (file: File) => {
 
 export const loadOpportunitySamples = () => apiFetch<{ createdCount: number; ids: number[] }>(`${base}/samples`, { method: 'POST' });
 export const getRadarProvider = () => apiFetch<RadarProviderStatus>(`${base}/provider`);
-export const previewOpportunityEvaluation = (provider: EvaluationProvider, opportunityIds?: number[]) =>
-  apiFetch<EvaluationPreview>(`${base}/evaluation-preview`, { method: 'POST', body: JSON.stringify({ opportunityIds, provider }) });
-export const evaluateOpportunities = (provider: EvaluationProvider, opportunityIds?: number[], confirmationCode?: string) =>
-  apiFetch<{ evaluatedCount: number; failedCount: number; provider: string }>(`${base}/evaluate`, { method: 'POST', body: JSON.stringify({ opportunityIds, provider, confirmationCode }) });
+export const previewOpportunityEvaluation = (opportunityIds?: number[]) =>
+  apiFetch<EvaluationPreview>(`${base}/evaluation-preview`, { method: 'POST', body: JSON.stringify({ opportunityIds }) });
+export const evaluateOpportunities = (opportunityIds?: number[], confirmationCode?: string) =>
+  apiFetch<{ evaluatedCount: number; failedCount: number; provider: string }>(`${base}/evaluate`, { method: 'POST', body: JSON.stringify({ opportunityIds, confirmationCode }) });
 export const updateOpportunityReview = (id: number, decision: ActiveProjectDecision | BusinessProspectDecision | null, notes: string) =>
   apiFetch<void>(`${base}/${id}/review`, { method: 'PATCH', body: JSON.stringify({ decision, notes }) });
 export const deleteOpportunity = (id: number) => apiFetch<void>(`${base}/${id}`, { method: 'DELETE' });
 export const clearOpportunityDuplicate = (id: number) => apiFetch<void>(`${base}/${id}/duplicate`, { method: 'PATCH' });
+export const updateProspectTypeOverride = (id: number, prospectType: BusinessProspectType | null) =>
+  apiFetch<void>(`${base}/${id}/prospect-type`, { method: 'PATCH', body: JSON.stringify({ prospectType }) });
 export const getRadarPreferences = () => apiFetch<RadarPreferences>(`${base}/preferences`);
 export const updateRadarPreferences = (value: Omit<RadarPreferences, 'updatedAt'>) =>
   apiFetch<RadarPreferences>(`${base}/preferences`, { method: 'PUT', body: JSON.stringify(value) });
