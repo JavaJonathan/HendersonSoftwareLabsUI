@@ -10,6 +10,7 @@ import AddIcon from '@mui/icons-material/Add';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import CheckCircleOutlineRoundedIcon from '@mui/icons-material/CheckCircleOutlineRounded';
 import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
+import DeleteOutlineRoundedIcon from '@mui/icons-material/DeleteOutlineRounded';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
@@ -25,13 +26,13 @@ import { RadarPageHeader } from '../components/opportunities/RadarPageHeader';
 import { SURFACE_SUBTLE } from '../theme';
 import {
   downloadOpportunityExport, getOpportunities, getRadarPreferences, getRadarProvider,
-  importActiveProject, importActiveProjectCsv, importBusinessProspect, importBusinessProspectCsv,
+  importActiveProject, importActiveProjectsBatch, importBusinessProspect, importBusinessProspectsBatch,
   loadOpportunitySamples, updateRadarPreferences, SOURCE_TYPE_LABELS, formatProspectType,
-  type OpportunityEntityType, type OpportunityList,
+  type OpportunityEntityType, type OpportunityList, type ImportActiveProjectRequest, type ImportBusinessProspectRequest,
   type BusinessProspectType, type OpportunitySourceType, type RadarPreferences, type RadarProviderStatus, type ResearchConfidence,
 } from '../api/opportunities';
 import { getApiErrorMessage } from '../api/client';
-import { getOpportunityCsvTemplate } from './opportunityCsvTemplates';
+import { getOpportunityJsonTemplate } from './opportunityJsonTemplates';
 
 const RECOMMENDATION_VALUES: Record<OpportunityEntityType, string[]> = {
   ActiveProject: ['All', 'Pursue', 'Investigate', 'Pass'],
@@ -42,14 +43,18 @@ const DECISION_VALUES: Record<OpportunityEntityType, string[]> = {
   BusinessProspect: ['All', 'Unreviewed', 'Prioritize', 'Watch', 'Skip'],
 };
 
-function downloadCsvTemplate(entityType: OpportunityEntityType) {
-  const template = getOpportunityCsvTemplate(entityType);
-  const url = URL.createObjectURL(new Blob([template.csv], { type: 'text/csv;charset=utf-8' }));
+function downloadJsonFile(content: string, filename: string) {
+  const url = URL.createObjectURL(new Blob([content], { type: 'application/json;charset=utf-8' }));
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = template.filename;
+  anchor.download = filename;
   anchor.click();
   URL.revokeObjectURL(url);
+}
+
+function downloadJsonSchema(entityType: OpportunityEntityType) {
+  const template = getOpportunityJsonTemplate(entityType);
+  downloadJsonFile(template.schema, template.schemaFilename);
 }
 
 async function copyText(text: string): Promise<boolean> {
@@ -237,24 +242,135 @@ function ExportDialog({ open, fullScreen, onClose }: { open: boolean; fullScreen
   return <RadarDialog open={open} fullScreen={fullScreen} title="Export review data" busy={busy} onClose={onClose} actions={<><Button onClick={onClose} disabled={busy}>Cancel</Button><Button variant="contained" startIcon={<DownloadOutlinedIcon />} onClick={download} disabled={busy}>{busy ? 'Preparing...' : 'Download CSV'}</Button></>}><Stack spacing={2}>{error && <Alert severity="error">{error}</Alert>}<Typography color="text.secondary">Download both lanes with source metadata, model details, semantic factors, decisions, and notes.</Typography><Paper variant="outlined" sx={{ p: 2, bgcolor: SURFACE_SUBTLE }}><Stack direction="row" spacing={1.25} sx={{ alignItems: 'flex-start' }}><CheckCircleOutlineRoundedIcon color="primary" /><Typography variant="body2">Imported and user-written cells are sanitized against spreadsheet formula injection. Stored source data is unchanged.</Typography></Stack></Paper><FormControlLabel control={<Checkbox checked={includeSynthetic} onChange={event => setIncludeSynthetic(event.target.checked)} />} label="Include synthetic examples" />{!includeSynthetic && <Typography variant="caption" color="text.secondary">Synthetic illustrations are excluded by default so they do not mix with real review data.</Typography>}</Stack></RadarDialog>;
 }
 
+interface EvidenceRow { fact: string; source: string; date: string }
+const EMPTY_EVIDENCE_ROW: EvidenceRow = { fact: '', source: '', date: '' };
+
 function ImportDialog({ open, fullScreen, entityType, onClose, onImported }: { open: boolean; fullScreen: boolean; entityType: OpportunityEntityType; onClose: () => void; onImported: (message: string) => void }) {
-  const [mode, setMode] = useState<'paste' | 'csv'>('paste'); const [title, setTitle] = useState(''); const [description, setDescription] = useState(''); const [sourceType, setSourceType] = useState<OpportunitySourceType>('ExplicitDemand'); const [websiteUrl, setWebsiteUrl] = useState(''); const [geography, setGeography] = useState(''); const [industry, setIndustry] = useState(''); const [sourceUrl, setSourceUrl] = useState(''); const [prospectType, setProspectType] = useState<BusinessProspectType | ''>(''); const [researchConfidence, setResearchConfidence] = useState<ResearchConfidence | ''>(''); const [researchConfidenceReason, setResearchConfidenceReason] = useState(''); const [researchAgent, setResearchAgent] = useState(''); const [file, setFile] = useState<File | null>(null); const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
-  useEffect(() => { if (open) { setMode('paste'); setTitle(''); setDescription(''); setSourceType('ExplicitDemand'); setWebsiteUrl(''); setGeography(''); setIndustry(''); setSourceUrl(''); setProspectType(''); setResearchConfidence(''); setResearchConfidenceReason(''); setResearchAgent(''); setFile(null); setError(''); setCopyStatus('idle'); } }, [open]);
-  async function copyAgentPrompt() { setCopyStatus(await copyText(getOpportunityCsvTemplate(entityType).agentPrompt) ? 'copied' : 'failed'); }
-  async function submit() { setBusy(true); setError(''); try { if (mode === 'paste') { if (!title.trim() || description.trim().length < 20) throw new Error(entityType === 'ActiveProject' ? 'Add a title and at least 20 characters of source description.' : 'Add a business name and at least 20 characters of research evidence.'); const agentFields = { researchConfidence: researchConfidence || undefined, researchConfidenceReason: researchConfidenceReason || undefined, researchAgent: researchAgent || undefined }; if (entityType === 'ActiveProject') { const result = await importActiveProject({ title, description, sourceType, sourceUrl: sourceUrl || undefined, ...agentFields }); onImported(result.updated ? 'An existing Active Project was updated. Its review decision was preserved.' : 'Active Project imported. Evaluate it when you are ready.'); } else { const result = await importBusinessProspect({ businessName: title, evidence: description, websiteUrl: websiteUrl || undefined, geography: geography || undefined, industry: industry || undefined, sourceUrl: sourceUrl || undefined, prospectType: prospectType || undefined, ...agentFields }); onImported(result.updated ? 'An existing Business Prospect was updated. Its review decision was preserved.' : 'Business Prospect imported. Evaluate it when you are ready.'); } } else { if (!file) throw new Error('Choose a CSV file first.'); const result = entityType === 'ActiveProject' ? await importActiveProjectCsv(file) : await importBusinessProspectCsv(file); onImported(`Imported ${result.imported.length} new records. ${result.updated.length} existing records were updated without changing their decisions.`); } } catch (err) { setError(err instanceof Error ? err.message : 'Import failed.'); } finally { setBusy(false); } }
-  return <RadarDialog open={open} fullScreen={fullScreen} title={entityType === 'ActiveProject' ? 'Import active projects' : 'Import business prospects'} busy={busy} onClose={onClose} actions={<><Button onClick={onClose} disabled={busy}>Cancel</Button><Button variant="contained" onClick={submit} disabled={busy}>{busy ? 'Importing...' : mode === 'csv' ? 'Import CSV' : 'Import record'}</Button></>}>
+  const [mode, setMode] = useState<'paste' | 'batch'>('paste');
+  const [title, setTitle] = useState('');
+  const [request, setRequest] = useState('');
+  const [sourceType, setSourceType] = useState<OpportunitySourceType>('ExplicitDemand');
+  const [sourceUrl, setSourceUrl] = useState('');
+  const [budget, setBudget] = useState('');
+  const [competitionProposals, setCompetitionProposals] = useState('');
+  const [competitionInterviewing, setCompetitionInterviewing] = useState('');
+  const [competitionHires, setCompetitionHires] = useState('');
+  const [evidence, setEvidence] = useState<EvidenceRow[]>([EMPTY_EVIDENCE_ROW]);
+  const [websiteUrl, setWebsiteUrl] = useState('');
+  const [geography, setGeography] = useState('');
+  const [industry, setIndustry] = useState('');
+  const [prospectType, setProspectType] = useState<BusinessProspectType | ''>('');
+  const [fit, setFit] = useState('');
+  const [proposalAngle, setProposalAngle] = useState('');
+  const [entryOffer, setEntryOffer] = useState('');
+  const [risk, setRisk] = useState('');
+  const [confidenceLevel, setConfidenceLevel] = useState<ResearchConfidence | ''>('');
+  const [confidenceReason, setConfidenceReason] = useState('');
+  const [researchAgent, setResearchAgent] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
+
+  useEffect(() => {
+    if (!open) return;
+    setMode('paste'); setTitle(''); setRequest(''); setSourceType('ExplicitDemand'); setSourceUrl('');
+    setBudget(''); setCompetitionProposals(''); setCompetitionInterviewing(''); setCompetitionHires('');
+    setEvidence([EMPTY_EVIDENCE_ROW]); setWebsiteUrl(''); setGeography(''); setIndustry(''); setProspectType('');
+    setFit(''); setProposalAngle(''); setEntryOffer(''); setRisk(''); setConfidenceLevel(''); setConfidenceReason('');
+    setResearchAgent(''); setFile(null); setError(''); setCopyStatus('idle');
+  }, [open]);
+
+  async function copySchema() { setCopyStatus(await copyText(getOpportunityJsonTemplate(entityType).schema) ? 'copied' : 'failed'); }
+  function updateEvidenceRow(index: number, patch: Partial<EvidenceRow>) { setEvidence(rows => rows.map((row, i) => i === index ? { ...row, ...patch } : row)); }
+  function removeEvidenceRow(index: number) { setEvidence(rows => rows.length > 1 ? rows.filter((_, i) => i !== index) : rows); }
+
+  async function submit() {
+    setBusy(true); setError('');
+    try {
+      const confidence = confidenceLevel ? { level: confidenceLevel, reason: confidenceReason || undefined } : undefined;
+      if (mode === 'paste') {
+        if (entityType === 'ActiveProject') {
+          if (!title.trim() || request.trim().length < 20) throw new Error('Add a title and at least 20 characters describing the request.');
+          const competition = competitionProposals || competitionInterviewing || competitionHires
+            ? { proposals: competitionProposals || undefined, interviewing: competitionInterviewing ? Number(competitionInterviewing) : undefined, hires: competitionHires ? Number(competitionHires) : undefined }
+            : undefined;
+          const result = await importActiveProject({
+            title, request, sourceType, sourceUrl: sourceUrl || undefined, budget: budget || undefined, competition,
+            fit: fit || undefined, proposalAngle: proposalAngle || undefined, risk: risk || undefined, confidence, researchAgent: researchAgent || undefined,
+          });
+          onImported(result.updated ? 'An existing Active Project was updated. Its review decision was preserved.' : 'Active Project imported. Evaluate it when you are ready.');
+        } else {
+          const cleanedEvidence = evidence.filter(row => row.fact.trim().length > 0)
+            .map(row => ({ fact: row.fact.trim(), source: row.source.trim() || undefined, date: row.date || undefined }));
+          const combinedLength = cleanedEvidence.reduce((sum, row) => sum + row.fact.length, 0);
+          if (!title.trim() || combinedLength < 20) throw new Error('Add a business name and at least 20 combined characters of evidence.');
+          const result = await importBusinessProspect({
+            businessName: title, evidence: cleanedEvidence, websiteUrl: websiteUrl || undefined, geography: geography || undefined,
+            industry: industry || undefined, prospectType: prospectType || undefined, fit: fit || undefined, entryOffer: entryOffer || undefined,
+            risk: risk || undefined, confidence, researchAgent: researchAgent || undefined,
+          });
+          onImported(result.updated ? 'An existing Business Prospect was updated. Its review decision was preserved.' : 'Business Prospect imported. Evaluate it when you are ready.');
+        }
+      } else {
+        if (!file) throw new Error('Choose a JSON file first.');
+        let parsed: { researchAgent?: string; items?: unknown[] } | unknown[];
+        try { parsed = JSON.parse(await file.text()); } catch { throw new Error('That file is not valid JSON.'); }
+        const items = Array.isArray(parsed) ? parsed : parsed.items;
+        const batchResearchAgent = Array.isArray(parsed) ? undefined : parsed.researchAgent;
+        if (!Array.isArray(items) || items.length === 0) throw new Error('The JSON file must contain a non-empty "items" array.');
+        const result = entityType === 'ActiveProject'
+          ? await importActiveProjectsBatch(items as ImportActiveProjectRequest[], batchResearchAgent)
+          : await importBusinessProspectsBatch(items as ImportBusinessProspectRequest[], batchResearchAgent);
+        onImported(`Imported ${result.imported.length} new records. ${result.updated.length} existing records were updated without changing their decisions.`);
+      }
+    } catch (err) { setError(err instanceof Error ? err.message : 'Import failed.'); }
+    finally { setBusy(false); }
+  }
+
+  return <RadarDialog open={open} fullScreen={fullScreen} maxWidth="sm" title={entityType === 'ActiveProject' ? 'Import active projects' : 'Import business prospects'} busy={busy} onClose={onClose} actions={<><Button onClick={onClose} disabled={busy}>Cancel</Button><Button variant="contained" onClick={submit} disabled={busy}>{busy ? 'Importing...' : mode === 'batch' ? 'Import batch' : 'Import record'}</Button></>}>
     <Stack spacing={2.5}>
-      <Tabs value={mode} onChange={(_, value: 'paste' | 'csv') => setMode(value)}><Tab value="paste" label="Paste one" /><Tab value="csv" label="Upload CSV" /></Tabs>
+      <Tabs value={mode} onChange={(_, value: 'paste' | 'batch') => setMode(value)}><Tab value="paste" label="Paste one" /><Tab value="batch" label="Upload JSON" /></Tabs>
       {error && <Alert severity="error">{error}</Alert>}
       {mode === 'paste' ? <Stack spacing={2}>
         <TextField label={entityType === 'ActiveProject' ? 'Project title' : 'Business name'} value={title} onChange={event => setTitle(event.target.value)} slotProps={{ htmlInput: { maxLength: 200 } }} required />
-        <TextField label={entityType === 'ActiveProject' ? 'Original description' : 'Research evidence'} value={description} onChange={event => setDescription(event.target.value)} multiline minRows={7} slotProps={{ htmlInput: { maxLength: 30000 } }} required helperText={`${description.length.toLocaleString()} / 30,000 characters`} />
-        {entityType === 'ActiveProject' ? <FormControl><InputLabel>Source type</InputLabel><Select label="Source type" value={sourceType} onChange={event => setSourceType(event.target.value as OpportunitySourceType)}>{Object.entries(SOURCE_TYPE_LABELS).map(([key, label]) => <MenuItem key={key} value={key}>{label}</MenuItem>)}</Select></FormControl> : <><TextField label="Website URL (optional)" type="url" value={websiteUrl} onChange={event => setWebsiteUrl(event.target.value)} slotProps={{ htmlInput: { maxLength: 2048 } }} /><Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}><TextField label="Geography (optional)" value={geography} onChange={event => setGeography(event.target.value)} fullWidth /><TextField label="Industry (optional)" value={industry} onChange={event => setIndustry(event.target.value)} fullWidth /></Stack><FormControl><InputLabel>Imported prospect type (optional)</InputLabel><Select label="Imported prospect type (optional)" value={prospectType} onChange={event => setProspectType(event.target.value as BusinessProspectType | '')}><MenuItem value="">Not supplied</MenuItem>{(['OperationalPain', 'DigitalPresence', 'Hybrid', 'Unknown'] as BusinessProspectType[]).map(value => <MenuItem key={value} value={value}>{formatProspectType(value)}</MenuItem>)}</Select></FormControl></>}
-        <FormControl><InputLabel>Research confidence (optional)</InputLabel><Select label="Research confidence (optional)" value={researchConfidence} onChange={event => setResearchConfidence(event.target.value as ResearchConfidence | '')}><MenuItem value="">Not supplied</MenuItem>{(['Low', 'Medium', 'High'] as ResearchConfidence[]).map(value => <MenuItem key={value} value={value}>{value}</MenuItem>)}</Select></FormControl>
-        <TextField label="Research confidence reason (optional)" value={researchConfidenceReason} onChange={event => setResearchConfidenceReason(event.target.value)} slotProps={{ htmlInput: { maxLength: 500 } }} />
+        {entityType === 'ActiveProject' ? <>
+          <TextField label="Request" value={request} onChange={event => setRequest(event.target.value)} multiline minRows={4} slotProps={{ htmlInput: { maxLength: 4000 } }} required helperText={`What the buyer explicitly requested. ${request.length.toLocaleString()} / 4,000 characters`} />
+          <FormControl><InputLabel>Source type</InputLabel><Select label="Source type" value={sourceType} onChange={event => setSourceType(event.target.value as OpportunitySourceType)}>{Object.entries(SOURCE_TYPE_LABELS).map(([key, label]) => <MenuItem key={key} value={key}>{label}</MenuItem>)}</Select></FormControl>
+          <TextField label="Source URL (optional)" type="url" value={sourceUrl} onChange={event => setSourceUrl(event.target.value)} slotProps={{ htmlInput: { maxLength: 2048 } }} />
+          <TextField label="Budget (optional)" value={budget} onChange={event => setBudget(event.target.value)} placeholder="e.g. $8,000 fixed" slotProps={{ htmlInput: { maxLength: 100 } }} />
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <TextField label="Proposals (optional)" value={competitionProposals} onChange={event => setCompetitionProposals(event.target.value)} placeholder="e.g. 5-10" fullWidth />
+            <TextField label="Interviewing (optional)" type="number" value={competitionInterviewing} onChange={event => setCompetitionInterviewing(event.target.value)} fullWidth slotProps={{ htmlInput: { min: 0 } }} />
+            <TextField label="Hires (optional)" type="number" value={competitionHires} onChange={event => setCompetitionHires(event.target.value)} fullWidth slotProps={{ htmlInput: { min: 0 } }} />
+          </Stack>
+          <TextField label="Fit (optional)" value={fit} onChange={event => setFit(event.target.value)} multiline minRows={2} helperText="Your own assessment of alignment with HSL's capabilities. Not evidence." slotProps={{ htmlInput: { maxLength: 1000 } }} />
+          <TextField label="Proposal angle (optional)" value={proposalAngle} onChange={event => setProposalAngle(event.target.value)} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 1000 } }} />
+        </> : <>
+          <Paper variant="outlined" sx={{ p: 2, bgcolor: SURFACE_SUBTLE }}><Stack spacing={1.5}>
+            <Typography sx={{ fontWeight: 700 }}>Evidence</Typography>
+            <Typography variant="caption" color="text.secondary">Verified, source-backed facts only. Combined length must be at least 20 characters.</Typography>
+            {evidence.map((row, index) => <Stack key={index} spacing={1} sx={{ pb: 1.5, borderBottom: index < evidence.length - 1 ? 1 : 0, borderColor: 'divider' }}>
+              <TextField label={`Fact ${index + 1}`} value={row.fact} onChange={event => updateEvidenceRow(index, { fact: event.target.value })} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                <TextField label="Source (optional)" value={row.source} onChange={event => updateEvidenceRow(index, { source: event.target.value })} fullWidth slotProps={{ htmlInput: { maxLength: 1000 } }} />
+                <TextField label="Date (optional)" type="date" value={row.date} onChange={event => updateEvidenceRow(index, { date: event.target.value })} slotProps={{ inputLabel: { shrink: true } }} sx={{ minWidth: 170 }} />
+                <IconButton aria-label="Remove evidence fact" onClick={() => removeEvidenceRow(index)} disabled={evidence.length === 1}><DeleteOutlineRoundedIcon fontSize="small" /></IconButton>
+              </Stack>
+            </Stack>)}
+            <Button size="small" startIcon={<AddIcon />} onClick={() => setEvidence(rows => [...rows, EMPTY_EVIDENCE_ROW])} sx={{ alignSelf: 'flex-start' }}>Add evidence fact</Button>
+          </Stack></Paper>
+          <TextField label="Website URL (optional)" type="url" value={websiteUrl} onChange={event => setWebsiteUrl(event.target.value)} slotProps={{ htmlInput: { maxLength: 2048 } }} />
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}><TextField label="Geography (optional)" value={geography} onChange={event => setGeography(event.target.value)} fullWidth /><TextField label="Industry (optional)" value={industry} onChange={event => setIndustry(event.target.value)} fullWidth /></Stack>
+          <FormControl><InputLabel>Prospect type (optional)</InputLabel><Select label="Prospect type (optional)" value={prospectType} onChange={event => setProspectType(event.target.value as BusinessProspectType | '')}><MenuItem value="">Not supplied</MenuItem>{(['OperationalPain', 'DigitalPresence', 'Hybrid', 'Unknown'] as BusinessProspectType[]).map(value => <MenuItem key={value} value={value}>{formatProspectType(value)}</MenuItem>)}</Select></FormControl>
+          <TextField label="Fit (optional)" value={fit} onChange={event => setFit(event.target.value)} multiline minRows={2} helperText="Your own inference of the workflow opportunity. Not evidence." slotProps={{ htmlInput: { maxLength: 1000 } }} />
+          <TextField label="Entry offer (optional)" value={entryOffer} onChange={event => setEntryOffer(event.target.value)} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 1000 } }} />
+        </>}
+        <TextField label="Risk (optional)" value={risk} onChange={event => setRisk(event.target.value)} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 1000 } }} />
+        <FormControl><InputLabel>Confidence (optional)</InputLabel><Select label="Confidence (optional)" value={confidenceLevel} onChange={event => setConfidenceLevel(event.target.value as ResearchConfidence | '')}><MenuItem value="">Not supplied</MenuItem>{(['Low', 'Medium', 'High'] as ResearchConfidence[]).map(value => <MenuItem key={value} value={value}>{value}</MenuItem>)}</Select></FormControl>
+        <TextField label="Confidence reason (optional)" value={confidenceReason} onChange={event => setConfidenceReason(event.target.value)} slotProps={{ htmlInput: { maxLength: 500 } }} />
         <TextField label="Research agent (optional)" value={researchAgent} onChange={event => setResearchAgent(event.target.value)} slotProps={{ htmlInput: { maxLength: 100 } }} />
-        <TextField label="Source URL (optional)" type="url" value={sourceUrl} onChange={event => setSourceUrl(event.target.value)} slotProps={{ htmlInput: { maxLength: 2048 } }} />
-      </Stack> : <Paper variant="outlined" sx={{ p: 2.5, bgcolor: SURFACE_SUBTLE, borderRadius: 3 }}><Stack spacing={1.5}><Typography sx={{ fontWeight: 800 }}>CSV format</Typography><Typography variant="body2" color="text.secondary">Download the import-ready sample, then copy the field rules into your AI agent.</Typography><Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: { xs: 'stretch', sm: 'center' } }}><Button onClick={() => downloadCsvTemplate(entityType)}>Download sample CSV</Button><Button variant="outlined" startIcon={<ContentCopyOutlinedIcon />} onClick={copyAgentPrompt}>Copy AI agent instructions</Button></Stack><Typography role="status" variant="caption" sx={{ minHeight: 18, color: copyStatus === 'failed' ? 'error.main' : 'success.dark' }}>{copyStatus === 'copied' && 'AI agent instructions copied.'}{copyStatus === 'failed' && 'Unable to copy the AI agent instructions.'}</Typography><Button component="label" variant="outlined" startIcon={<UploadFileOutlinedIcon />} sx={{ alignSelf: 'flex-start' }}>Choose CSV<input hidden type="file" accept=".csv,text/csv" onChange={event => setFile(event.target.files?.[0] ?? null)} /></Button><Typography variant="body2">{file?.name ?? 'No file selected'}</Typography></Stack></Paper>}
+      </Stack> : <Paper variant="outlined" sx={{ p: 2.5, bgcolor: SURFACE_SUBTLE, borderRadius: 3 }}><Stack spacing={1.5}><Typography sx={{ fontWeight: 800 }}>JSON Schema</Typography><Typography variant="body2" color="text.secondary">Hand your AI agent this schema, its field descriptions carry the field rules and a worked example is embedded under its top-level "examples".</Typography><Stack direction="row" spacing={1}><Button onClick={() => downloadJsonSchema(entityType)}>Download JSON Schema</Button><Button variant="outlined" startIcon={<ContentCopyOutlinedIcon />} onClick={copySchema}>Copy JSON Schema</Button></Stack><Typography role="status" variant="caption" sx={{ minHeight: 18, color: copyStatus === 'failed' ? 'error.main' : 'success.dark' }}>{copyStatus === 'copied' && 'JSON Schema copied.'}{copyStatus === 'failed' && 'Unable to copy the JSON Schema.'}</Typography><Button component="label" variant="outlined" startIcon={<UploadFileOutlinedIcon />} sx={{ alignSelf: 'flex-start' }}>Choose JSON<input hidden type="file" accept=".json,application/json" onChange={event => setFile(event.target.files?.[0] ?? null)} /></Button><Typography variant="body2">{file?.name ?? 'No file selected'}</Typography></Stack></Paper>}
     </Stack>
   </RadarDialog>;
 }

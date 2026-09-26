@@ -111,6 +111,10 @@ export function OpportunityDetailPage() {
   const evaluation = item.evaluation;
   const result = evaluation?.result;
   const evidenceIds = new Set(result?.factors.map(factor => factor.evidencePassageId) ?? []);
+  const fitValue = isActiveProject ? item.activeProject?.fit : item.businessProspect?.fit;
+  const secondaryAssessmentLabel = isActiveProject ? 'Proposal angle' : 'Entry offer';
+  const secondaryAssessmentValue = isActiveProject ? item.activeProject?.proposalAngle : item.businessProspect?.entryOffer;
+  const riskValue = isActiveProject ? item.activeProject?.risk : item.businessProspect?.risk;
   const liveAvailable = !!(isActiveProject ? providerStatus?.activeProject.liveAvailable : providerStatus?.businessProspect.liveAvailable);
   const reviewPanel = <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, borderColor: 'rgba(37,99,235,.24)', boxShadow: '0 20px 45px -38px rgba(37,99,235,.75)' }}>
     <Typography variant="overline" color="primary.main">Your call</Typography><Typography variant="h6">Record the decision</Typography>
@@ -174,6 +178,18 @@ export function OpportunityDetailPage() {
 
           {!isActiveProject && item.businessProspect && <Section title="Business details"><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 2 }}><DetailMetric label="Website" value={item.businessProspect.websiteUrl ? <Link href={item.businessProspect.websiteUrl} target="_blank" rel="noopener noreferrer">Visit website</Link> : 'No website found'} /><DetailMetric label="Geography" value={item.businessProspect.geography ?? 'Unknown'} /><DetailMetric label="Industry" value={item.businessProspect.industry ?? 'Unknown'} /></Box></Section>}
 
+          {isActiveProject && item.activeProject && (item.activeProject.budget || item.activeProject.competition) && <Section title="Project details"><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 2 }}>
+            <DetailMetric label="Budget" value={item.activeProject.budget ?? 'Not supplied'} />
+            <DetailMetric label="Proposals" value={item.activeProject.competition?.proposals ?? 'Unknown'} />
+            <DetailMetric label="Interviewing / hires" value={item.activeProject.competition ? `${item.activeProject.competition.interviewing ?? 'Unknown'} / ${item.activeProject.competition.hires ?? 'Unknown'}` : 'Unknown'} />
+          </Box></Section>}
+
+          {(fitValue || secondaryAssessmentValue || riskValue) && <Section title="Sourcing agent assessment"><Stack spacing={2}>
+            {fitValue && <AssessmentBlock label="Fit" value={fitValue} />}
+            {secondaryAssessmentValue && <AssessmentBlock label={secondaryAssessmentLabel} value={secondaryAssessmentValue} />}
+            {riskValue && <AssessmentBlock label="Risk" value={riskValue} tone="warning" />}
+          </Stack></Section>}
+
           {!isActiveProject && item.businessProspect && <Section title="Evaluation agreement"><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
             <DetailMetric label="Imported type" value={item.businessProspect.importedProspectType ?? 'Not supplied'} />
             <DetailMetric label="Imported research confidence" value={item.researchConfidence ?? 'Not supplied'} />
@@ -195,7 +211,7 @@ export function OpportunityDetailPage() {
 
           <SupportingSection key="source" title="Original source" subtitle="The complete imported description and source metadata."><Paper variant="outlined" sx={{ p: 2.5, bgcolor: SURFACE_SUBTLE, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{item.description}</Paper>{(item.sourceDate || item.externalId) && <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>{item.sourceDate && `Source date: ${new Date(item.sourceDate).toLocaleDateString()}`}{item.sourceDate && item.externalId && ' | '}{item.externalId && `External ID: ${item.externalId}`}</Typography>}</SupportingSection>
 
-          <SupportingSection key="evidence" title="Stored evidence" subtitle="Quoted passages come directly from the stored source text."><Stack spacing={1.25}>{item.passages.map(passage => <Paper id={`passage-${passage.id}`} key={passage.id} variant="outlined" sx={{ p: 2, scrollMarginTop: 96, borderColor: evidenceIds.has(passage.id) ? 'primary.main' : 'divider', bgcolor: evidenceIds.has(passage.id) ? 'primary.light' : 'background.paper', transition: 'box-shadow .2s ease', '&:target': { boxShadow: '0 0 0 3px rgba(37,99,235,.25)' } }}><Typography variant="overline" color="text.secondary">{passage.id}</Typography><Typography sx={{ whiteSpace: 'pre-wrap' }}>{passage.text}</Typography></Paper>)}</Stack></SupportingSection>
+          <SupportingSection key="evidence" title="Stored evidence" subtitle="Quoted passages come directly from the stored source text."><Stack spacing={1.25}>{item.passages.map(passage => <Paper id={`passage-${passage.id}`} key={passage.id} variant="outlined" sx={{ p: 2, scrollMarginTop: 96, borderColor: evidenceIds.has(passage.id) ? 'primary.main' : 'divider', bgcolor: evidenceIds.has(passage.id) ? 'primary.light' : 'background.paper', transition: 'box-shadow .2s ease', '&:target': { boxShadow: '0 0 0 3px rgba(37,99,235,.25)' } }}><Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'baseline' }}><Typography variant="overline" color="text.secondary">{passage.id}</Typography>{passage.source && <Typography variant="caption" color="text.secondary">Source: {passage.source}</Typography>}{passage.date && <Typography variant="caption" color="text.secondary">{new Date(passage.date).toLocaleDateString()}</Typography>}</Stack><Typography sx={{ whiteSpace: 'pre-wrap' }}>{passage.text}</Typography></Paper>)}</Stack></SupportingSection>
         </Stack>
 
         {desktopReview && <Stack spacing={2.5} sx={{ position: 'sticky', top: 88 }}>{reviewPanel}</Stack>}
@@ -219,6 +235,13 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function DetailMetric({ label, value }: { label: string; value: React.ReactNode }) {
   return <Box><Typography variant="overline" color="text.secondary">{label}</Typography><Typography variant="body2" sx={{ mt: 0.25, fontWeight: 650, overflowWrap: 'anywhere' }}>{value}</Typography></Box>;
+}
+
+function AssessmentBlock({ label, value, tone = 'default' }: { label: string; value: string; tone?: 'default' | 'warning' }) {
+  return <Box sx={tone === 'warning' ? { p: 1.5, borderRadius: 2, bgcolor: '#fff7ed', border: '1px solid #fed7aa' } : undefined}>
+    <Typography variant="overline" color={tone === 'warning' ? 'warning.dark' : 'text.secondary'}>{label}</Typography>
+    <Typography sx={{ mt: 0.25, whiteSpace: 'pre-wrap' }}>{value}</Typography>
+  </Box>;
 }
 
 function formatCamelKey(key: string) {

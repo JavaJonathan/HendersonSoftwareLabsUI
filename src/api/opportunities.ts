@@ -50,7 +50,7 @@ export interface OpportunitySummary {
 
 export interface OpportunityList { items: OpportunitySummary[]; total: number; page: number; pageSize: number }
 
-export interface RadarPassage { id: string; text: string }
+export interface RadarPassage { id: string; text: string; source: string | null; date: string | null }
 export interface RadarFactor { key: string; label: string; score: number; evidencePassageId: string; explanation: string }
 export interface EvaluationCheck { key: string; severity: EvaluationCheckSeverity; explanation: string; evidencePassageId: string }
 export interface RadarResult {
@@ -86,11 +86,15 @@ export interface OpportunityDetail {
   isSynthetic: boolean;
   notes: string;
   createdAt: string;
-  activeProject: { sourceType: OpportunitySourceType; userDecision: ActiveProjectDecision | null } | null;
+  activeProject: {
+    sourceType: OpportunitySourceType; userDecision: ActiveProjectDecision | null;
+    budget: string | null; competition: CompetitionInfo | null; fit: string | null; proposalAngle: string | null; risk: string | null;
+  } | null;
   businessProspect: {
     businessName: string; websiteUrl: string | null; normalizedWebsiteDomain: string | null;
     geography: string | null; industry: string | null; userDecision: BusinessProspectDecision | null;
     importedProspectType: BusinessProspectType | null; prospectTypeOverride: BusinessProspectType | null;
+    fit: string | null; entryOffer: string | null; risk: string | null;
   } | null;
   evaluation: null | {
     id: number; provider: EvaluationProvider; status: string; model: string; questionSetVersion: string;
@@ -137,17 +141,23 @@ export interface RadarPreferences {
   updatedAt: string;
 }
 
+export interface EvidenceFact { fact: string; source?: string; date?: string }
+export interface CompetitionInfo { proposals: string | null; interviewing: number | null; hires: number | null }
+export interface ConfidenceInfo { level: ResearchConfidence; reason?: string }
+
 export interface ImportActiveProjectRequest {
-  title: string; description: string; sourceType: OpportunitySourceType;
+  title: string; request: string; sourceType: OpportunitySourceType;
   sourceName?: string; sourceUrl?: string; sourceDate?: string; externalId?: string;
-  researchConfidence?: ResearchConfidence; researchConfidenceReason?: string; researchAgent?: string;
+  budget?: string; competition?: { proposals?: string; interviewing?: number; hires?: number };
+  fit?: string; proposalAngle?: string; risk?: string; confidence?: ConfidenceInfo; researchAgent?: string;
 }
 
 export interface ImportBusinessProspectRequest {
-  businessName: string; evidence: string; websiteUrl?: string; geography?: string; industry?: string;
-  sourceName?: string; sourceUrl?: string; sourceDate?: string; externalId?: string;
-  prospectType?: BusinessProspectType; researchConfidence?: ResearchConfidence; researchConfidenceReason?: string; researchAgent?: string;
+  businessName: string; evidence: EvidenceFact[]; websiteUrl?: string; geography?: string; industry?: string;
+  externalId?: string; prospectType?: BusinessProspectType;
+  fit?: string; entryOffer?: string; risk?: string; confidence?: ConfidenceInfo; researchAgent?: string;
 }
+
 
 export interface ImportResult { id: number; created: boolean; updated: boolean; nearDuplicateOfId: number | null }
 
@@ -182,18 +192,14 @@ export const getOpportunityDigest = (includeSynthetic = false) => apiFetch<Oppor
 
 export const importActiveProject = (payload: ImportActiveProjectRequest) =>
   apiFetch<ImportResult>(`${base}/import/active-projects`, { method: 'POST', body: JSON.stringify(payload) });
-export const importActiveProjectCsv = (file: File) => {
-  const body = new FormData(); body.set('file', file);
-  return apiFetch<{ imported: { id: number; title: string; nearDuplicateOfId: number | null }[]; updated: { id: number; title: string }[] }>(
-    `${base}/import/active-projects/csv`, { method: 'POST', body });
-};
+export const importActiveProjectsBatch = (items: ImportActiveProjectRequest[], researchAgent?: string) =>
+  apiFetch<{ imported: { id: number; title: string; nearDuplicateOfId: number | null }[]; updated: { id: number; title: string }[] }>(
+    `${base}/import/active-projects/batch`, { method: 'POST', body: JSON.stringify({ researchAgent, items }) });
 export const importBusinessProspect = (payload: ImportBusinessProspectRequest) =>
   apiFetch<ImportResult>(`${base}/import/business-prospects`, { method: 'POST', body: JSON.stringify(payload) });
-export const importBusinessProspectCsv = (file: File) => {
-  const body = new FormData(); body.set('file', file);
-  return apiFetch<{ imported: { id: number; businessName: string; nearDuplicateOfId: number | null }[]; updated: { id: number; businessName: string }[] }>(
-    `${base}/import/business-prospects/csv`, { method: 'POST', body });
-};
+export const importBusinessProspectsBatch = (items: ImportBusinessProspectRequest[], researchAgent?: string) =>
+  apiFetch<{ imported: { id: number; businessName: string; nearDuplicateOfId: number | null }[]; updated: { id: number; businessName: string }[] }>(
+    `${base}/import/business-prospects/batch`, { method: 'POST', body: JSON.stringify({ researchAgent, items }) });
 
 export const loadOpportunitySamples = () => apiFetch<{ createdCount: number; ids: number[] }>(`${base}/samples`, { method: 'POST' });
 export const getRadarProvider = () => apiFetch<RadarProviderStatus>(`${base}/provider`);
