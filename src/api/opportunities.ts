@@ -101,7 +101,7 @@ export const TONE_HEX = { success: '#16a34a', warning: '#d97706', default: '#94a
 
 export interface OpportunityList { items: OpportunitySummary[]; total: number; page: number; pageSize: number }
 
-export interface RadarPassage { id: string; text: string; source: string | null; date: string | null }
+export interface RadarPassage { id: string; text: string; source: string | null; date: string | null; category: string | null }
 export interface RadarFactor { key: string; label: string; score: number; evidencePassageId: string; explanation: string }
 export interface EvaluationCheck { key: string; severity: EvaluationCheckSeverity; explanation: string; evidencePassageId: string }
 export interface RadarResult {
@@ -192,7 +192,12 @@ export interface RadarPreferences {
   updatedAt: string;
 }
 
-export interface EvidenceFact { fact: string; source?: string; date?: string }
+export type BusinessProspectEvidenceCategory =
+  | 'painCostSeverity' | 'painFrequency' | 'automationFeasibility' | 'economicLeverage'
+  | 'containedEngagement' | 'urgency' | 'hslDeliveryFit' | 'buyerAccess'
+  | 'businessStrength' | 'digitalWeakness' | 'reputationMismatch' | 'entryProjectStrength' | 'general';
+
+export interface EvidenceFact { fact: string; source?: string; date?: string; category?: BusinessProspectEvidenceCategory }
 export interface CompetitionInfo { proposals: string | null; interviewing: number | null; hires: number | null }
 export interface ConfidenceInfo { level: ResearchConfidence; reason?: string }
 

@@ -131,10 +131,26 @@ const ACTIVE_PROJECT_SCHEMA = {
   },
 };
 
+const EVIDENCE_CATEGORY_PROPERTY = {
+  enum: [
+    'painCostSeverity', 'painFrequency', 'automationFeasibility', 'economicLeverage',
+    'containedEngagement', 'urgency', 'hslDeliveryFit', 'buyerAccess',
+    'businessStrength', 'digitalWeakness', 'reputationMismatch', 'entryProjectStrength', 'general',
+  ],
+  description: 'Which single signal this fact most directly supports, so the evaluator can weigh it correctly. Omit only when a fact genuinely does not speak to any signal below (use general for plain business-identity context). '
+    + 'painCostSeverity: the workflow problem wastes money, staff time, or missed revenue. painFrequency: it is frequent or repetitive, not a one-off. '
+    + 'automationFeasibility: a narrow software/automation/integration response looks feasible without replacing a core system. economicLeverage: a plausible, non-invented estimate of recoverable cost or time. '
+    + 'containedEngagement: a specific, boundable first project HSL could deliver. '
+    + 'urgency: a stated deadline, trigger event, mounting cost, or other reason to act soon, actively worth searching for (recent funding, a compliance deadline, a hiring push, a public complaint) rather than noting only if stumbled on. '
+    + 'hslDeliveryFit: the work matches integrations, automation, portals, reporting, or web applications. '
+    + 'buyerAccess: a named, reachable owner, executive, or decision-maker, actively worth searching for (a listed manager, a LinkedIn profile, a direct contact path), not just whatever contact info happened to be on the page. '
+    + 'businessStrength/digitalWeakness/reputationMismatch/entryProjectStrength: the Digital Presence equivalents of the above. general: useful identity or background context that does not map to one signal.',
+};
+
 const BUSINESS_PROSPECT_SCHEMA = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
   title: 'Opportunity Radar Business Prospect import',
-  description: 'Use this schema for an established business with an observed operational pain, inefficient manual workflow, hiring signal for manual work, weak digital presence, or similar signal, whether or not the business has stated any intention to buy software. If the source shows a direct, stated request for software or automation help instead, use the sibling Active Project schema for that record. Produce one item per distinct business opportunity, not one item per supporting source; when multiple sources support the same opportunity, add one evidence entry per source rather than merging them or duplicating the item, and no more than 100 items. If nothing from this run belongs here, submit an empty items array rather than guessing. Before finishing, check: sources for the same opportunity are separate evidence entries on one item, no item repeats an externalId already used earlier in this file, every evidence fact traces to observation rather than industry assumption, DigitalPresence items name a specific defect rather than a dated look, Hybrid items have independent evidence for both halves, and every item has a prospectType and a confidence level and reason.',
+  description: 'Use this schema for an established business with an observed operational pain, inefficient manual workflow, hiring signal for manual work, weak digital presence, or similar signal, whether or not the business has stated any intention to buy software. If the source shows a direct, stated request for software or automation help instead, use the sibling Active Project schema for that record. Produce one item per distinct business opportunity, not one item per supporting source; when multiple sources support the same opportunity, add one evidence entry per source rather than merging them or duplicating the item, and no more than 100 items. If nothing from this run belongs here, submit an empty items array rather than guessing. Before finishing, check: sources for the same opportunity are separate evidence entries on one item, no item repeats an externalId already used earlier in this file, every evidence fact traces to observation rather than industry assumption, DigitalPresence items name a specific defect rather than a dated look, Hybrid items have independent evidence for both halves, every item has a prospectType and a confidence level and reason, and each evidence signal that plausibly has public evidence (especially urgency and buyer access, which are easy to skip) has at least one categorized fact rather than being left to chance - a signal that genuinely lacks evidence should stay uncovered rather than guessed at.',
   type: 'object',
   required: ['researchAgent', 'items'],
   additionalProperties: false,
@@ -144,8 +160,9 @@ const BUSINESS_PROSPECT_SCHEMA = {
       externalId: 'source-system-business-001',
       businessName: 'Riverside Family Dental',
       evidence: [
-        { fact: 'Established dental practice, well known locally, with loyal customers for over fifteen years.', source: 'https://example.com/about', date: '2026-09-25' },
-        { fact: 'The website is outdated, not mobile friendly, and has no online booking system.', source: 'https://example.com/reviews' },
+        { fact: 'Established dental practice, well known locally, with loyal customers for over fifteen years.', source: 'https://example.com/about', date: '2026-09-25', category: 'businessStrength' },
+        { fact: 'The website is outdated, not mobile friendly, and has no online booking system.', source: 'https://example.com/reviews', category: 'digitalWeakness' },
+        { fact: 'The practice owner, Dr. Alan Reyes, is listed as the sole decision-maker on the practice\'s state licensing record.', source: 'https://example.com/about', category: 'buyerAccess' },
       ],
       websiteUrl: 'https://example.com',
       geography: 'Raleigh',
@@ -191,6 +208,7 @@ const BUSINESS_PROSPECT_SCHEMA = {
               date: dateOrDateTimeProperty(
                 "This fact's own published, posted, or last-updated date or timestamp, same rules as an Active Project sourceDate: never the date you accessed or researched the page, omit when the source has none of its own.",
               ),
+              category: EVIDENCE_CATEGORY_PROPERTY,
             },
           },
         },
