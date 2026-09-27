@@ -2,7 +2,7 @@ import { Fragment, useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 import {
   Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, Chip, Container,
-  IconButton, Link, MenuItem, Paper, Select, Stack, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography, useMediaQuery,
+  IconButton, Link, Skeleton, MenuItem, Paper, Select, Stack, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography, useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
@@ -15,7 +15,7 @@ import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined
 import SearchOffOutlinedIcon from '@mui/icons-material/SearchOffOutlined';
 import { AuthedAppBar } from '../components/layout/AuthedAppBar';
 import { EvaluationDialog } from '../components/opportunities/EvaluationDialog';
-import { AppDialog } from '../components/common/AppDialog';
+import { RadarDialog as AppDialog } from '../components/opportunities/RadarDialog';
 import { SURFACE_SUBTLE, SEVERITY_TINT } from '../theme';
 import {
   getOpportunity, getOpportunitySignal, getRadarProvider, updateOpportunityReview, updateProspectTypeOverride, deleteOpportunity, clearOpportunityDuplicate,
@@ -91,6 +91,9 @@ export function OpportunityDetailPage() {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const desktopReview = useMediaQuery(theme.breakpoints.up('lg'));
+  const [retryKey, setRetryKey] = useState(0);
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [pendingPassage, setPendingPassage] = useState<string | null>(null);
   const [item, setItem] = useState<OpportunityDetail | null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -116,7 +119,7 @@ export function OpportunityDetailPage() {
       setSavedDecision(nextDecision); setSavedNotes(data.notes);
     }).catch(() => { if (active) setError('Unable to load this opportunity.'); });
     return () => { active = false; };
-  }, [id]);
+  }, [id, retryKey]);
 
   useEffect(() => { getRadarProvider().then(setProviderStatus).catch(() => setProviderStatus(null)); }, []);
 
@@ -162,8 +165,36 @@ export function OpportunityDetailPage() {
     finally { setBusy(false); }
   }
 
-  if (error && !item) return <Box sx={{ minHeight: '100vh', bgcolor: SURFACE_SUBTLE }}><AuthedAppBar subtitle="Opportunity Radar" /><Container sx={{ py: 5 }}><Alert severity="error">{error}</Alert></Container></Box>;
-  if (!item) return <Box sx={{ minHeight: '100vh', bgcolor: SURFACE_SUBTLE }}><AuthedAppBar subtitle="Opportunity Radar" /><Container sx={{ py: 5 }}><Typography>Loading opportunity...</Typography></Container></Box>;
+  // Only react to the opportunity actually changing (a fresh navigation), not to
+  // setItem() refreshes of the same record after evaluating, clearing a duplicate,
+  // or overriding the type - otherwise those would reopen and re-scroll to a passage
+  // the user already closed. The dependency is deliberately just the id.
+  /* oxlint-disable react/exhaustive-deps */
+  useEffect(() => {
+    if (!item) return;
+    const hash = decodeURIComponent(window.location.hash.slice(1));
+    if (hash.startsWith('passage-') && item.passages.some(passage => `passage-${passage.id}` === hash)) {
+      setEvidenceOpen(true); setPendingPassage(hash);
+    }
+  }, [item?.id]);
+  /* oxlint-enable react/exhaustive-deps */
+
+  useEffect(() => {
+    if (!evidenceOpen || !pendingPassage) return;
+    const timeout = window.setTimeout(() => {
+      const target = document.getElementById(pendingPassage);
+      if (target) {
+        window.history.replaceState(window.history.state, '', `#${encodeURIComponent(pendingPassage)}`);
+        target.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+        target.focus({ preventScroll: true });
+      }
+      setPendingPassage(null);
+    }, 350);
+    return () => window.clearTimeout(timeout);
+  }, [evidenceOpen, pendingPassage]);
+
+  if (error && !item) return <Box sx={{ minHeight: '100vh', bgcolor: SURFACE_SUBTLE }}><AuthedAppBar subtitle="Opportunity Radar" /><Container component="main" maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}><Alert severity="error" action={<Button color="inherit" onClick={() => setRetryKey(value => value + 1)}>Retry</Button>}>{error}</Alert></Container></Box>;
+  if (!item) return <Box sx={{ minHeight: '100vh', bgcolor: SURFACE_SUBTLE }}><AuthedAppBar subtitle="Opportunity Radar" /><Container component="main" maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}><Box role="status" aria-label="Loading opportunity"><Skeleton width={160} /><Skeleton width="70%" height={56} sx={{ mt: 3 }} /><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' }, gap: 3, mt: 3 }}>{[0, 1].map(column => <Paper key={column} variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 3 }}><Skeleton width="40%" height={32} /><Skeleton height={48} /><Skeleton /><Skeleton /><Skeleton height={80} sx={{ mt: 2 }} /></Paper>)}</Box></Box></Container></Box>;
 
   const isActiveProject = item.entityType === 'ActiveProject';
   const decisionOptions = isActiveProject ? ACTIVE_PROJECT_DECISIONS : BUSINESS_PROSPECT_DECISIONS;
@@ -177,19 +208,26 @@ export function OpportunityDetailPage() {
   const secondaryAssessmentValue = isActiveProject ? item.activeProject?.proposalAngle : item.businessProspect?.entryOffer;
   const riskValue = isActiveProject ? item.activeProject?.risk : item.businessProspect?.risk;
   const liveAvailable = !!(isActiveProject ? providerStatus?.activeProject.liveAvailable : providerStatus?.businessProspect.liveAvailable);
-  const reviewPanel = <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, borderColor: 'rgba(37,99,235,.24)', boxShadow: '0 20px 45px -38px rgba(37,99,235,.75)' }}>
-    <Typography variant="overline" color="primary.main">Your call</Typography><Typography variant="h6">Record the decision</Typography>
+  const reviewPanel = <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 3, borderColor: 'rgba(37,99,235,.24)', boxShadow: '0 20px 45px -38px rgba(37,99,235,.75)' }}>
+    <Typography variant="overline" sx={{ color: 'primary.main' }}>Your call</Typography><Typography variant="h6">Record the decision</Typography>
     <Stack spacing={2} sx={{ mt: 2 }}>
-      <ToggleButtonGroup exclusive fullWidth value={decision} onChange={(_, value) => { if (value !== null) setDecision(value); }} size="small" aria-label="Review decision" sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', '& .MuiToggleButtonGroup-grouped': { borderRadius: '8px !important', border: '1px solid !important', borderColor: 'divider !important', m: 0.25 } }}><ToggleButton value="">Unreviewed</ToggleButton>{decisionOptions.map(value => <ToggleButton key={value} value={value}>{value}</ToggleButton>)}</ToggleButtonGroup>
+      <ToggleButtonGroup exclusive fullWidth value={decision} onChange={(_, value) => { if (value !== null) setDecision(value); }} size="small" aria-label="Review decision" sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 1, '& .MuiToggleButtonGroup-grouped': { minHeight: 44, minWidth: 0, borderRadius: '8px !important', border: '1px solid !important', borderColor: 'divider !important', m: 0, '&.Mui-selected': { color: 'primary.main', bgcolor: 'primary.light', borderColor: 'primary.main !important', fontWeight: 700 } } }}><ToggleButton value="">Unreviewed</ToggleButton>{decisionOptions.map(value => <ToggleButton key={value} value={value}>{value}</ToggleButton>)}</ToggleButtonGroup>
       <TextField label="Review notes" value={notes} onChange={event => setNotes(event.target.value)} multiline minRows={5} slotProps={{ htmlInput: { maxLength: 5000 } }} helperText={`${notes.length.toLocaleString()} / 5,000`} />
       <Button variant="contained" onClick={save} disabled={busy || (decision === savedDecision && notes === savedNotes)}>{busy ? 'Saving...' : decision === savedDecision && notes === savedNotes ? 'Review saved' : 'Save review'}</Button>
-      {(decision !== savedDecision || notes !== savedNotes) && <Typography variant="caption" color="warning.main" sx={{ textAlign: 'center', fontWeight: 700 }}>Unsaved changes</Typography>}
+      {(decision !== savedDecision || notes !== savedNotes) && <Typography variant="caption" sx={{ color: 'warning.main', textAlign: 'center', fontWeight: 700 }}>Unsaved changes</Typography>}
     </Stack>
   </Paper>;
 
   return <Box sx={{ minHeight: '100vh', bgcolor: SURFACE_SUBTLE }}>
     <AuthedAppBar subtitle="Opportunity Radar" />
-    <Container component="main" maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}>
+    <Container component="main" maxWidth="lg" onClickCapture={event => {
+      if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      const anchor = (event.target as HTMLElement).closest('a');
+      const hash = anchor?.getAttribute('href');
+      if (hash?.startsWith('#passage-')) {
+        event.preventDefault(); setEvidenceOpen(true); setPendingPassage(decodeURIComponent(hash.slice(1)));
+      }
+    }} sx={{ py: { xs: 3, md: 5 } }}>
       <Link component={RouterLink} to={backTo}>Back to {isActiveProject ? 'active projects' : 'business prospects'}</Link>
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mt: 2, mb: 3, justifyContent: 'space-between', alignItems: { md: 'flex-start' } }}>
         <Box sx={{ minWidth: 0 }}>
@@ -198,7 +236,7 @@ export function OpportunityDetailPage() {
               ? item.activeProject && <Chip label={SOURCE_TYPE_LABELS[item.activeProject.sourceType]} variant="outlined" />
               : <Fragment key="prospect-header-chips">
                 <Chip label="Business prospect" variant="outlined" />
-                {item.businessProspect?.industry && <Chip label={item.businessProspect.industry} variant="outlined" />}
+                {item.businessProspect?.industry && <Chip label={item.businessProspect.industry} variant="outlined" sx={{ maxWidth: '100%', height: 'auto', '& .MuiChip-label': { whiteSpace: 'normal', overflowWrap: 'anywhere', py: 0.5 } }} />}
               </Fragment>}
             {item.isSynthetic && <Chip label="Synthetic example" color="info" variant="outlined" />}
             {evaluation?.provider === 'Simulated' && <Chip label="Simulated evaluation" color="warning" variant="outlined" />}
@@ -207,7 +245,7 @@ export function OpportunityDetailPage() {
             {evaluation?.status === 'Failed' && <Chip label="Provider failure" color="error" />}
           </Stack>
           <Typography component="h1" variant="h4" sx={{ fontSize: { xs: 27, md: 36 }, overflowWrap: 'anywhere' }}>{item.title}</Typography>
-          {item.sourceName && <Typography color="text.secondary" sx={{ mt: 0.75 }}>{item.sourceName}</Typography>}
+          {item.sourceName && <Typography sx={{ color: 'text.secondary', mt: 0.75 }}>{item.sourceName}</Typography>}
           {item.duplicateOfId && <Alert severity="warning" sx={{ mt: 2 }} action={
             <Button color="inherit" size="small" onClick={clearDuplicate} disabled={clearingDuplicate}>{clearingDuplicate ? 'Clearing...' : 'Not a duplicate'}</Button>
           }>This may duplicate opportunity #{item.duplicateOfId}. Review both before acting.</Alert>}
@@ -217,11 +255,11 @@ export function OpportunityDetailPage() {
       {notice && <Alert severity="success" onClose={() => setNotice('')} sx={{ mb: 2 }}>{notice}</Alert>}
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.65fr) minmax(310px, .85fr)' }, gap: 2.5, alignItems: 'start' }}>
-        <Stack spacing={2.5} sx={{ minWidth: 0 }}>
-          {evaluation?.status === 'Failed' ? <Alert severity="error" action={<Button color="inherit" size="small" onClick={() => setEvaluationOpen(true)}>Retry evaluation</Button>}>Evaluation failed without changing the opportunity score. {evaluation.errorMessage ?? 'Retry when the provider is available.'}</Alert> : evaluation ? <Paper variant="outlined" sx={{ p: { xs: 2.5, md: 3.5 }, borderRadius: 3, background: signal ? PANEL_TINT[signal.tone].background : 'linear-gradient(145deg, #ffffff 25%, #f8fafc 100%)', borderColor: signal ? PANEL_TINT[signal.tone].borderColor : 'rgba(100,116,139,.25)' }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.65fr) minmax(310px, .85fr)' }, gap: 3, alignItems: 'start' }}>
+        <Stack spacing={3} sx={{ minWidth: 0 }}>
+          {evaluation?.status === 'Failed' ? <Alert severity="error" action={<Button color="inherit" size="small" onClick={() => setEvaluationOpen(true)}>Retry evaluation</Button>}>Evaluation failed without changing the opportunity score. {evaluation.errorMessage ?? 'Retry when the provider is available.'}</Alert> : evaluation ? <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 3, background: signal ? PANEL_TINT[signal.tone].background : 'linear-gradient(145deg, #ffffff 25%, #f8fafc 100%)', borderColor: signal ? PANEL_TINT[signal.tone].borderColor : 'rgba(100,116,139,.25)' }}>
             <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
-              <Typography variant="overline" color="primary.main">Radar recommendation</Typography>
+              <Typography variant="overline" sx={{ color: 'primary.main' }}>Radar recommendation</Typography>
               {evaluation.recommendation && signal && <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
                 <Chip size="small" label={evaluation.recommendation} color={signal.chipColor} variant={signal.chipVariant} />
                 {signal.icon === 'verify' && <Tooltip title={signal.iconTooltip ?? ''}><FactCheckOutlinedIcon sx={{ fontSize: 18, color: 'success.main' }} /></Tooltip>}
@@ -229,14 +267,14 @@ export function OpportunityDetailPage() {
               </Stack>}
               <Button size="small" onClick={() => setEvaluationOpen(true)} sx={{ ml: 'auto' }}>Re-evaluate</Button>
             </Stack>
-            <Typography variant="h5" sx={{ mt: 1.25, maxWidth: 760, lineHeight: 1.35 }}>{evaluation.summary}</Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 2, mt: 2.5 }}>
+            <Typography variant="h5" sx={{ fontSize: { xs: 20, sm: 22, md: 24 }, mt: 1.25, maxWidth: 760, lineHeight: 1.35 }}>{evaluation.summary}</Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', md: 'repeat(3, minmax(0, 1fr))' }, gap: 2, mt: 2.5 }}>
               <DetailMetric label="Opportunity score" value={evaluation.opportunityScore == null ? 'Unavailable' : <><Box component="span" sx={{ color: signal?.scoreColor }}>{evaluation.opportunityScore.toFixed(1)}</Box> / 100</>} />
               <DetailMetric label="Jev confidence" value={evaluation.jevConfidence == null ? 'Unavailable' : `${Math.round(evaluation.jevConfidence * 100)}%`} />
               <DetailMetric label="Evaluation" value={evaluation.origin === 'LocalRecompose' ? 'Locally recomposed' : 'Provider run'} />
             </Box>
-            <Box sx={{ mt: 2.5, pl: 2, borderLeft: '3px solid', borderColor: 'primary.main' }}><Typography variant="overline" color="text.secondary">Recommended next step</Typography><Typography sx={{ mt: 0.25, fontWeight: 650 }}>{evaluation.nextStep}</Typography></Box>
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2.5 }}>{evaluation.provider === 'Jev' ? `Assembled deterministically from stored Jev judgments and source evidence. Usage: ${evaluation.inputTokens?.toLocaleString() ?? 'unknown'} input tokens.` : 'Generated deterministically from a simulated evaluation. It is not a Jev result.'}</Typography>
+            <Box sx={{ mt: 2.5, pl: 2, borderLeft: '3px solid', borderColor: 'primary.main' }}><Typography variant="overline" sx={{ color: 'text.secondary' }}>Recommended next step</Typography><Typography sx={{ mt: 0.25, fontWeight: 650 }}>{evaluation.nextStep}</Typography></Box>
+            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 2.5 }}>{evaluation.provider === 'Jev' ? `Assembled deterministically from stored Jev judgments and source evidence. Usage: ${evaluation.inputTokens?.toLocaleString() ?? 'unknown'} input tokens.` : 'Generated deterministically from a simulated evaluation. It is not a Jev result.'}</Typography>
           </Paper> : <Alert severity="info" action={<Button color="inherit" size="small" onClick={() => setEvaluationOpen(true)}>Evaluate now</Button>}>This record has not been evaluated yet.</Alert>}
 
           {!desktopReview && reviewPanel}
@@ -249,9 +287,9 @@ export function OpportunityDetailPage() {
           {!!result?.checks?.length && <Section title="Evaluation checks"><Stack spacing={1.25}>{result.checks.map(check => <Alert key={check.key} severity={check.severity === 'Block' ? 'error' : check.severity === 'Review' ? 'warning' : 'info'}><Typography sx={{ fontWeight: 800 }}><HelpText label={formatCamelKey(check.key)} help={checkHelpFor(check.key)}>{formatCamelKey(check.key)}</HelpText></Typography><Typography variant="body2">{check.explanation}</Typography>{check.evidencePassageId !== 'none' && <Link href={`#passage-${check.evidencePassageId}`} variant="caption" sx={{ display: 'inline-block', mt: 0.75 }}>View {check.evidencePassageId}</Link>}</Alert>)}</Stack></Section>}
 
           {/* Reference: imported facts and a human's own notes - useful context, but not AI evidence, so it sits below the group above. */}
-          {!isActiveProject && item.businessProspect && <Section title="Business details"><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 2 }}><DetailMetric label="Website" value={item.businessProspect.websiteUrl ? <Link href={item.businessProspect.websiteUrl} target="_blank" rel="noopener noreferrer">Visit website</Link> : 'No website found'} /><DetailMetric label="Geography" value={item.businessProspect.geography ?? 'Unknown'} /><DetailMetric label="Industry" value={item.businessProspect.industry ?? 'Unknown'} /></Box></Section>}
+          {!isActiveProject && item.businessProspect && <Section title="Business details"><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', md: 'repeat(3, minmax(0, 1fr))' }, gap: 2 }}><DetailMetric label="Website" value={item.businessProspect.websiteUrl ? <Link href={item.businessProspect.websiteUrl} target="_blank" rel="noopener noreferrer">Visit website</Link> : 'No website found'} /><DetailMetric label="Geography" value={item.businessProspect.geography ?? 'Unknown'} /><DetailMetric label="Industry" value={item.businessProspect.industry ?? 'Unknown'} /></Box></Section>}
 
-          {isActiveProject && item.activeProject && (item.activeProject.budget || item.activeProject.competition) && <Section title="Project details"><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 2 }}>
+          {isActiveProject && item.activeProject && (item.activeProject.budget || item.activeProject.competition) && <Section title="Project details"><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', md: 'repeat(3, minmax(0, 1fr))' }, gap: 2 }}>
             <DetailMetric label="Budget" value={item.activeProject.budget ?? 'Not supplied'} />
             <DetailMetric label="Proposals" value={item.activeProject.competition?.proposals ?? 'Unknown'} />
             <DetailMetric label="Interviewing / hires" value={item.activeProject.competition ? `${item.activeProject.competition.interviewing ?? 'Unknown'} / ${item.activeProject.competition.hires ?? 'Unknown'}` : 'Unknown'} />
@@ -264,32 +302,32 @@ export function OpportunityDetailPage() {
           </Stack></Section>}
 
           {!isActiveProject && item.businessProspect && <Section title="Evaluation agreement"><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
-            <DetailMetric label="Imported type" value={item.businessProspect.importedProspectType ?? 'Not supplied'} />
+            <DetailMetric label="Imported type" value={item.businessProspect.importedProspectType ? formatProspectType(item.businessProspect.importedProspectType) : 'Not supplied'} />
             <DetailMetric label="Imported research confidence" value={item.researchConfidence ?? 'Not supplied'} />
             <DetailMetric label="Research confidence reason" value={item.researchConfidenceReason ?? 'Not supplied'} />
             <DetailMetric label="Research agent" value={item.researchAgent ?? 'Not supplied'} />
-            <DetailMetric label="Jev type" value={evaluation?.evaluatedProspectType ?? 'Not evaluated'} />
+            <DetailMetric label="Jev type" value={evaluation?.evaluatedProspectType ? formatProspectType(evaluation.evaluatedProspectType) : 'Not evaluated'} />
             <DetailMetric label="Jev confidence" value={evaluation?.jevConfidence == null ? 'Not evaluated' : `${Math.round(evaluation.jevConfidence * 100)}%`} />
-            <Box><Typography variant="overline" color="text.secondary">Human override</Typography><Select size="small" fullWidth value={item.businessProspect.prospectTypeOverride ?? ''} disabled={busy || !evaluation} onChange={event => setTypeOverride(event.target.value as BusinessProspectType | '')} sx={{ mt: 0.5 }}><MenuItem value="">No override</MenuItem>{(['OperationalPain', 'DigitalPresence', 'Hybrid', 'Unknown'] as BusinessProspectType[]).map(value => <MenuItem key={value} value={value}>{formatProspectType(value)}</MenuItem>)}</Select></Box>
+            <Box><Typography variant="overline" sx={{ color: 'text.secondary' }}>Human override</Typography><Select inputProps={{ 'aria-label': 'Human override' }} size="small" fullWidth value={item.businessProspect.prospectTypeOverride ?? ''} disabled={busy || !evaluation} onChange={event => setTypeOverride(event.target.value as BusinessProspectType | '')} sx={{ mt: 0.5 }}><MenuItem value="">No override</MenuItem>{(['OperationalPain', 'DigitalPresence', 'Hybrid', 'Unknown'] as BusinessProspectType[]).map(value => <MenuItem key={value} value={value}>{formatProspectType(value)}</MenuItem>)}</Select></Box>
             <DetailMetric label="Agreement" value={agreementLabel(item)} />
           </Box></Section>}
 
           {/* Collapsed reference material: rarely opened, so it stays out of the way until someone wants it. */}
-          <SupportingSection key="source" title="Original source" subtitle="The complete imported description and source metadata."><Paper variant="outlined" sx={{ p: 2.5, bgcolor: SURFACE_SUBTLE, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{item.description}</Paper>{(item.sourceDate || item.externalId) && <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>{item.sourceDate && `Source date: ${new Date(item.sourceDate).toLocaleDateString()}`}{item.sourceDate && item.externalId && ' | '}{item.externalId && `External ID: ${item.externalId}`}</Typography>}</SupportingSection>
+          <SupportingSection key="source" title="Original source" subtitle="The complete imported description and source metadata."><Paper variant="outlined" sx={{ p: 2.5, bgcolor: SURFACE_SUBTLE, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{item.description}</Paper>{(item.sourceDate || item.externalId) && <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1.5 }}>{item.sourceDate && `Source date: ${new Date(item.sourceDate).toLocaleDateString()}`}{item.sourceDate && item.externalId && ' | '}{item.externalId && `External ID: ${item.externalId}`}</Typography>}</SupportingSection>
 
-          <SupportingSection key="evidence" title="Stored evidence" subtitle="Quoted passages come directly from the stored source text."><Stack spacing={1.25}>{item.passages.map(passage => <Paper id={`passage-${passage.id}`} key={passage.id} variant="outlined" sx={{ p: 2, scrollMarginTop: 96, borderColor: evidenceIds.has(passage.id) ? 'primary.main' : 'divider', bgcolor: evidenceIds.has(passage.id) ? 'primary.light' : 'background.paper', transition: 'box-shadow .2s ease', '&:target': { boxShadow: '0 0 0 3px rgba(37,99,235,.25)' } }}><Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}><Typography variant="overline" color="text.secondary">{passage.id}</Typography>{passage.category && <Chip size="small" variant="outlined" label={formatCamelKey(passage.category)} />}{passage.source && <Typography variant="caption" color="text.secondary">Source: {passage.source}</Typography>}{passage.date && <Typography variant="caption" color="text.secondary">{new Date(passage.date).toLocaleDateString()}</Typography>}</Stack><Typography sx={{ whiteSpace: 'pre-wrap' }}>{passage.text}</Typography></Paper>)}</Stack></SupportingSection>
+          <SupportingSection key="evidence" expanded={evidenceOpen} onExpandedChange={setEvidenceOpen} title="Stored evidence" subtitle="Quoted passages come directly from the stored source text."><Stack spacing={1.25}>{item.passages.map(passage => <Paper id={`passage-${passage.id}`} tabIndex={-1} key={passage.id} variant="outlined" sx={{ p: 2, scrollMarginTop: 96, borderColor: evidenceIds.has(passage.id) ? 'primary.main' : 'divider', bgcolor: evidenceIds.has(passage.id) ? 'primary.light' : 'background.paper', transition: 'box-shadow .2s ease', '&:target': { boxShadow: '0 0 0 3px rgba(37,99,235,.25)' } }}><Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}><Typography variant="overline" sx={{ color: 'text.secondary' }}>{passage.id}</Typography>{passage.category && <Chip size="small" variant="outlined" label={formatCamelKey(passage.category)} />}{passage.source && <Typography variant="caption" sx={{ color: 'text.secondary' }}>Source: {passage.source}</Typography>}{passage.date && <Typography variant="caption" sx={{ color: 'text.secondary' }}>{new Date(passage.date).toLocaleDateString()}</Typography>}</Stack><Typography sx={{ whiteSpace: 'pre-wrap' }}>{passage.text}</Typography></Paper>)}</Stack></SupportingSection>
 
           {evaluation && <SupportingSection key="scoring-profile" title="Scoring profile" subtitle="The relative weights this evaluation used. Only changes when screening preferences are edited."><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mb: 2 }}><DetailMetric label="Rubric version" value={evaluation.rubricVersion} /><DetailMetric label="Origin" value={evaluation.origin === 'LocalRecompose' ? 'Locally recomposed from stored Jev judgments' : 'Jev provider run'} /></Box><Stack spacing={1}>{Object.entries(evaluation.effectiveWeights ?? {}).map(([key, value]) => <Stack key={key} direction="row" sx={{ justifyContent: 'space-between', gap: 2 }}><Typography variant="body2">{formatCamelKey(key)}</Typography><Typography variant="body2" sx={{ fontWeight: 800 }}>{Number(value).toFixed(2)}%</Typography></Stack>)}</Stack></SupportingSection>}
         </Stack>
 
-        {desktopReview && <Stack spacing={2.5} sx={{ position: 'sticky', top: 88 }}>{reviewPanel}</Stack>}
+        {desktopReview && <Stack spacing={3} sx={{ position: 'sticky', top: 88 }}>{reviewPanel}</Stack>}
       </Box>
 
-      <Paper variant="outlined" sx={{ mt: 4, p: { xs: 2.5, md: 3 }, borderRadius: 3, borderColor: '#fecaca', bgcolor: '#fffafa' }}><Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ justifyContent: 'space-between', alignItems: { sm: 'center' } }}><Box><Typography variant="h6" color="error.main">Danger zone</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 0.35 }}>Delete a bad import or synthetic example and its evaluation history. This cannot be undone.</Typography></Box><Button color="error" variant="outlined" onClick={() => setDeleteOpen(true)} sx={{ flexShrink: 0 }}>Delete opportunity</Button></Stack></Paper>
+      <Paper variant="outlined" sx={{ mt: 4, p: { xs: 2, sm: 3 }, borderRadius: 3, borderColor: '#fecaca', bgcolor: '#fffafa' }}><Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ justifyContent: 'space-between', alignItems: { sm: 'center' } }}><Box><Typography variant="h6" sx={{ color: 'error.main' }}>Danger zone</Typography><Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.35 }}>Delete a bad import or synthetic example and its evaluation history. This cannot be undone.</Typography></Box><Button color="error" variant="outlined" onClick={() => setDeleteOpen(true)} sx={{ flexShrink: 0 }}>Delete opportunity</Button></Stack></Paper>
     </Container>
 
     <AppDialog open={deleteOpen} fullScreen={fullScreen} maxWidth="xs" title="Delete opportunity" busy={deleting} onClose={() => { setDeleteOpen(false); setDeleteError(''); }} actions={<><Button onClick={() => { setDeleteOpen(false); setDeleteError(''); }} disabled={deleting}>Cancel</Button><Button variant="contained" color="error" onClick={confirmDelete} loading={deleting}>Delete</Button></>}>
-      <Typography variant="body2" color="text.secondary">This permanently deletes &quot;{item.title}&quot; and its evaluation history. This cannot be undone.</Typography>
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>This permanently deletes &quot;{item.title}&quot; and its evaluation history. This cannot be undone.</Typography>
       {deleteError && <Alert severity="error" sx={{ mt: 2 }}>{deleteError}</Alert>}
     </AppDialog>
 
@@ -298,16 +336,16 @@ export function OpportunityDetailPage() {
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return <Paper variant="outlined" sx={{ p: { xs: 2.5, md: 3 }, borderRadius: 3 }}><Typography variant="h6" sx={{ mb: 2 }}>{title}</Typography>{children}</Paper>;
+  return <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 3 }}><Typography variant="h6" sx={{ mb: 2 }}>{title}</Typography>{children}</Paper>;
 }
 
 function DetailMetric({ label, value }: { label: string; value: React.ReactNode }) {
-  return <Box><Typography variant="overline" color="text.secondary">{label}</Typography><Typography variant="body2" sx={{ mt: 0.25, fontWeight: 650, overflowWrap: 'anywhere' }}>{value}</Typography></Box>;
+  return <Box><Typography variant="overline" sx={{ color: 'text.secondary' }}>{label}</Typography><Typography variant="body2" sx={{ mt: 0.25, fontWeight: 650, overflowWrap: 'anywhere' }}>{value}</Typography></Box>;
 }
 
 function AssessmentBlock({ label, value, tone = 'default' }: { label: string; value: string; tone?: 'default' | 'warning' }) {
   return <Box sx={tone === 'warning' ? { p: 1.5, borderRadius: 2, bgcolor: SEVERITY_TINT.warning.bg, border: `1px solid ${SEVERITY_TINT.warning.border}` } : undefined}>
-    <Typography variant="overline" color={tone === 'warning' ? 'warning.dark' : 'text.secondary'}>{label}</Typography>
+    <Typography variant="overline" sx={{ color: tone === 'warning' ? 'warning.dark' : 'text.secondary' }}>{label}</Typography>
     <Typography sx={{ mt: 0.25, whiteSpace: 'pre-wrap' }}>{value}</Typography>
   </Box>;
 }
@@ -347,20 +385,20 @@ function HelpIcon({ label, help }: { label: string; help?: string }) {
 function HelpText({ label, help, children }: { label: string; help?: string; children: React.ReactNode }) {
   if (!help) return <>{children}</>;
   return <Tooltip arrow placement="top" enterTouchDelay={0} leaveTouchDelay={6000} title={<Box sx={{ py: 0.5 }}><Typography variant="subtitle2" sx={{ mb: 0.5 }}>{label}</Typography><Typography variant="body2" sx={{ lineHeight: 1.45 }}>{help}</Typography></Box>} slotProps={{ tooltip: { sx: { maxWidth: 340, p: 1.5 } } }}>
-    <Box component="span" sx={{ cursor: 'help', textDecoration: 'underline', textDecorationStyle: 'dotted', textDecorationColor: 'currentColor', textUnderlineOffset: 3 }}>{children}</Box>
+    <Box component="span" tabIndex={0} aria-label={`What ${label} means`} sx={{ cursor: 'help', '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 3 }, textDecoration: 'underline', textDecorationStyle: 'dotted', textDecorationColor: 'currentColor', textUnderlineOffset: 3 }}>{children}</Box>
   </Tooltip>;
 }
 
 function FactorScore({ factorKey, label, score, explanation, evidencePassageId }: { factorKey: string; label: string; score: number; explanation: string; evidencePassageId: string }) {
   const help = FACTOR_HELP[factorKey];
-  return <Box sx={{ py: 2, '&:first-of-type': { pt: 0 }, '&:last-of-type': { pb: 0 } }}><Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ justifyContent: 'space-between', alignItems: { sm: 'flex-start' } }}><Box sx={{ minWidth: 0 }}><Stack direction="row" spacing={0.25} sx={{ alignItems: 'center' }}><Typography sx={{ fontWeight: 800 }}>{label}</Typography><HelpIcon label={label} help={help} /></Stack><Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.55 }}>{explanation}</Typography>{evidencePassageId !== 'none' && <Link href={`#passage-${evidencePassageId}`} underline="hover" variant="caption" sx={{ display: 'inline-block', mt: 0.75, fontWeight: 700 }}>View {evidencePassageId}</Link>}</Box><Box sx={{ width: 110, flexShrink: 0, pt: 0.25 }}><Typography variant="caption" sx={{ display: 'block', textAlign: 'right', fontWeight: 800 }}>{score.toFixed(1)} / 100</Typography><Box sx={{ height: 8, mt: 0.5, borderRadius: 99, bgcolor: 'divider', overflow: 'hidden' }}><Box sx={{ width: `${Math.max(0, Math.min(100, score))}%`, height: '100%', bgcolor: 'primary.main' }} /></Box></Box></Stack></Box>;
+  return <Box sx={{ py: 2, '&:first-of-type': { pt: 0 }, '&:last-of-type': { pb: 0 } }}><Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ justifyContent: 'space-between', alignItems: { sm: 'flex-start' } }}><Box sx={{ minWidth: 0 }}><Stack direction="row" spacing={0.25} sx={{ alignItems: 'center' }}><Typography sx={{ fontWeight: 800 }}>{label}</Typography><HelpIcon label={label} help={help} /></Stack><Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5, lineHeight: 1.55 }}>{explanation}</Typography>{evidencePassageId !== 'none' && <Link href={`#passage-${evidencePassageId}`} underline="hover" variant="caption" sx={{ display: 'inline-block', mt: 0.75, fontWeight: 700 }}>View {evidencePassageId}</Link>}</Box><Box sx={{ width: 110, flexShrink: 0, pt: 0.25 }}><Typography variant="caption" sx={{ display: 'block', textAlign: 'right', fontWeight: 800 }}>{score.toFixed(1)} / 100</Typography><Box sx={{ height: 8, mt: 0.5, borderRadius: 99, bgcolor: 'divider', overflow: 'hidden' }}><Box sx={{ width: `${Math.max(0, Math.min(100, score))}%`, height: '100%', bgcolor: 'primary.main' }} /></Box></Box></Stack></Box>;
 }
 
 function SignalCard({ title, values, empty, icon, tone = 'default' }: { title: string; values: string[]; empty: string; icon: React.ReactNode; tone?: 'default' | 'info' | 'warning' | 'error' }) {
   const colors = SEVERITY_TINT[tone];
-  return <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 3, bgcolor: colors.bg, borderColor: colors.border }}><Stack direction="row" spacing={1} sx={{ alignItems: 'center', color: colors.fg }}><Box sx={{ display: 'flex', '& svg': { fontSize: 20 } }}>{icon}</Box><Typography sx={{ fontWeight: 800 }}>{title}</Typography><Chip size="small" label={values.length} sx={{ ml: 'auto !important', height: 22, bgcolor: 'rgba(255,255,255,.7)' }} /></Stack>{values.length ? <Box component="ul" sx={{ pl: 2.5, mb: 0 }}>{values.map(value => <Typography component="li" key={value} variant="body2" sx={{ mt: 1 }}>{value}</Typography>)}</Box> : <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{empty}</Typography>}</Paper>;
+  return <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, overflowWrap: 'anywhere', borderRadius: 3, bgcolor: colors.bg, borderColor: colors.border }}><Stack direction="row" spacing={1} sx={{ alignItems: 'center', color: colors.fg }}><Box sx={{ display: 'flex', '& svg': { fontSize: 20 } }}>{icon}</Box><Typography sx={{ fontWeight: 800 }}>{title}</Typography><Chip size="small" label={values.length} sx={{ ml: 'auto !important', height: 22, bgcolor: 'rgba(255,255,255,.7)' }} /></Stack>{values.length ? <Box component="ul" sx={{ pl: 2.5, mb: 0 }}>{values.map(value => <Typography component="li" key={value} variant="body2" sx={{ mt: 1 }}>{value}</Typography>)}</Box> : <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>{empty}</Typography>}</Paper>;
 }
 
-function SupportingSection({ title, subtitle, defaultExpanded = false, children }: { title: string; subtitle?: string; defaultExpanded?: boolean; children: React.ReactNode }) {
-  return <Accordion defaultExpanded={defaultExpanded} disableGutters variant="outlined" sx={{ borderRadius: '14px !important', overflow: 'hidden', '&::before': { display: 'none' } }}><AccordionSummary expandIcon={<ExpandMoreRoundedIcon />} sx={{ px: { xs: 2.5, md: 3 }, py: 0.75, '& .MuiAccordionSummary-content': { my: 1.25 } }}><Box><Typography variant="h6">{title}</Typography>{subtitle && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>{subtitle}</Typography>}</Box></AccordionSummary><AccordionDetails sx={{ px: { xs: 2.5, md: 3 }, pb: 3, pt: 0 }}>{children}</AccordionDetails></Accordion>;
+function SupportingSection({ title, subtitle, defaultExpanded = false, expanded, onExpandedChange, children }: { title: string; subtitle?: string; defaultExpanded?: boolean; expanded?: boolean; onExpandedChange?: (value: boolean) => void; children: React.ReactNode }) {
+  return <Accordion expanded={expanded} onChange={(_, value) => onExpandedChange?.(value)} defaultExpanded={defaultExpanded} disableGutters variant="outlined" sx={{ borderRadius: '14px !important', overflow: 'hidden', '&::before': { display: 'none' } }}><AccordionSummary expandIcon={<ExpandMoreRoundedIcon />} sx={{ px: { xs: 2, sm: 3 }, py: 0.75, '& .MuiAccordionSummary-content': { my: 1.25 } }}><Box><Typography variant="h6">{title}</Typography>{subtitle && <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.25 }}>{subtitle}</Typography>}</Box></AccordionSummary><AccordionDetails sx={{ px: { xs: 2, sm: 3 }, pb: 3, pt: 0 }}>{children}</AccordionDetails></Accordion>;
 }

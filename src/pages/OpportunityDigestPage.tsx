@@ -40,15 +40,15 @@ function DigestColumn({ title, description, items, requested, returned }: {
   title: string; description: string; items: OpportunityDigest['activeProjects']; requested: number; returned: number;
 }) {
   return <Box sx={{ minWidth: 0 }}>
-    <Paper variant="outlined" sx={{ p: 2, mb: 1.5, borderRadius: 3, bgcolor: 'rgba(255,255,255,.7)' }}>
+    <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, mb: 1.5, borderRadius: 3, bgcolor: 'rgba(255,255,255,.7)' }}>
       <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-        <Box><Typography variant="h6">{title}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>{description}</Typography></Box>
+        <Box><Typography variant="h6">{title}</Typography><Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.25 }}>{description}</Typography></Box>
         <Box sx={{ px: 1.25, py: 0.5, borderRadius: 999, bgcolor: returned < requested ? '#fff7ed' : 'primary.light', flexShrink: 0 }}><Typography variant="caption" color={returned < requested ? 'warning.main' : 'primary.main'} sx={{ fontWeight: 800 }}>{returned} / {requested}</Typography></Box>
       </Stack>
     </Paper>
     {items.length ? <Stack spacing={1.5}>{items.map((item, index) => <OpportunityRow key={item.id} item={item} to={`/admin/opportunities/${item.id}`} rank={index + 1} />)}</Stack>
       : <Paper variant="outlined" sx={{ p: { xs: 3, md: 4 }, textAlign: 'center', borderRadius: 3, borderStyle: 'dashed' }}>
-        <AutoAwesomeIcon color="disabled" /><Typography color="text.secondary" sx={{ mt: 0.75 }}>Nothing qualifies today.</Typography>
+        <AutoAwesomeIcon color="disabled" /><Typography sx={{ color: 'text.secondary', mt: 0.75 }}>Nothing qualifies today.</Typography>
       </Paper>}
   </Box>;
 }

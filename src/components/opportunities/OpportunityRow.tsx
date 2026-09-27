@@ -29,7 +29,7 @@ export function OpportunityRow({ item, to, rank, compact = false }: { item: Oppo
           <OpportunitySignalSummary item={item} />
           {!compact && item.prospectType && <Chip size="small" variant="outlined" label={formatProspectType(item.prospectType)} sx={{ mt: 1 }} />}
         </Box>
-        {!compact && item.preview && <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6, overflowWrap: 'anywhere', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.preview}</Typography>}
+        {!compact && item.preview && <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6, overflowWrap: 'anywhere', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.preview}</Typography>}
         <Typography variant="caption" sx={{ pt: 1.25, borderTop: 1, borderColor: 'divider', color: item.userDecision ? 'primary.main' : 'text.secondary', fontWeight: 700 }}>{item.userDecision ? `Decision: ${item.userDecision}` : 'Awaiting your decision'}</Typography>
       </Stack>
     </CardActionArea>

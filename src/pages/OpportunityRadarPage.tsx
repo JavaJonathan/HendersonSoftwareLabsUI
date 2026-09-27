@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Alert, Autocomplete, Box, Button, Checkbox, Container, FormControl, FormControlLabel, IconButton,
-  InputAdornment, InputLabel, Menu, MenuItem, Pagination, Paper, Select, Skeleton, Stack, Tab,
+  InputLabel, Menu, MenuItem, Pagination, Paper, Select, Skeleton, Stack, Tab,
   Tabs, TextField, Typography, useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
@@ -15,13 +15,13 @@ import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SearchRoundedIcon from '@mui/icons-material/SearchRounded';
 import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
-import TuneRoundedIcon from '@mui/icons-material/TuneRounded';
 import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
 import { AuthedAppBar } from '../components/layout/AuthedAppBar';
 import { EvaluationDialog } from '../components/opportunities/EvaluationDialog';
 import { OpportunityLaneTabs } from '../components/opportunities/OpportunityLaneTabs';
 import { OpportunityTable, OpportunityTableSkeleton, SignalLegend } from '../components/opportunities/OpportunityTable';
-import { AppDialog } from '../components/common/AppDialog';
+import { RadarDialog as AppDialog } from '../components/opportunities/RadarDialog';
+import { RadarFilters, type RadarFilterField } from '../components/opportunities/RadarFilters';
 import { RadarPageHeader } from '../components/opportunities/RadarPageHeader';
 import { copyToClipboard } from '../lib/clipboard';
 import { SURFACE_SUBTLE } from '../theme';
@@ -61,7 +61,7 @@ function downloadJsonSchema(entityType: OpportunityEntityType) {
 export function OpportunityRadarPage({ entityType }: { entityType: OpportunityEntityType }) {
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
-  const compactActions = useMediaQuery(theme.breakpoints.down('md'));
+  const compactActions = useMediaQuery(theme.breakpoints.down('lg'));
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get('q') ?? '';
   const recommendation = searchParams.get('recommendation') ?? 'All';
@@ -132,6 +132,14 @@ export function OpportunityRadarPage({ entityType }: { entityType: OpportunityEn
   const laneAvailable = entityType === 'ActiveProject' ? providerStatus?.activeProject.liveAvailable : providerStatus?.businessProspect.liveAvailable;
   const laneModel = entityType === 'ActiveProject' ? providerStatus?.activeProject.model : providerStatus?.businessProspect.model;
   const filterCount = [query, recommendation !== 'All', sourceType !== 'All' && entityType === 'ActiveProject', decision !== 'All', prospectType !== 'All' && entityType === 'BusinessProspect', verification !== 'All'].filter(Boolean).length;
+  const filterFields: RadarFilterField[] = [
+    { key: 'recommendation', label: 'Recommendation', value: recommendation, values: RECOMMENDATION_VALUES[entityType] },
+    entityType === 'ActiveProject'
+      ? { key: 'source', label: 'Source', value: sourceType, values: ['All', 'ExplicitDemand', 'OperationalSignal'], labels: SOURCE_TYPE_LABELS }
+      : { key: 'prospectType', label: 'Prospect type', value: prospectType, values: ['All', 'OperationalPain', 'DigitalPresence', 'Hybrid', 'Unknown'] },
+    { key: 'verification', label: 'Verification', value: verification, values: ['All', 'Clear', 'NeedsVerification'], labels: { NeedsVerification: 'Needs verification' } },
+    { key: 'decision', label: 'Decision', value: decision, values: DECISION_VALUES[entityType] },
+  ];
   const start = list?.total ? (page - 1) * list.pageSize + 1 : 0;
   const end = list?.total ? Math.min(page * list.pageSize, list.total) : 0;
 
@@ -146,17 +154,20 @@ export function OpportunityRadarPage({ entityType }: { entityType: OpportunityEn
   }
 
   const headerActions = compactActions ? (
-    <Stack direction="row" spacing={1} sx={{ width: '100%' }}>
+    <Stack direction="row" spacing={1} sx={{
+      width: { xs: '100%', sm: 'auto' },
+      '& > .MuiButton-root': { height: 44, px: { xs: 1.5, sm: 2.5 }, minWidth: 0, flex: { xs: '1 1 0', sm: '0 0 auto' }, width: { sm: 'auto' } },
+    }}>
       <Button fullWidth variant="contained" startIcon={<AddIcon />} onClick={() => setImportOpen(true)}>Import</Button>
       <Button fullWidth variant="outlined" startIcon={<AutoAwesomeIcon />} onClick={() => setEvaluationOpen(true)} disabled={busy || !list?.total}>Evaluate</Button>
-      <IconButton aria-label="More Radar actions" onClick={event => setActionAnchor(event.currentTarget)} sx={{ border: 1, borderColor: 'divider' }}><MoreVertIcon /></IconButton>
-      <Menu anchorEl={actionAnchor} open={Boolean(actionAnchor)} onClose={() => setActionAnchor(null)}>
+      <IconButton aria-label="More Radar actions" onClick={event => setActionAnchor(event.currentTarget)} aria-haspopup="menu" aria-expanded={Boolean(actionAnchor)} aria-controls={actionAnchor ? 'radar-actions-menu' : undefined} sx={{ border: 1, borderColor: 'divider', width: 44, height: 44, flexShrink: 0 }}><MoreVertIcon /></IconButton>
+      <Menu id="radar-actions-menu" anchorEl={actionAnchor} open={Boolean(actionAnchor)} onClose={() => setActionAnchor(null)}>
         <MenuItem onClick={() => { setActionAnchor(null); setSettingsOpen(true); }}><SettingsOutlinedIcon fontSize="small" sx={{ mr: 1.25 }} />Preferences</MenuItem>
         <MenuItem disabled={!list?.total} onClick={() => { setActionAnchor(null); setExportOpen(true); }}><DownloadOutlinedIcon fontSize="small" sx={{ mr: 1.25 }} />Export</MenuItem>
       </Menu>
     </Stack>
   ) : (
-    <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', justifyContent: 'flex-end', flexShrink: { lg: 0 } }}>
+    <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'nowrap', justifyContent: 'flex-end', '& > .MuiButton-root': { height: 44, whiteSpace: 'nowrap' } }}>
       <Button variant="outlined" startIcon={<SettingsOutlinedIcon />} onClick={() => setSettingsOpen(true)}>Preferences</Button>
       <Button variant="outlined" startIcon={<DownloadOutlinedIcon />} onClick={() => setExportOpen(true)} disabled={!list?.total}>Export</Button>
       <Button variant="outlined" startIcon={<AutoAwesomeIcon />} onClick={() => setEvaluationOpen(true)} disabled={busy || !list?.total}>Evaluate all</Button>
@@ -180,29 +191,19 @@ export function OpportunityRadarPage({ entityType }: { entityType: OpportunityEn
       {notice && <Alert severity="success" onClose={() => setNotice('')} sx={{ mb: 2 }}>{notice}</Alert>}
       {error && <Alert severity="error" action={<Button onClick={() => setRefresh(value => value + 1)}>Retry</Button>} sx={{ mb: 2 }}>{error}</Alert>}
 
-      <Paper variant="outlined" sx={{ p: { xs: 1.75, md: 2 }, mb: 2.5, borderRadius: 3 }}>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.25}>
-          <TextField size="small" placeholder={entityType === 'ActiveProject' ? 'Search projects' : 'Search businesses'} value={searchDraft} onChange={event => setSearchDraft(event.target.value)} sx={{ flexGrow: 1 }} slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchRoundedIcon fontSize="small" /></InputAdornment> }, htmlInput: { 'aria-label': 'Search opportunities' } }} />
-          <Filter label="Recommendation" value={recommendation} values={RECOMMENDATION_VALUES[entityType]} onChange={value => setParam('recommendation', value)} />
-          {entityType === 'ActiveProject' && <Filter label="Source" value={sourceType} values={['All', 'ExplicitDemand', 'OperationalSignal']} labels={SOURCE_TYPE_LABELS} onChange={value => setParam('source', value)} />}
-          {entityType === 'BusinessProspect' && <Filter label="Prospect type" value={prospectType} values={['All', 'OperationalPain', 'DigitalPresence', 'Hybrid', 'Unknown']} onChange={value => setParam('prospectType', value)} />}
-          <Filter label="Verification" value={verification} values={['All', 'Clear', 'NeedsVerification']} labels={{ Clear: 'Clear', NeedsVerification: 'Needs verification' }} onChange={value => setParam('verification', value)} />
-          <Filter label="Decision" value={decision} values={DECISION_VALUES[entityType]} onChange={value => setParam('decision', value)} />
-        </Stack>
-        {filterCount > 0 && <Stack direction="row" spacing={1} sx={{ mt: 1.5, alignItems: 'center' }}><TuneRoundedIcon sx={{ fontSize: 17, color: 'text.secondary' }} /><Typography variant="caption" color="text.secondary">{filterCount} active {filterCount === 1 ? 'filter' : 'filters'}</Typography><Button size="small" onClick={clearFilters} sx={{ py: 0.25, px: 1.25 }}>Clear filters</Button></Stack>}
-      </Paper>
+      <RadarFilters search={searchDraft} query={query} placeholder={entityType === 'ActiveProject' ? 'Search projects' : 'Search businesses'} fields={filterFields} onSearch={setSearchDraft} onFilter={setParam} onClear={clearFilters} />
 
       {loading && <OpportunityTableSkeleton entityType={entityType} />}
       {!loading && !error && list?.total === 0 && <Paper variant="outlined" sx={{ p: { xs: 3.5, md: 6 }, textAlign: 'center', borderRadius: 3, borderStyle: 'dashed' }}>
         <Box sx={{ width: 48, height: 48, borderRadius: '50%', bgcolor: 'primary.light', color: 'primary.main', display: 'grid', placeItems: 'center', mx: 'auto', mb: 1.5 }}>{filterCount ? <SearchRoundedIcon /> : <AutoAwesomeIcon />}</Box>
         <Typography variant="h6">{filterCount ? 'No matches in this view' : 'Your pipeline is ready'}</Typography>
-        <Typography color="text.secondary" sx={{ mt: 0.5, mb: 2.5, maxWidth: 520, mx: 'auto' }}>{filterCount ? 'Try broadening the search or clearing one of the active filters.' : entityType === 'ActiveProject' ? 'Import a public project description or load the synthetic examples to explore the workflow.' : 'Import a public business research note or load the synthetic examples to explore the workflow.'}</Typography>
+        <Typography sx={{ color: 'text.secondary', mt: 0.5, mb: 2.5, maxWidth: 520, mx: 'auto' }}>{filterCount ? 'Try broadening the search or clearing one of the active filters.' : entityType === 'ActiveProject' ? 'Import a public project description or load the synthetic examples to explore the workflow.' : 'Import a public business research note or load the synthetic examples to explore the workflow.'}</Typography>
         {filterCount ? <Button variant="outlined" onClick={clearFilters}>Clear filters</Button> : <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ justifyContent: 'center' }}><Button variant="contained" startIcon={<AddIcon />} onClick={() => setImportOpen(true)}>Import</Button><Button variant="outlined" onClick={loadSamples} disabled={busy}>Load synthetic examples</Button></Stack>}
       </Paper>}
       {!loading && !!list?.items.length && <>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 1, sm: 2 }} sx={{ mb: 1.5, alignItems: { sm: 'baseline' }, justifyContent: 'space-between' }}>
-          <Typography ref={resultsHeadingRef} tabIndex={-1} variant="body2" sx={{ fontWeight: 700, outline: 'none' }}>{list.total.toLocaleString()} {list.total === 1 ? 'result' : 'results'}, ranked by score, strongest first</Typography>
-          <Typography variant="caption" color="text.secondary">Showing {start}-{end}</Typography>
+          <Typography ref={resultsHeadingRef} tabIndex={-1} variant="body2" sx={{ fontWeight: 700, outline: 'none' }}>{list.total.toLocaleString()} {list.total === 1 ? 'result' : 'results'}<Box component="span" sx={{ display: 'block', mt: 0.5, color: 'text.secondary', fontSize: 12, fontWeight: 400 }}>Ranked by score, strongest first</Box></Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>Showing {start}-{end}</Typography>
         </Stack>
         <Box sx={{ mb: 1.5 }}><SignalLegend /></Box>
         <OpportunityTable items={list.items} entityType={entityType} />
@@ -216,13 +217,11 @@ export function OpportunityRadarPage({ entityType }: { entityType: OpportunityEn
   </Box>;
 }
 
-function Filter({ label, value, values, labels, onChange }: { label: string; value: string; values: string[]; labels?: Record<string, string>; onChange: (value: string) => void }) { return <FormControl size="small" sx={{ minWidth: { xs: '100%', md: 155 } }}><InputLabel>{label}</InputLabel><Select label={label} value={value} onChange={event => onChange(event.target.value)}>{values.map(item => <MenuItem key={item} value={item}>{labels?.[item] ?? item}</MenuItem>)}</Select></FormControl>; }
-
 function ExportDialog({ open, fullScreen, onClose }: { open: boolean; fullScreen: boolean; onClose: () => void }) {
   const [includeSynthetic, setIncludeSynthetic] = useState(false); const [busy, setBusy] = useState(false); const [error, setError] = useState('');
   useEffect(() => { if (open) { setIncludeSynthetic(false); setError(''); } }, [open]);
   async function download() { setBusy(true); setError(''); try { const blob = await downloadOpportunityExport(includeSynthetic); const url = URL.createObjectURL(blob); const anchor = document.createElement('a'); anchor.href = url; anchor.download = `hsl-opportunity-radar-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}.csv`; anchor.click(); URL.revokeObjectURL(url); onClose(); } catch (err) { setError(getApiErrorMessage(err, 'Unable to export opportunities.')); } finally { setBusy(false); } }
-  return <AppDialog open={open} fullScreen={fullScreen} title="Export review data" busy={busy} onClose={onClose} actions={<><Button onClick={onClose} disabled={busy}>Cancel</Button><Button variant="contained" startIcon={<DownloadOutlinedIcon />} onClick={download} disabled={busy}>{busy ? 'Preparing...' : 'Download CSV'}</Button></>}><Stack spacing={2}>{error && <Alert severity="error">{error}</Alert>}<Typography color="text.secondary">Download both lanes with source metadata, model details, semantic factors, decisions, and notes.</Typography><Paper variant="outlined" sx={{ p: 2, bgcolor: SURFACE_SUBTLE }}><Stack direction="row" spacing={1.25} sx={{ alignItems: 'flex-start' }}><CheckCircleOutlineRoundedIcon color="primary" /><Typography variant="body2">Imported and user-written cells are sanitized against spreadsheet formula injection. Stored source data is unchanged.</Typography></Stack></Paper><FormControlLabel control={<Checkbox checked={includeSynthetic} onChange={event => setIncludeSynthetic(event.target.checked)} />} label="Include synthetic examples" />{!includeSynthetic && <Typography variant="caption" color="text.secondary">Synthetic illustrations are excluded by default so they do not mix with real review data.</Typography>}</Stack></AppDialog>;
+  return <AppDialog open={open} fullScreen={fullScreen} title="Export review data" busy={busy} onClose={onClose} actions={<><Button onClick={onClose} disabled={busy}>Cancel</Button><Button variant="contained" startIcon={<DownloadOutlinedIcon />} onClick={download} disabled={busy}>{busy ? 'Preparing...' : 'Download CSV'}</Button></>}><Stack spacing={2}>{error && <Alert severity="error">{error}</Alert>}<Typography sx={{ color: 'text.secondary' }}>Download both lanes with source metadata, model details, semantic factors, decisions, and notes.</Typography><Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, bgcolor: SURFACE_SUBTLE }}><Stack direction="row" spacing={1.25} sx={{ alignItems: 'flex-start' }}><CheckCircleOutlineRoundedIcon color="primary" /><Typography variant="body2">Imported and user-written cells are sanitized against spreadsheet formula injection. Stored source data is unchanged.</Typography></Stack></Paper><FormControlLabel control={<Checkbox checked={includeSynthetic} onChange={event => setIncludeSynthetic(event.target.checked)} />} label="Include synthetic examples" />{!includeSynthetic && <Typography variant="caption" sx={{ color: 'text.secondary' }}>Synthetic illustrations are excluded by default so they do not mix with real review data.</Typography>}</Stack></AppDialog>;
 }
 
 interface EvidenceRow { fact: string; source: string; date: string }
@@ -316,13 +315,16 @@ function ImportDialog({ open, fullScreen, entityType, onClose, onImported }: { o
       <Tabs value={mode} onChange={(_, value: 'paste' | 'batch') => setMode(value)}><Tab value="paste" label="Paste one" /><Tab value="batch" label="Upload JSON" /></Tabs>
       {error && <Alert severity="error">{error}</Alert>}
       {mode === 'paste' ? <Stack spacing={2}>
+        <Typography variant="h6">{entityType === 'ActiveProject' ? 'Source details' : 'Business details'}</Typography>
         <TextField label={entityType === 'ActiveProject' ? 'Project title' : 'Business name'} value={title} onChange={event => setTitle(event.target.value)} slotProps={{ htmlInput: { maxLength: 200 } }} required />
         {entityType === 'ActiveProject' ? <>
-          <TextField label="Request" value={request} onChange={event => setRequest(event.target.value)} multiline minRows={4} slotProps={{ htmlInput: { maxLength: 4000 } }} required helperText={`What the buyer explicitly requested. ${request.length.toLocaleString()} / 4,000 characters`} />
           <FormControl><InputLabel>Source type</InputLabel><Select label="Source type" value={sourceType} onChange={event => setSourceType(event.target.value as OpportunitySourceType)}>{Object.entries(SOURCE_TYPE_LABELS).map(([key, label]) => <MenuItem key={key} value={key}>{label}</MenuItem>)}</Select></FormControl>
           <TextField label="Source URL (optional)" type="url" value={sourceUrl} onChange={event => setSourceUrl(event.target.value)} slotProps={{ htmlInput: { maxLength: 2048 } }} />
           <TextField label="Budget (optional)" value={budget} onChange={event => setBudget(event.target.value)} placeholder="e.g. $8,000 fixed" slotProps={{ htmlInput: { maxLength: 100 } }} />
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+          <Typography variant="h6" sx={{ pt: 1 }}>Evidence</Typography>
+          <TextField label="Request" value={request} onChange={event => setRequest(event.target.value)} multiline minRows={4} slotProps={{ htmlInput: { maxLength: 4000 } }} required helperText={`What the buyer explicitly requested. ${request.length.toLocaleString()} / 4,000 characters`} />
+          <Typography variant="h6" sx={{ pt: 1 }}>Optional research context</Typography>
+          <Stack direction="column" spacing={2}>
             <TextField label="Proposals (optional)" value={competitionProposals} onChange={event => setCompetitionProposals(event.target.value)} placeholder="e.g. 5-10" fullWidth />
             <TextField label="Interviewing (optional)" type="number" value={competitionInterviewing} onChange={event => setCompetitionInterviewing(event.target.value)} fullWidth slotProps={{ htmlInput: { min: 0 } }} />
             <TextField label="Hires (optional)" type="number" value={competitionHires} onChange={event => setCompetitionHires(event.target.value)} fullWidth slotProps={{ htmlInput: { min: 0 } }} />
@@ -330,22 +332,23 @@ function ImportDialog({ open, fullScreen, entityType, onClose, onImported }: { o
           <TextField label="Fit (optional)" value={fit} onChange={event => setFit(event.target.value)} multiline minRows={2} helperText="Your own assessment of alignment with HSL's capabilities. Not evidence." slotProps={{ htmlInput: { maxLength: 1000 } }} />
           <TextField label="Proposal angle (optional)" value={proposalAngle} onChange={event => setProposalAngle(event.target.value)} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 1000 } }} />
         </> : <>
-          <Paper variant="outlined" sx={{ p: 2, bgcolor: SURFACE_SUBTLE }}><Stack spacing={1.5}>
+          <TextField label="Website URL (optional)" type="url" value={websiteUrl} onChange={event => setWebsiteUrl(event.target.value)} slotProps={{ htmlInput: { maxLength: 2048 } }} />
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}><TextField label="Geography (optional)" value={geography} onChange={event => setGeography(event.target.value)} fullWidth /><TextField label="Industry (optional)" value={industry} onChange={event => setIndustry(event.target.value)} fullWidth /></Stack>
+          <FormControl><InputLabel>Prospect type (optional)</InputLabel><Select label="Prospect type (optional)" value={prospectType} onChange={event => setProspectType(event.target.value as BusinessProspectType | '')}><MenuItem value="">Not supplied</MenuItem>{(['OperationalPain', 'DigitalPresence', 'Hybrid', 'Unknown'] as BusinessProspectType[]).map(value => <MenuItem key={value} value={value}>{formatProspectType(value)}</MenuItem>)}</Select></FormControl>
+          <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, bgcolor: SURFACE_SUBTLE }}><Stack spacing={1.5}>
             <Typography sx={{ fontWeight: 700 }}>Evidence</Typography>
-            <Typography variant="caption" color="text.secondary">Verified, source-backed facts only. Combined length must be at least 20 characters.</Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>Verified, source-backed facts only. Combined length must be at least 20 characters.</Typography>
             {evidence.map((row, index) => <Stack key={index} spacing={1} sx={{ pb: 1.5, borderBottom: index < evidence.length - 1 ? 1 : 0, borderColor: 'divider' }}>
               <TextField label={`Fact ${index + 1}`} value={row.fact} onChange={event => updateEvidenceRow(index, { fact: event.target.value })} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 2000 } }} />
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                 <TextField label="Source (optional)" value={row.source} onChange={event => updateEvidenceRow(index, { source: event.target.value })} fullWidth slotProps={{ htmlInput: { maxLength: 1000 } }} />
-                <TextField label="Date (optional)" type="date" value={row.date} onChange={event => updateEvidenceRow(index, { date: event.target.value })} slotProps={{ inputLabel: { shrink: true } }} sx={{ minWidth: 170 }} />
-                <IconButton aria-label="Remove evidence fact" onClick={() => removeEvidenceRow(index)} disabled={evidence.length === 1}><DeleteOutlineRoundedIcon fontSize="small" /></IconButton>
+                <TextField label="Date (optional)" type="date" value={row.date} onChange={event => updateEvidenceRow(index, { date: event.target.value })} slotProps={{ inputLabel: { shrink: true } }} sx={{ width: { xs: '100%', sm: 160 }, flexShrink: 0 }} />
+                <IconButton sx={{ width: 44, height: 44, alignSelf: 'flex-end', flexShrink: 0 }} aria-label="Remove evidence fact" onClick={() => removeEvidenceRow(index)} disabled={evidence.length === 1}><DeleteOutlineRoundedIcon fontSize="small" /></IconButton>
               </Stack>
             </Stack>)}
             <Button size="small" startIcon={<AddIcon />} onClick={() => setEvidence(rows => [...rows, EMPTY_EVIDENCE_ROW])} sx={{ alignSelf: 'flex-start' }}>Add evidence fact</Button>
           </Stack></Paper>
-          <TextField label="Website URL (optional)" type="url" value={websiteUrl} onChange={event => setWebsiteUrl(event.target.value)} slotProps={{ htmlInput: { maxLength: 2048 } }} />
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}><TextField label="Geography (optional)" value={geography} onChange={event => setGeography(event.target.value)} fullWidth /><TextField label="Industry (optional)" value={industry} onChange={event => setIndustry(event.target.value)} fullWidth /></Stack>
-          <FormControl><InputLabel>Prospect type (optional)</InputLabel><Select label="Prospect type (optional)" value={prospectType} onChange={event => setProspectType(event.target.value as BusinessProspectType | '')}><MenuItem value="">Not supplied</MenuItem>{(['OperationalPain', 'DigitalPresence', 'Hybrid', 'Unknown'] as BusinessProspectType[]).map(value => <MenuItem key={value} value={value}>{formatProspectType(value)}</MenuItem>)}</Select></FormControl>
+          <Typography variant="h6" sx={{ pt: 1 }}>Optional research context</Typography>
           <TextField label="Fit (optional)" value={fit} onChange={event => setFit(event.target.value)} multiline minRows={2} helperText="Your own inference of the workflow opportunity. Not evidence." slotProps={{ htmlInput: { maxLength: 1000 } }} />
           <TextField label="Entry offer (optional)" value={entryOffer} onChange={event => setEntryOffer(event.target.value)} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 1000 } }} />
         </>}
@@ -353,7 +356,7 @@ function ImportDialog({ open, fullScreen, entityType, onClose, onImported }: { o
         <FormControl><InputLabel>Confidence (optional)</InputLabel><Select label="Confidence (optional)" value={confidenceLevel} onChange={event => setConfidenceLevel(event.target.value as ResearchConfidence | '')}><MenuItem value="">Not supplied</MenuItem>{(['Low', 'Medium', 'High'] as ResearchConfidence[]).map(value => <MenuItem key={value} value={value}>{value}</MenuItem>)}</Select></FormControl>
         <TextField label="Confidence reason (optional)" value={confidenceReason} onChange={event => setConfidenceReason(event.target.value)} slotProps={{ htmlInput: { maxLength: 500 } }} />
         <TextField label="Research agent (optional)" value={researchAgent} onChange={event => setResearchAgent(event.target.value)} slotProps={{ htmlInput: { maxLength: 100 } }} />
-      </Stack> : <Paper variant="outlined" sx={{ p: 2.5, bgcolor: SURFACE_SUBTLE, borderRadius: 3 }}><Stack spacing={1.5}><Typography sx={{ fontWeight: 800 }}>JSON Schema</Typography><Typography variant="body2" color="text.secondary">Hand your AI agent this schema, its field descriptions carry the field rules and a worked example is embedded under its top-level "examples".</Typography><Stack direction="row" spacing={1}><Button onClick={() => downloadJsonSchema(entityType)}>Download JSON Schema</Button><Button variant="outlined" startIcon={<ContentCopyOutlinedIcon />} onClick={copySchema}>Copy JSON Schema</Button></Stack><Typography role="status" variant="caption" sx={{ minHeight: 18, color: copyStatus === 'failed' ? 'error.main' : 'success.dark' }}>{copyStatus === 'copied' && 'JSON Schema copied.'}{copyStatus === 'failed' && 'Unable to copy the JSON Schema.'}</Typography><Button component="label" variant="outlined" startIcon={<UploadFileOutlinedIcon />} sx={{ alignSelf: 'flex-start' }}>Choose JSON<input hidden type="file" accept=".json,application/json" onChange={event => setFile(event.target.files?.[0] ?? null)} /></Button><Typography variant="body2">{file?.name ?? 'No file selected'}</Typography></Stack></Paper>}
+      </Stack> : <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, bgcolor: SURFACE_SUBTLE, borderRadius: 3 }}><Stack spacing={1.5}><Typography sx={{ fontWeight: 800 }}>JSON Schema</Typography><Typography variant="body2" sx={{ color: 'text.secondary' }}>Hand your AI agent this schema, its field descriptions carry the field rules and a worked example is embedded under its top-level "examples".</Typography><Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}><Button onClick={() => downloadJsonSchema(entityType)}>Download JSON Schema</Button><Button variant="outlined" startIcon={<ContentCopyOutlinedIcon />} onClick={copySchema}>Copy JSON Schema</Button></Stack><Typography role="status" variant="caption" sx={{ minHeight: 18, color: copyStatus === 'failed' ? 'error.main' : 'success.dark' }}>{copyStatus === 'copied' && 'JSON Schema copied.'}{copyStatus === 'failed' && 'Unable to copy the JSON Schema.'}</Typography><Button component="label" variant="outlined" startIcon={<UploadFileOutlinedIcon />} sx={{ alignSelf: 'flex-start' }}>Choose JSON<input hidden type="file" accept=".json,application/json" onChange={event => setFile(event.target.files?.[0] ?? null)} /></Button><Typography variant="body2">{file?.name ?? 'No file selected'}</Typography></Stack></Paper>}
     </Stack>
   </AppDialog>;
 }
@@ -376,7 +379,7 @@ function PreferencesDialog({ open, fullScreen, onClose, onSaved }: { open: boole
   async function save() { if (!value || validation) return; const clean = (items: string[]) => items.map(item => item.trim()).filter(Boolean); setBusy(true); setError(''); try { await updateRadarPreferences({ activeProject: value.activeProject, businessProspect: value.businessProspect, businessProfile: { ...value.businessProfile, idealCustomerTraits: clean(value.businessProfile.idealCustomerTraits), coreOffers: clean(value.businessProfile.coreOffers), secondaryOffers: clean(value.businessProfile.secondaryOffers), capabilities: clean(value.businessProfile.capabilities), engagementModel: clean(value.businessProfile.engagementModel), capacityConstraints: clean(value.businessProfile.capacityConstraints), geographicFocus: clean(value.businessProfile.geographicFocus), priceBands: clean(value.businessProfile.priceBands) }, digestActiveProjectCount: value.digestActiveProjectCount, digestBusinessProspectCount: value.digestBusinessProspectCount }); onSaved(); } catch (err) { setError(getApiErrorMessage(err, 'Unable to save preferences.')); } finally { setBusy(false); } }
   return <AppDialog open={open} fullScreen={fullScreen} title="Opportunity Radar settings" busy={busy} maxWidth="md" onClose={onClose} actions={<><Button onClick={onClose} disabled={busy}>Cancel</Button><Button variant="contained" onClick={save} disabled={busy || !value || Boolean(validation)}>{busy ? 'Saving...' : 'Save preferences'}</Button></>}>
     <Stack spacing={2.5}>{error && <Alert severity="error">{error}</Alert>}{validation && <Alert severity="warning">{validation}</Alert>}{!value ? !error && <Stack spacing={1}><Skeleton height={48} /><Skeleton height={72} /><Skeleton height={72} /></Stack> : <>
-      <Tabs value={section} onChange={(_, next) => setSection(next)} variant="scrollable" scrollButtons="auto"><Tab value="projects" label="Active Projects" /><Tab value="prospects" label="Business Prospects" /><Tab value="profile" label="Business Profile" /><Tab value="digest" label="Digest" /></Tabs>
+      <Tabs value={section} onChange={(_, next) => setSection(next)} variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile sx={{ '& .MuiTab-root': { px: { xs: 1, sm: 2 }, minWidth: 0, fontSize: { xs: 12, sm: 14 } } }}><Tab value="projects" label="Active Projects" /><Tab value="prospects" label="Business Prospects" /><Tab value="profile" label="Business Profile" /><Tab value="digest" label="Digest" /></Tabs>
       {section === 'projects' && <Stack spacing={2.25}>
         <ChipField label="Preferred project types" value={value.activeProject.preferredProjectTypes} onChange={preferredProjectTypes => setValue({ ...value, activeProject: { ...value.activeProject, preferredProjectTypes } })} />
         <ChipField label="Excluded project types" value={value.activeProject.excludedProjectTypes} onChange={excludedProjectTypes => setValue({ ...value, activeProject: { ...value.activeProject, excludedProjectTypes } })} helperText="Hard exclusions." />
@@ -408,9 +411,9 @@ function PreferencesDialog({ open, fullScreen, onClose, onSaved }: { open: boole
         <TextField label="Last reviewed" type="date" value={value.businessProfile.lastReviewedAt?.slice(0, 10) ?? ''} onChange={event => setValue({ ...value, businessProfile: { ...value.businessProfile, lastReviewedAt: event.target.value ? new Date(`${event.target.value}T12:00:00Z`).toISOString() : null } })} slotProps={{ inputLabel: { shrink: true } }} fullWidth />
         <Alert severity="warning">The profile helps Jev understand HSL. It does not count as evidence that a buyer has urgency, budget, workflow pain, or economic value.</Alert>
       </Stack>}
-      {section === 'digest' && <Stack spacing={2}><Typography color="text.secondary">Choose the maximum number of clear, unreviewed records shown in each daily view.</Typography><Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}><TextField label="Active projects" type="number" value={value.digestActiveProjectCount} onChange={event => setValue({ ...value, digestActiveProjectCount: Number(event.target.value) })} fullWidth /><TextField label="Business prospects" type="number" value={value.digestBusinessProspectCount} onChange={event => setValue({ ...value, digestBusinessProspectCount: Number(event.target.value) })} fullWidth /></Stack></Stack>}
+      {section === 'digest' && <Stack spacing={2}><Typography sx={{ color: 'text.secondary' }}>Choose the maximum number of clear, unreviewed records shown in each daily view.</Typography><Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}><TextField label="Active projects" type="number" value={value.digestActiveProjectCount} onChange={event => setValue({ ...value, digestActiveProjectCount: Number(event.target.value) })} fullWidth /><TextField label="Business prospects" type="number" value={value.digestBusinessProspectCount} onChange={event => setValue({ ...value, digestBusinessProspectCount: Number(event.target.value) })} fullWidth /></Stack></Stack>}
     </>}</Stack>
   </AppDialog>;
 }
 
-function WeightGrid<K extends string>({ title, note, items, values, onChange }: { title: string; note: string; items: readonly (readonly [K, string])[]; values: Record<K, number>; onChange: (key: K, value: number) => void }) { return <Box><Typography sx={{ fontWeight: 800 }}>{title}</Typography><Typography variant="caption" color="text.secondary">{note}</Typography><Box sx={{ display: 'grid', gridTemplateColumns: { xs: items.length > 4 ? '1fr' : '1fr 1fr', sm: 'repeat(4, 1fr)' }, gap: 1.5, mt: 1.5 }}>{items.map(([key, label]) => <TextField key={key} label={label} type="number" size="small" value={values[key] ?? 0} onChange={event => onChange(key, Number(event.target.value))} slotProps={{ htmlInput: { min: 0, max: 100 } }} />)}</Box></Box>; }
+function WeightGrid<K extends string>({ title, note, items, values, onChange }: { title: string; note: string; items: readonly (readonly [K, string])[]; values: Record<K, number>; onChange: (key: K, value: number) => void }) { return <Box><Typography sx={{ fontWeight: 800 }}>{title}</Typography><Typography variant="caption" sx={{ color: 'text.secondary' }}>{note}</Typography><Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))', md: 'repeat(3, minmax(0, 1fr))' }, gap: 1.5, mt: 1.5 }}>{items.map(([key, label]) => <TextField key={key} label={label} fullWidth type="number" size="small" value={values[key] ?? 0} onChange={event => onChange(key, Number(event.target.value))} slotProps={{ htmlInput: { min: 0, max: 100 } }} />)}</Box></Box>; }

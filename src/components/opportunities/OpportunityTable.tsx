@@ -17,7 +17,7 @@ export function SignalLegend() {
   return <Stack direction="row" spacing={1.75} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
     {LEGEND_ITEMS.map(item => <Stack key={item.label} direction="row" spacing={0.6} sx={{ alignItems: 'center' }}>
       <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: item.outlined ? 'transparent' : item.color, border: item.outlined ? `2px solid ${item.color}` : 'none' }} />
-      <Typography variant="caption" color="text.secondary">{item.label}</Typography>
+      <Typography variant="caption" sx={{ color: 'text.secondary' }}>{item.label}</Typography>
     </Stack>)}
   </Stack>;
 }

@@ -22,7 +22,7 @@ export function OpportunityLaneTabs() {
         minHeight: 46,
         borderBottom: 1,
         borderColor: 'divider',
-        '& .MuiTab-root': { minHeight: 46, px: { xs: 1.75, sm: 2.5 }, fontWeight: 700 },
+        '& .MuiTab-root': { minHeight: 46, px: { xs: 1, sm: 2.5 }, minWidth: { xs: 0, sm: 90 }, fontSize: { xs: 12, sm: 14 }, flexShrink: 0, fontWeight: 700 },
       }}
     >
       {LANES.map(lane => (

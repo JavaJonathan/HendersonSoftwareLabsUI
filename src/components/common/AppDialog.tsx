@@ -1,3 +1,4 @@
+import type { SxProps, Theme } from '@mui/material/styles';
 import type { FormEvent, ReactNode } from 'react';
 import { Box, Dialog, DialogActions, DialogContent, DialogTitle, IconButton } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
@@ -21,8 +22,9 @@ const TITLE_SX = {
  * falling back to MUI's bare defaults.
  */
 export function AppDialog({
-  open, fullScreen, title, busy = false, maxWidth = 'sm', onClose, onSubmit, children, actions,
+  open, fullScreen, title, busy = false, maxWidth = 'sm', onClose, onSubmit, children, actions, sx,
 }: {
+  sx?: SxProps<Theme>;
   open: boolean;
   fullScreen: boolean;
   title: ReactNode;
@@ -48,6 +50,7 @@ export function AppDialog({
   );
   return (
     <Dialog
+      sx={sx}
       open={open}
       onClose={busy ? undefined : onClose}
       fullScreen={fullScreen}

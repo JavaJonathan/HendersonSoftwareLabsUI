@@ -36,11 +36,11 @@ export function OpportunitySignalSummary({ item }: { item: OpportunitySummary })
   const caption = confidenceCaption(item);
   return <Box sx={{ minWidth: 0 }}>
     <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center', minHeight: 24 }}>
-      {signal ? <Chip size="small" color={signal.chipColor} variant={signal.chipVariant} label={item.recommendation} /> : <Typography variant="caption" color="text.secondary">Not evaluated</Typography>}
+      {signal ? <Chip size="small" color={signal.chipColor} variant={signal.chipVariant} label={item.recommendation} /> : <Typography variant="caption" sx={{ color: 'text.secondary' }}>Not evaluated</Typography>}
       {signal?.icon === 'verify' && <Flag show label={signal.iconTooltip ?? ''} icon={<FactCheckOutlinedIcon />} color="success.main" />}
       {signal?.icon === 'blocked' && <Flag show label={signal.iconTooltip ?? ''} icon={<BlockOutlinedIcon />} color="text.secondary" />}
       {item.opportunityScore != null && <Tooltip title="Score is Jev's weighted composite of factor ratings (0-100), not a probability or dollar figure. Preferences determine the weights. Confidence is separate: how sure Jev is about those ratings, not how good the opportunity is.">
-        <Typography component="span" sx={{ fontWeight: 800, fontSize: 16, lineHeight: 1.5, color: signal?.scoreColor ?? 'text.secondary', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', cursor: 'help' }}>
+        <Typography component="span" tabIndex={0} aria-label={`Opportunity score: ${item.opportunityScore.toFixed(1)} out of 100`} sx={{ '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: 3 }, fontWeight: 800, fontSize: 16, lineHeight: 1.5, color: signal?.scoreColor ?? 'text.secondary', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', cursor: 'help' }}>
           {item.opportunityScore.toFixed(1)}<Box component="span" sx={{ fontWeight: 400, fontSize: 11, color: 'text.secondary', ml: 0.25 }}>/100</Box>
         </Typography>
       </Tooltip>}
