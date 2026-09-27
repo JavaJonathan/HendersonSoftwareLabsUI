@@ -1,151 +1,78 @@
-import {
-  Box, Chip, Link, Paper, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Tooltip, Typography,
-} from '@mui/material';
-import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
+import { Box, Link, Paper, Skeleton, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
-import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
-import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
-import HistoryToggleOffRoundedIcon from '@mui/icons-material/HistoryToggleOffRounded';
-import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import {
-  confidenceCaption, getOpportunitySignal, SOURCE_TYPE_LABELS, TONE_HEX, type OpportunityEntityType, type OpportunitySummary,
-} from '../../api/opportunities';
-import { Flag } from './OpportunitySignals';
+import { TONE_HEX, type OpportunityEntityType, type OpportunitySummary } from '../../api/opportunities';
+import { OpportunityFlags, OpportunityMetadata, OpportunitySignalSummary } from './OpportunityPresentation';
+import { OpportunityRow, OpportunityRowSkeleton } from './OpportunityRow';
 import { SURFACE_SUBTLE } from '../../theme';
 
-const HIDE_BELOW_SM = { display: { xs: 'none', sm: 'table-cell' } };
-
-const LEGEND_ITEMS: { label: string; color: string; outlined: boolean }[] = [
+const LEGEND_ITEMS = [
   { label: 'Prioritize now', color: TONE_HEX.success, outlined: false },
   { label: 'Strong, verify first', color: TONE_HEX.success, outlined: true },
   { label: 'Worth a look', color: TONE_HEX.warning, outlined: false },
   { label: 'Excluded or weak', color: TONE_HEX.default, outlined: false },
 ];
 
-/** Explains the Signal column's color grammar once, near the results heading, rather than only on hover. */
 export function SignalLegend() {
-  return (
-    <Stack direction="row" spacing={1.75} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
-      {LEGEND_ITEMS.map(item => (
-        <Stack key={item.label} direction="row" spacing={0.6} sx={{ alignItems: 'center' }}>
-          <Box sx={{
-            width: 10, height: 10, borderRadius: '50%',
-            bgcolor: item.outlined ? 'transparent' : item.color,
-            border: item.outlined ? `2px solid ${item.color}` : 'none',
-          }} />
-          <Typography variant="caption" color="text.secondary">{item.label}</Typography>
-        </Stack>
-      ))}
-    </Stack>
-  );
+  return <Stack direction="row" spacing={1.75} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
+    {LEGEND_ITEMS.map(item => <Stack key={item.label} direction="row" spacing={0.6} sx={{ alignItems: 'center' }}>
+      <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: item.outlined ? 'transparent' : item.color, border: item.outlined ? `2px solid ${item.color}` : 'none' }} />
+      <Typography variant="caption" color="text.secondary">{item.label}</Typography>
+    </Stack>)}
+  </Stack>;
 }
 
-function metaLine(item: OpportunitySummary) {
-  const parts = item.entityType === 'ActiveProject'
-    ? [item.sourceType && SOURCE_TYPE_LABELS[item.sourceType], item.budgetStatus && `Budget ${item.budgetStatus.toLowerCase()}`]
-    : [item.industry, item.geography, item.websiteDomain ?? 'No website found'];
-  return parts.filter(Boolean).join(' · ');
+const TABLE_SURFACE_SX = {
+  borderRadius: 3, overflow: 'hidden', containerType: 'inline-size',
+  '& tbody tr:last-of-type td': { borderBottom: 0 },
+  '& td, & th': { px: { sm: 2, md: 2.5 }, py: 2.25, verticalAlign: 'top', borderColor: 'divider' },
+  '& td:last-child, & th:last-child': { px: 1 },
+};
+
+/** Shared widths keep the loading table and results aligned. */
+function OpportunityColumns() {
+  return <colgroup><col style={{ width: 'calc(55cqw - 99px)' }} /><col style={{ width: 'calc(45cqw - 81px)' }} /><col style={{ width: 140 }} /><col style={{ width: 40 }} /></colgroup>;
 }
 
-/** Rendered by both the skeleton and the loaded table so the two have identical geometry. */
 export function OpportunityTableHead({ entityType }: { entityType: OpportunityEntityType }) {
-  return (
-    <TableHead sx={{
-      bgcolor: SURFACE_SUBTLE,
-      '& th': { fontFamily: '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif', fontWeight: 700, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: 'text.secondary' },
-    }}>
-      <TableRow>
-        <TableCell>{entityType === 'ActiveProject' ? 'Project' : 'Business'}</TableCell>
-        <TableCell>Signal</TableCell>
-        <TableCell align="right" sx={HIDE_BELOW_SM}>Status</TableCell>
-        <TableCell aria-hidden sx={{ width: { xs: 36, sm: 56 } }} />
-      </TableRow>
-    </TableHead>
-  );
+  return <TableHead sx={{ bgcolor: SURFACE_SUBTLE, '& th': { fontFamily: '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif', fontWeight: 700, fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: 'text.secondary' } }}>
+    <TableRow><TableCell>{entityType === 'ActiveProject' ? 'Project' : 'Business'}</TableCell><TableCell>Signal</TableCell><TableCell align="right">Status</TableCell><TableCell aria-hidden /></TableRow>
+  </TableHead>;
 }
 
 export function OpportunityTable({ items, entityType }: { items: OpportunitySummary[]; entityType: OpportunityEntityType }) {
   const navigate = useNavigate();
-  return (
-    <TableContainer component={Paper} variant="outlined" sx={{
-      borderRadius: 3,
-      '& tbody tr:last-of-type td': { borderBottom: 0 },
-      '& td, & th': { px: { xs: 1.5, sm: 2 } },
-    }}>
-      <Table aria-label={entityType === 'ActiveProject' ? 'Active projects' : 'Business prospects'}>
-        <OpportunityTableHead entityType={entityType} />
-        <TableBody>
-          {items.map(item => {
-            const to = `/admin/opportunities/${item.id}`;
-            const meta = metaLine(item);
-            const signal = getOpportunitySignal(item);
-            const liveJev = item.evaluationProvider === 'Jev' && item.evaluationStatus === 'Ready';
-            const caption = confidenceCaption(item);
-            return (
-              <TableRow
-                key={item.id}
-                onClick={() => navigate(to)}
-                sx={{
-                  cursor: 'pointer',
-                  transition: 'background-color 0.18s ease',
-                  '&:hover': { bgcolor: 'primary.light' },
-                  '&:hover .opportunity-row-chevron': { opacity: 1, transform: 'translateX(2px)' },
-                }}
-              >
-                <TableCell sx={{ maxWidth: 0 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
-                    <Link
-                      component={RouterLink}
-                      to={to}
-                      underline="none"
-                      onClick={event => event.stopPropagation()}
-                      sx={{
-                        fontWeight: 600, color: 'text.primary', overflowWrap: 'anywhere',
-                        '&:hover': { color: 'primary.main' },
-                        '&:focus-visible': { outline: 'none', borderRadius: 1, boxShadow: '0 0 0 3px rgba(37,99,235,.35)' },
-                      }}
-                    >
-                      {item.title}
-                    </Link>
-                    <Flag show={item.evaluationStatus === 'Failed'} label="Provider failure" icon={<ErrorOutlineRoundedIcon />} color="error.main" />
-                    <Flag show={item.evaluationStatus === 'Stale'} label="Reevaluation required" icon={<HistoryToggleOffRoundedIcon />} color="warning.main" />
-                    <Flag show={!!item.duplicateOfId} label="Possible duplicate" icon={<ContentCopyOutlinedIcon />} color="warning.main" />
-                    <Flag show={item.isSynthetic} label="Synthetic example" icon={<ScienceOutlinedIcon />} color="info.main" />
-                    {liveJev && <Typography variant="caption" color="success.main" sx={{ fontWeight: 700 }}>Live Jev</Typography>}
-                  </Box>
-                  {meta && <Typography variant="body2" sx={{ mt: 0.25, color: 'text.secondary', fontSize: 12.5 }}>{meta}</Typography>}
-                </TableCell>
-                <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {signal
-                      ? <Chip size="small" color={signal.chipColor} variant={signal.chipVariant} label={item.recommendation} />
-                      : <Typography variant="caption" color="text.secondary">Not evaluated</Typography>}
-                    {signal?.icon === 'verify' && <Flag show label={signal.iconTooltip ?? ''} icon={<FactCheckOutlinedIcon />} color="success.main" />}
-                    {signal?.icon === 'blocked' && <Flag show label={signal.iconTooltip ?? ''} icon={<BlockOutlinedIcon />} color="text.secondary" />}
-                    {item.opportunityScore != null && <Tooltip title="Score is Jev's weighted composite of the factor ratings below (0-100), not a probability or a dollar figure - the weights are whatever you've set in Preferences. Confidence is a separate axis: how sure Jev is about those ratings, not how good the opportunity is.">
-                      <Box sx={{ fontVariantNumeric: 'tabular-nums', cursor: 'help' }}>
-                        <Typography component="div" sx={{ fontWeight: 700, lineHeight: 1.2, color: signal?.scoreColor ?? 'text.secondary' }}>
-                          {item.opportunityScore.toFixed(1)}
-                          <Box component="span" sx={{ fontWeight: 400, fontSize: '0.7em', color: 'text.secondary', ml: 0.25 }}>/100</Box>
-                        </Typography>
-                        {caption && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.3 }}>{caption}</Typography>}
-                      </Box>
-                    </Tooltip>}
-                  </Box>
-                </TableCell>
-                <TableCell align="right" sx={{ ...HIDE_BELOW_SM, fontWeight: 700, color: item.userDecision ? 'primary.main' : 'text.secondary' }}>
-                  {item.userDecision ?? 'Awaiting'}
-                </TableCell>
-                <TableCell align="right" sx={{ width: { xs: 36, sm: 56 }, pl: 0 }}>
-                  <ChevronRightIcon className="opportunity-row-chevron" sx={{ display: 'block', color: 'text.secondary', opacity: 0.4, transition: 'opacity 0.18s ease, transform 0.18s ease' }} />
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
+  return <>
+    <Stack spacing={1.5} sx={{ display: { xs: 'flex', sm: 'none' } }}>{items.map(item => <OpportunityRow key={item.id} item={item} to={`/admin/opportunities/${item.id}`} compact />)}</Stack>
+    <TableContainer component={Paper} variant="outlined" sx={{ ...TABLE_SURFACE_SX, display: { xs: 'none', sm: 'block' } }}>
+      <Table sx={{ tableLayout: 'fixed' }} aria-label={entityType === 'ActiveProject' ? 'Active projects' : 'Business prospects'}>
+        <OpportunityColumns /><OpportunityTableHead entityType={entityType} />
+        <TableBody>{items.map(item => {
+          const to = `/admin/opportunities/${item.id}`;
+          return <TableRow key={item.id} onClick={event => { if (!event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) navigate(to); }} sx={{ cursor: 'pointer', transition: 'background-color 0.18s ease', '&:hover, &:focus-within': { bgcolor: 'primary.light' }, '&:hover .opportunity-row-chevron': { opacity: 1, transform: 'translateX(2px)' } }}>
+            <TableCell>
+              <Link component={RouterLink} to={to} underline="none" onClick={event => event.stopPropagation()} sx={{ display: 'inline-block', fontWeight: 700, fontSize: 14, lineHeight: 1.7, color: 'text.primary', overflowWrap: 'anywhere', '&:hover': { color: 'primary.main' }, '&:focus-visible': { outline: 'none', borderRadius: 1, boxShadow: '0 0 0 3px rgba(37,99,235,.35)' } }}>{item.title}</Link>
+              <Box sx={{ mt: 0.5 }}><OpportunityMetadata item={item} /></Box><OpportunityFlags item={item} />
+            </TableCell>
+            <TableCell><OpportunitySignalSummary item={item} /></TableCell>
+            <TableCell align="right"><Typography variant="body2" sx={{ lineHeight: '24px', fontWeight: 600, color: item.userDecision ? 'primary.main' : 'text.secondary' }}>{item.userDecision ?? 'Awaiting'}</Typography></TableCell>
+            <TableCell><ChevronRightIcon className="opportunity-row-chevron" sx={{ display: 'block', fontSize: 20, mt: 0.25, color: 'text.secondary', opacity: 0.4, transition: 'opacity 0.18s ease, transform 0.18s ease' }} /></TableCell>
+          </TableRow>;
+        })}</TableBody>
       </Table>
     </TableContainer>
-  );
+  </>;
+}
+
+export function OpportunityTableSkeleton({ entityType }: { entityType: OpportunityEntityType }) {
+  return <Box role="status" aria-label="Loading opportunities">
+    <Stack spacing={1.5} sx={{ display: { xs: 'flex', sm: 'none' } }}>{[0, 1, 2].map(row => <OpportunityRowSkeleton key={row} compact />)}</Stack>
+    <TableContainer component={Paper} variant="outlined" sx={{ ...TABLE_SURFACE_SX, display: { xs: 'none', sm: 'block' } }}>
+      <Table sx={{ tableLayout: 'fixed' }}><OpportunityColumns /><OpportunityTableHead entityType={entityType} /><TableBody>{[0, 1, 2].map(row => <TableRow key={row}>
+        <TableCell><Skeleton width="70%" height={24} /><Skeleton width="90%" sx={{ mt: 0.5 }} /><Skeleton width="55%" /></TableCell>
+        <TableCell><Stack direction="row" spacing={1}><Skeleton width={60} height={24} /><Skeleton width={45} height={24} /></Stack><Skeleton width="85%" sx={{ mt: 0.75 }} /></TableCell>
+        <TableCell><Skeleton width={70} height={24} sx={{ ml: 'auto' }} /></TableCell><TableCell />
+      </TableRow>)}</TableBody></Table>
+    </TableContainer>
+  </Box>;
 }

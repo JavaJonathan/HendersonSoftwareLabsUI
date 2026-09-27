@@ -167,7 +167,6 @@ export interface OpportunityDetail {
 }
 
 export interface ActiveProjectPreferences {
-  capabilities: string[];
   preferredProjectTypes: string[];
   excludedProjectTypes: string[];
   minimumBudget: number;
@@ -193,9 +192,24 @@ export interface BusinessProspectPreferences {
   };
 }
 
+export interface HslBusinessProfile {
+  positioning: string;
+  businessModel: string;
+  idealCustomerTraits: string[];
+  coreOffers: string[];
+  secondaryOffers: string[];
+  capabilities: string[];
+  engagementModel: string[];
+  capacityConstraints: string[];
+  geographicFocus: string[];
+  priceBands: string[];
+  lastReviewedAt: string | null;
+}
+
 export interface RadarPreferences {
   activeProject: ActiveProjectPreferences;
   businessProspect: BusinessProspectPreferences;
+  businessProfile: HslBusinessProfile;
   digestActiveProjectCount: number;
   digestBusinessProspectCount: number;
   updatedAt: string;

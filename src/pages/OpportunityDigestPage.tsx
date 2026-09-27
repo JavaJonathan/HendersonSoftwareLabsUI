@@ -3,7 +3,7 @@ import { Alert, Box, Button, Container, Paper, Skeleton, Stack, Typography } fro
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { AuthedAppBar } from '../components/layout/AuthedAppBar';
 import { OpportunityLaneTabs } from '../components/opportunities/OpportunityLaneTabs';
-import { OpportunityRow } from '../components/opportunities/OpportunityRow';
+import { OpportunityRow, OpportunityRowSkeleton } from '../components/opportunities/OpportunityRow';
 import { RadarPageHeader } from '../components/opportunities/RadarPageHeader';
 import { SURFACE_SUBTLE } from '../theme';
 import { getOpportunityDigest, type OpportunityDigest } from '../api/opportunities';
@@ -26,7 +26,7 @@ export function OpportunityDigestPage() {
       <OpportunityLaneTabs />
       {error && <Alert severity="error" action={<Button onClick={() => setRefresh(value => value + 1)}>Retry</Button>} sx={{ mb: 2 }}>{error}</Alert>}
       {!digest && !error && <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2.5 }}>
-        {[0, 1].map(column => <Box key={column}><Skeleton width={180} height={34} sx={{ mb: 1 }} /><Stack spacing={1.5}>{[0, 1].map(row => <Paper key={row} variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}><Skeleton width={120} /><Skeleton height={28} width="70%" /><Skeleton /><Skeleton width="80%" /></Paper>)}</Stack></Box>)}
+        {[0, 1].map(column => <Box key={column}><Skeleton width={180} height={34} sx={{ mb: 1 }} /><Stack spacing={1.5}>{[0, 1].map(row => <OpportunityRowSkeleton key={row} />)}</Stack></Box>)}
       </Box>}
       {digest && <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2.5 }}>
         <DigestColumn title="Active projects" description="Public demand worth a closer look." items={digest.activeProjects} requested={digest.activeProjectRequested} returned={digest.activeProjectReturned} />
@@ -39,7 +39,7 @@ export function OpportunityDigestPage() {
 function DigestColumn({ title, description, items, requested, returned }: {
   title: string; description: string; items: OpportunityDigest['activeProjects']; requested: number; returned: number;
 }) {
-  return <Box>
+  return <Box sx={{ minWidth: 0 }}>
     <Paper variant="outlined" sx={{ p: 2, mb: 1.5, borderRadius: 3, bgcolor: 'rgba(255,255,255,.7)' }}>
       <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
         <Box><Typography variant="h6">{title}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>{description}</Typography></Box>
