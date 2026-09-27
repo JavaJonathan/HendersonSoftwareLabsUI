@@ -57,6 +57,34 @@ const FACTOR_HELP: Record<string, string> = {
   entryProjectStrength: 'Whether there is a useful, well-scoped digital project that could serve as a practical first engagement.',
 };
 
+// Keyed by the part of check.key before any ":factor" suffix (see checkHelpFor), so unsupported:marketAccessFit
+// and lowConfidence:urgency share one explanation of what that check category means in general.
+const CHECK_HELP: Record<string, string> = {
+  employment: 'A Block-severity check: the source reads as an employment or staffing request rather than an independent project, so it is excluded outright rather than scored down.',
+  teamScale: 'A Review-severity check: the requested work looks broad enough to need a team rather than one independent engineer, which changes the risk and economics of pursuing it.',
+  coreReplacement: 'A Review-severity check: the work may mean replacing a specialized core system rather than integrating with or complementing it, a different and riskier kind of project.',
+  weakClassification: "A Review-severity check: Jev's classification of what kind of demand or prospect this is came back unknown or below 55% confidence, so the score rests on shakier ground.",
+  excludedProjectType: 'A Block-severity check: this project type is on your excluded list in Preferences, so it is rejected regardless of how strong everything else looks.',
+  inadequateBudget: 'A Block-severity check: the stated budget is below the minimum you configured in Preferences.',
+  typeDisagreement: 'The sourcing agent and Jev classified this record differently. Worth checking which one is right before trusting the score that follows from it.',
+  unknownType: 'A Review-severity check: Jev could not determine a supported prospect type from the available evidence.',
+  speculativeWorkflow: 'A Review-severity check: the claimed workflow problem leans on general industry assumptions rather than evidence specific to this business.',
+  physicalOrJudgmentHeavy: 'A Review-severity check: the work looks substantially physical, relationship-based, or judgment-heavy, the kind of work software is less likely to meaningfully improve.',
+  excludedIndustry: 'A Block-severity check: this industry is on your excluded list in Preferences.',
+  excludedGeography: 'A Block-severity check: this geography is on your excluded list in Preferences.',
+  insufficientEvidence: 'A Review-severity check: there is not enough evidence to calculate a defensible score at all, not just a low one.',
+  lowResearchConfidence: "A Review-severity check: the sourcing agent itself marked its research confidence as Low before this ever reached Jev.",
+  staleEvidence: 'A Review-severity check: the primary evidence is more than 180 days old and may no longer reflect reality.',
+  unsupported: 'A Review-severity check: a factor scored 2 or higher out of 3, a strong judgment, but Jev did not cite a specific passage backing it up.',
+  lowJevConfidence: "A Review-severity check: Jev's overall confidence across all factors is below 65%. The score may be a fair summary of the evidence, but confidence in that summary is not high.",
+  lowConfidence: "A Review-severity check: Jev rated this specific factor below 55% confidence, treat its contribution to the score with more skepticism than the others.",
+  clear: 'No deterministic Review or Block condition fired for this record.',
+};
+
+function checkHelpFor(key: string) {
+  return CHECK_HELP[key.split(':')[0]];
+}
+
 export function OpportunityDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -218,7 +246,7 @@ export function OpportunityDetailPage() {
 
           {!!result?.factors.length && <Section title="Fit factors"><Stack divider={<Box sx={{ borderTop: 1, borderColor: 'divider' }} />}>{result.factors.map(factor => <FactorScore key={factor.key} factorKey={factor.key} label={factor.label} score={factor.score} explanation={factor.explanation} evidencePassageId={factor.evidencePassageId} />)}</Stack></Section>}
 
-          {!!result?.checks?.length && <Section title="Evaluation checks"><Stack spacing={1.25}>{result.checks.map(check => <Alert key={check.key} severity={check.severity === 'Block' ? 'error' : check.severity === 'Review' ? 'warning' : 'info'}><Typography sx={{ fontWeight: 800 }}>{formatCamelKey(check.key)}</Typography><Typography variant="body2">{check.explanation}</Typography>{check.evidencePassageId !== 'none' && <Link href={`#passage-${check.evidencePassageId}`} variant="caption" sx={{ display: 'inline-block', mt: 0.75 }}>View {check.evidencePassageId}</Link>}</Alert>)}</Stack></Section>}
+          {!!result?.checks?.length && <Section title="Evaluation checks"><Stack spacing={1.25}>{result.checks.map(check => <Alert key={check.key} severity={check.severity === 'Block' ? 'error' : check.severity === 'Review' ? 'warning' : 'info'}><Typography sx={{ fontWeight: 800 }}><HelpText label={formatCamelKey(check.key)} help={checkHelpFor(check.key)}>{formatCamelKey(check.key)}</HelpText></Typography><Typography variant="body2">{check.explanation}</Typography>{check.evidencePassageId !== 'none' && <Link href={`#passage-${check.evidencePassageId}`} variant="caption" sx={{ display: 'inline-block', mt: 0.75 }}>View {check.evidencePassageId}</Link>}</Alert>)}</Stack></Section>}
 
           {/* Reference: imported facts and a human's own notes - useful context, but not AI evidence, so it sits below the group above. */}
           {!isActiveProject && item.businessProspect && <Section title="Business details"><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 2 }}><DetailMetric label="Website" value={item.businessProspect.websiteUrl ? <Link href={item.businessProspect.websiteUrl} target="_blank" rel="noopener noreferrer">Visit website</Link> : 'No website found'} /><DetailMetric label="Geography" value={item.businessProspect.geography ?? 'Unknown'} /><DetailMetric label="Industry" value={item.businessProspect.industry ?? 'Unknown'} /></Box></Section>}
@@ -299,9 +327,33 @@ function agreementLabel(item: OpportunityDetail) {
   return imported === evaluated ? 'Agent and Jev agree' : 'Agent and Jev disagree';
 }
 
+/** Shared by FactorScore and the Evaluation checks section: an info icon whose tooltip explains what a
+ * factor or check key means in general, distinct from the record-specific explanation shown next to it. */
+function HelpIcon({ label, help }: { label: string; help?: string }) {
+  if (!help) return null;
+  return <Tooltip arrow placement="top" enterTouchDelay={0} leaveTouchDelay={6000} title={<Box sx={{ py: 0.5 }}><Typography variant="subtitle2" sx={{ mb: 0.5 }}>{label}</Typography><Typography variant="body2" sx={{ lineHeight: 1.45 }}>{help}</Typography></Box>} slotProps={{ tooltip: { sx: { maxWidth: 340, p: 1.5 } } }}>
+    <IconButton size="small" aria-label={`What ${label} means`} sx={{ p: 0.4, color: 'text.secondary', '&:hover, &:focus-visible': { color: 'primary.main', bgcolor: 'primary.light' } }}>
+      <InfoOutlinedIcon sx={{ fontSize: 18 }} />
+    </IconButton>
+  </Tooltip>;
+}
+
+/**
+ * Same tooltip as HelpIcon, but as a dotted underline on the trigger text itself rather than a second icon.
+ * Used inside the Evaluation checks' Alerts, which already have MUI's own severity icon on the left -
+ * an info-circle help icon right next to a title read as two icons repeating each other, worst on an
+ * Info-severity check where both icons are literally the same glyph.
+ */
+function HelpText({ label, help, children }: { label: string; help?: string; children: React.ReactNode }) {
+  if (!help) return <>{children}</>;
+  return <Tooltip arrow placement="top" enterTouchDelay={0} leaveTouchDelay={6000} title={<Box sx={{ py: 0.5 }}><Typography variant="subtitle2" sx={{ mb: 0.5 }}>{label}</Typography><Typography variant="body2" sx={{ lineHeight: 1.45 }}>{help}</Typography></Box>} slotProps={{ tooltip: { sx: { maxWidth: 340, p: 1.5 } } }}>
+    <Box component="span" sx={{ cursor: 'help', textDecoration: 'underline', textDecorationStyle: 'dotted', textDecorationColor: 'currentColor', textUnderlineOffset: 3 }}>{children}</Box>
+  </Tooltip>;
+}
+
 function FactorScore({ factorKey, label, score, explanation, evidencePassageId }: { factorKey: string; label: string; score: number; explanation: string; evidencePassageId: string }) {
   const help = FACTOR_HELP[factorKey];
-  return <Box sx={{ py: 2, '&:first-of-type': { pt: 0 }, '&:last-of-type': { pb: 0 } }}><Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ justifyContent: 'space-between', alignItems: { sm: 'flex-start' } }}><Box sx={{ minWidth: 0 }}><Stack direction="row" spacing={0.25} sx={{ alignItems: 'center' }}><Typography sx={{ fontWeight: 800 }}>{label}</Typography>{help && <Tooltip arrow placement="top" enterTouchDelay={0} leaveTouchDelay={6000} title={<Box sx={{ py: 0.5 }}><Typography variant="subtitle2" sx={{ mb: 0.5 }}>{label}</Typography><Typography variant="body2" sx={{ lineHeight: 1.45 }}>{help}</Typography></Box>} slotProps={{ tooltip: { sx: { maxWidth: 340, p: 1.5 } } }}><IconButton size="small" aria-label={`What ${label} means`} sx={{ p: 0.4, color: 'text.secondary', '&:hover, &:focus-visible': { color: 'primary.main', bgcolor: 'primary.light' } }}><InfoOutlinedIcon sx={{ fontSize: 18 }} /></IconButton></Tooltip>}</Stack><Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.55 }}>{explanation}</Typography>{evidencePassageId !== 'none' && <Link href={`#passage-${evidencePassageId}`} underline="hover" variant="caption" sx={{ display: 'inline-block', mt: 0.75, fontWeight: 700 }}>View {evidencePassageId}</Link>}</Box><Box sx={{ width: 110, flexShrink: 0, pt: 0.25 }}><Typography variant="caption" sx={{ display: 'block', textAlign: 'right', fontWeight: 800 }}>{score.toFixed(1)} / 100</Typography><Box sx={{ height: 8, mt: 0.5, borderRadius: 99, bgcolor: 'divider', overflow: 'hidden' }}><Box sx={{ width: `${Math.max(0, Math.min(100, score))}%`, height: '100%', bgcolor: 'primary.main' }} /></Box></Box></Stack></Box>;
+  return <Box sx={{ py: 2, '&:first-of-type': { pt: 0 }, '&:last-of-type': { pb: 0 } }}><Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ justifyContent: 'space-between', alignItems: { sm: 'flex-start' } }}><Box sx={{ minWidth: 0 }}><Stack direction="row" spacing={0.25} sx={{ alignItems: 'center' }}><Typography sx={{ fontWeight: 800 }}>{label}</Typography><HelpIcon label={label} help={help} /></Stack><Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.55 }}>{explanation}</Typography>{evidencePassageId !== 'none' && <Link href={`#passage-${evidencePassageId}`} underline="hover" variant="caption" sx={{ display: 'inline-block', mt: 0.75, fontWeight: 700 }}>View {evidencePassageId}</Link>}</Box><Box sx={{ width: 110, flexShrink: 0, pt: 0.25 }}><Typography variant="caption" sx={{ display: 'block', textAlign: 'right', fontWeight: 800 }}>{score.toFixed(1)} / 100</Typography><Box sx={{ height: 8, mt: 0.5, borderRadius: 99, bgcolor: 'divider', overflow: 'hidden' }}><Box sx={{ width: `${Math.max(0, Math.min(100, score))}%`, height: '100%', bgcolor: 'primary.main' }} /></Box></Box></Stack></Box>;
 }
 
 function SignalCard({ title, values, empty, icon, tone = 'default' }: { title: string; values: string[]; empty: string; icon: React.ReactNode; tone?: 'default' | 'info' | 'warning' | 'error' }) {
