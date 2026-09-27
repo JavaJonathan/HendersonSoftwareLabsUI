@@ -44,9 +44,60 @@ export interface OpportunitySummary {
   websiteDomain: string | null;
   opportunityScore: number | null;
   jevConfidence: number | null;
+  topFactorLabel: string | null;
   prospectType: BusinessProspectType | null;
   needsVerification: boolean;
 }
+
+export type SignalTone = 'top' | 'nearMiss' | 'mid' | 'blocked' | 'weak';
+
+export interface OpportunitySignal {
+  tone: SignalTone;
+  chipColor: 'success' | 'warning' | 'default';
+  chipVariant: 'filled' | 'outlined';
+  icon: 'verify' | 'blocked' | null;
+  iconTooltip: string | null;
+  scoreColor: string;
+}
+
+export interface OpportunitySignalInput {
+  recommendation: OpportunityRecommendation | null;
+  priorityBand: PriorityBand | null;
+  needsVerification: boolean;
+}
+
+/**
+ * Recommendation alone collapses two very different situations into the same color: a "Watch"/"Investigate"
+ * can be a genuine middle case, or it can be a would-be top-tier record blocked only by one unresolved
+ * verification check (only reachable at PriorityBand.High, per OpportunityRadarV2.Decide's own branching -
+ * see HendersonSoftwareLabsAPI/Services/OpportunityRadarV2.cs). Likewise a "Skip"/"Pass" can be genuinely
+ * weak, or it can be a high-scoring record a hard screening rule (budget/industry/geography/etc.) excluded
+ * outright. Takes just the three fields it needs (not a full OpportunitySummary) so it works equally well
+ * against a list row or an OpportunityDetail's `evaluation`; no API change needed either way.
+ */
+export function getOpportunitySignal(item: OpportunitySignalInput): OpportunitySignal | null {
+  if (!item.recommendation) return null;
+  const meta = RECOMMENDATION_META[item.recommendation];
+  const topTier = meta.chipColor === 'success';
+  const rejectTier = meta.chipColor === 'default';
+  const highPriority = item.priorityBand === 'High';
+  if (topTier) return { tone: 'top', chipColor: 'success', chipVariant: 'filled', icon: null, iconTooltip: null, scoreColor: 'success.main' };
+  if (rejectTier && highPriority) return {
+    tone: 'blocked', chipColor: 'default', chipVariant: 'outlined', icon: 'blocked',
+    iconTooltip: 'Scored like a strong opportunity but excluded by a hard screening rule (budget, industry, geography, or similar). Check screening preferences if this looks wrong.',
+    scoreColor: 'text.secondary',
+  };
+  if (rejectTier) return { tone: 'weak', chipColor: 'default', chipVariant: 'filled', icon: null, iconTooltip: null, scoreColor: 'text.secondary' };
+  if (highPriority && item.needsVerification) return {
+    tone: 'nearMiss', chipColor: 'success', chipVariant: 'outlined', icon: 'verify',
+    iconTooltip: 'Scores like a top opportunity; blocked only by an unresolved verification check. Open the record to see what needs confirming.',
+    scoreColor: 'success.main',
+  };
+  return { tone: 'mid', chipColor: 'warning', chipVariant: 'filled', icon: null, iconTooltip: null, scoreColor: 'warning.main' };
+}
+
+/** The chip-color families above, as hex, for places that need a raw color rather than an MUI Chip `color` prop (row accent bars, the legend dots). */
+export const TONE_HEX = { success: '#16a34a', warning: '#d97706', default: '#94a3b8' } as const;
 
 export interface OpportunityList { items: OpportunitySummary[]; total: number; page: number; pageSize: number }
 

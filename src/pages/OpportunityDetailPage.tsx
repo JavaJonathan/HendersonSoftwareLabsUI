@@ -2,11 +2,14 @@ import { Fragment, useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 import {
   Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, Chip, Container,
-  Link, MenuItem, Paper, Select, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography, useMediaQuery,
+  IconButton, Link, MenuItem, Paper, Select, Stack, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography, useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
+import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
 import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined';
 import SearchOffOutlinedIcon from '@mui/icons-material/SearchOffOutlined';
@@ -15,15 +18,44 @@ import { EvaluationDialog } from '../components/opportunities/EvaluationDialog';
 import { RadarDialog } from '../components/opportunities/RadarDialog';
 import { SURFACE_SUBTLE } from '../theme';
 import {
-  getOpportunity, getRadarProvider, updateOpportunityReview, updateProspectTypeOverride, deleteOpportunity, clearOpportunityDuplicate,
-  RECOMMENDATION_META, SOURCE_TYPE_LABELS, formatProspectType,
+  getOpportunity, getOpportunitySignal, getRadarProvider, updateOpportunityReview, updateProspectTypeOverride, deleteOpportunity, clearOpportunityDuplicate,
+  SOURCE_TYPE_LABELS, formatProspectType,
   type ActiveProjectDecision, type BusinessProspectDecision, type BusinessProspectType, type OpportunityDetail,
-  type RadarProviderStatus,
+  type RadarProviderStatus, type SignalTone,
 } from '../api/opportunities';
 import { getApiErrorMessage } from '../api/client';
 
 const ACTIVE_PROJECT_DECISIONS: ActiveProjectDecision[] = ['Pursue', 'Investigate', 'Pass'];
 const BUSINESS_PROSPECT_DECISIONS: BusinessProspectDecision[] = ['Prioritize', 'Watch', 'Skip'];
+
+// Same green/amber/gray families the inbox table uses, just as a panel-scale gradient tint rather than a chip color.
+const PANEL_TINT: Record<SignalTone, { background: string; borderColor: string }> = {
+  top: { background: 'linear-gradient(145deg, #ffffff 25%, #f0fdf4 100%)', borderColor: 'rgba(22,163,74,.25)' },
+  nearMiss: { background: 'linear-gradient(145deg, #ffffff 25%, #f0fdf4 100%)', borderColor: 'rgba(22,163,74,.25)' },
+  mid: { background: 'linear-gradient(145deg, #ffffff 25%, #fff7ed 100%)', borderColor: 'rgba(217,119,6,.25)' },
+  blocked: { background: 'linear-gradient(145deg, #ffffff 25%, #f8fafc 100%)', borderColor: 'rgba(100,116,139,.25)' },
+  weak: { background: 'linear-gradient(145deg, #ffffff 25%, #f8fafc 100%)', borderColor: 'rgba(100,116,139,.25)' },
+};
+
+const FACTOR_HELP: Record<string, string> = {
+  problemClarity: 'How clearly the source describes a specific software-related problem and the outcome the buyer wants.',
+  hslDeliveryFit: 'How closely the work matches HSL capabilities such as integrations, automation, portals, reporting, and web applications.',
+  independentScope: 'Whether one experienced independent engineer could deliver a useful first version in a reasonable timeframe.',
+  economicViability: 'Whether a contained software engagement could create meaningful value relative to its likely cost, without assuming unsupported ROI.',
+  urgency: 'How much direct evidence shows a deadline, time pressure, mounting cost, or another reason to act soon.',
+  buyerReadiness: 'Whether a likely decision-maker is identifiable and reachable, with a clear next step for starting a conversation.',
+  informationMarketFit: 'Whether the source contains enough market, buyer, scope, and technical context to make a sound initial decision.',
+  painEvidence: 'How directly the evidence shows a costly problem that happens repeatedly. This combines cost severity and frequency.',
+  automationFeasibility: 'Whether a focused automation, integration, or software tool could address the problem without replacing a core business system.',
+  economicLeverage: 'Whether solving the problem could plausibly save meaningful time or money, reduce errors, or recover revenue.',
+  containedEngagement: 'Whether HSL could begin with a useful, clearly bounded project instead of a broad transformation.',
+  buyerAccess: 'Whether a likely owner, executive, or operational decision-maker can be identified and realistically contacted.',
+  marketAccessFit: 'How the prospect\'s industry and geography match your preferred and excluded markets. The application calculates this factor from your screening preferences.',
+  businessStrength: 'How established the business appears from real-world signals such as operating history, activity, reputation, and customer demand.',
+  digitalWeakness: 'How weak or outdated the business\'s digital presence appears relative to the business itself.',
+  reputationMismatch: 'How large the gap is between the business\'s real-world reputation and the quality of its digital presence.',
+  entryProjectStrength: 'Whether there is a useful, well-scoped digital project that could serve as a practical first engagement.',
+};
 
 export function OpportunityDetailPage() {
   const { id } = useParams();
@@ -109,6 +141,7 @@ export function OpportunityDetailPage() {
   const decisionOptions = isActiveProject ? ACTIVE_PROJECT_DECISIONS : BUSINESS_PROSPECT_DECISIONS;
   const backTo = isActiveProject ? '/admin/opportunities' : '/admin/opportunities/prospects';
   const evaluation = item.evaluation;
+  const signal = evaluation ? getOpportunitySignal(evaluation) : null;
   const result = evaluation?.result;
   const evidenceIds = new Set(result?.factors.map(factor => factor.evidencePassageId) ?? []);
   const fitValue = isActiveProject ? item.activeProject?.fit : item.businessProspect?.fit;
@@ -133,8 +166,6 @@ export function OpportunityDetailPage() {
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mt: 2, mb: 3, justifyContent: 'space-between', alignItems: { md: 'flex-start' } }}>
         <Box sx={{ minWidth: 0 }}>
           <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap', mb: 1 }}>
-            {evaluation?.recommendation && <Chip label={evaluation.recommendation} color={RECOMMENDATION_META[evaluation.recommendation].chipColor} />}
-            {evaluation?.priorityBand && <Chip label={`${evaluation.priorityBand} priority`} variant="outlined" />}
             {isActiveProject
               ? item.activeProject && <Chip label={SOURCE_TYPE_LABELS[item.activeProject.sourceType]} variant="outlined" />
               : <Fragment key="prospect-header-chips">
@@ -144,7 +175,6 @@ export function OpportunityDetailPage() {
             {item.isSynthetic && <Chip label="Synthetic example" color="info" variant="outlined" />}
             {evaluation?.provider === 'Simulated' && <Chip label="Simulated evaluation" color="warning" variant="outlined" />}
             {evaluation?.provider === 'Jev' && <Chip label={`Live Jev: ${evaluation.model}`} color="success" variant="outlined" />}
-            {evaluation?.needsVerification && <Chip label="Needs verification" color="warning" />}
             {evaluation?.status === 'Stale' && <Chip label="Reevaluation required" color="warning" />}
             {evaluation?.status === 'Failed' && <Chip label="Provider failure" color="error" />}
           </Stack>
@@ -161,13 +191,20 @@ export function OpportunityDetailPage() {
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.65fr) minmax(310px, .85fr)' }, gap: 2.5, alignItems: 'start' }}>
         <Stack spacing={2.5} sx={{ minWidth: 0 }}>
-          {evaluation?.status === 'Failed' ? <Alert severity="error" action={<Button color="inherit" size="small" onClick={() => setEvaluationOpen(true)}>Retry evaluation</Button>}>Evaluation failed without changing the opportunity score. {evaluation.errorMessage ?? 'Retry when the provider is available.'}</Alert> : evaluation ? <Paper variant="outlined" sx={{ p: { xs: 2.5, md: 3.5 }, borderRadius: 3, background: 'linear-gradient(145deg, #ffffff 25%, #eff6ff 100%)', borderColor: 'rgba(37,99,235,.22)' }}>
-            <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}><Typography variant="overline" color="primary.main">Radar recommendation</Typography>{evaluation.recommendation && <Chip size="small" label={evaluation.recommendation} color={RECOMMENDATION_META[evaluation.recommendation].chipColor} />}{evaluation.priorityBand && <Chip size="small" variant="outlined" label={`${evaluation.priorityBand} priority`} />}<Button size="small" onClick={() => setEvaluationOpen(true)} sx={{ ml: 'auto' }}>Re-evaluate</Button></Stack>
+          {evaluation?.status === 'Failed' ? <Alert severity="error" action={<Button color="inherit" size="small" onClick={() => setEvaluationOpen(true)}>Retry evaluation</Button>}>Evaluation failed without changing the opportunity score. {evaluation.errorMessage ?? 'Retry when the provider is available.'}</Alert> : evaluation ? <Paper variant="outlined" sx={{ p: { xs: 2.5, md: 3.5 }, borderRadius: 3, background: signal ? PANEL_TINT[signal.tone].background : 'linear-gradient(145deg, #ffffff 25%, #f8fafc 100%)', borderColor: signal ? PANEL_TINT[signal.tone].borderColor : 'rgba(100,116,139,.25)' }}>
+            <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
+              <Typography variant="overline" color="primary.main">Radar recommendation</Typography>
+              {evaluation.recommendation && signal && <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
+                <Chip size="small" label={evaluation.recommendation} color={signal.chipColor} variant={signal.chipVariant} />
+                {signal.icon === 'verify' && <Tooltip title={signal.iconTooltip ?? ''}><FactCheckOutlinedIcon sx={{ fontSize: 18, color: 'success.main' }} /></Tooltip>}
+                {signal.icon === 'blocked' && <Tooltip title={signal.iconTooltip ?? ''}><BlockOutlinedIcon sx={{ fontSize: 18, color: 'text.secondary' }} /></Tooltip>}
+              </Stack>}
+              <Button size="small" onClick={() => setEvaluationOpen(true)} sx={{ ml: 'auto' }}>Re-evaluate</Button>
+            </Stack>
             <Typography variant="h5" sx={{ mt: 1.25, maxWidth: 760, lineHeight: 1.35 }}>{evaluation.summary}</Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(4, 1fr)' }, gap: 2, mt: 2.5 }}>
-              <DetailMetric label="Opportunity score" value={evaluation.opportunityScore == null ? 'Unavailable' : `${evaluation.opportunityScore.toFixed(1)} / 100`} />
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 2, mt: 2.5 }}>
+              <DetailMetric label="Opportunity score" value={evaluation.opportunityScore == null ? 'Unavailable' : <><Box component="span" sx={{ color: signal?.scoreColor }}>{evaluation.opportunityScore.toFixed(1)}</Box> / 100</>} />
               <DetailMetric label="Jev confidence" value={evaluation.jevConfidence == null ? 'Unavailable' : `${Math.round(evaluation.jevConfidence * 100)}%`} />
-              <DetailMetric label="Verification" value={evaluation.needsVerification ? 'Required' : 'Clear'} />
               <DetailMetric label="Evaluation" value={evaluation.origin === 'LocalRecompose' ? 'Locally recomposed' : 'Provider run'} />
             </Box>
             <Box sx={{ mt: 2.5, pl: 2, borderLeft: '3px solid', borderColor: 'primary.main' }}><Typography variant="overline" color="text.secondary">Recommended next step</Typography><Typography sx={{ mt: 0.25, fontWeight: 650 }}>{evaluation.nextStep}</Typography></Box>
@@ -176,6 +213,14 @@ export function OpportunityDetailPage() {
 
           {!desktopReview && reviewPanel}
 
+          {/* AI evidence: what actually drove the recommendation above, promoted ahead of imported/reference facts. */}
+          {result && <Box><Typography variant="h6" sx={{ mb: 1.5 }}>Decision signals</Typography><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 1.5 }}><SignalCard title="Model hypotheses" values={result.hypotheses} empty="No hypotheses." tone="info" icon={<LightbulbOutlinedIcon />} /><SignalCard title="Missing information" values={result.missingInformation} empty="No major missing fields detected." tone="warning" icon={<SearchOffOutlinedIcon />} /><SignalCard title="Concerns" values={result.concerns} empty="No hard concerns detected." tone="error" icon={<ReportProblemOutlinedIcon />} /></Box></Box>}
+
+          {!!result?.factors.length && <Section title="Fit factors"><Stack divider={<Box sx={{ borderTop: 1, borderColor: 'divider' }} />}>{result.factors.map(factor => <FactorScore key={factor.key} factorKey={factor.key} label={factor.label} score={factor.score} explanation={factor.explanation} evidencePassageId={factor.evidencePassageId} />)}</Stack></Section>}
+
+          {!!result?.checks?.length && <Section title="Evaluation checks"><Stack spacing={1.25}>{result.checks.map(check => <Alert key={check.key} severity={check.severity === 'Block' ? 'error' : check.severity === 'Review' ? 'warning' : 'info'}><Typography sx={{ fontWeight: 800 }}>{formatCamelKey(check.key)}</Typography><Typography variant="body2">{check.explanation}</Typography>{check.evidencePassageId !== 'none' && <Link href={`#passage-${check.evidencePassageId}`} variant="caption" sx={{ display: 'inline-block', mt: 0.75 }}>View {check.evidencePassageId}</Link>}</Alert>)}</Stack></Section>}
+
+          {/* Reference: imported facts and a human's own notes - useful context, but not AI evidence, so it sits below the group above. */}
           {!isActiveProject && item.businessProspect && <Section title="Business details"><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 2 }}><DetailMetric label="Website" value={item.businessProspect.websiteUrl ? <Link href={item.businessProspect.websiteUrl} target="_blank" rel="noopener noreferrer">Visit website</Link> : 'No website found'} /><DetailMetric label="Geography" value={item.businessProspect.geography ?? 'Unknown'} /><DetailMetric label="Industry" value={item.businessProspect.industry ?? 'Unknown'} /></Box></Section>}
 
           {isActiveProject && item.activeProject && (item.activeProject.budget || item.activeProject.competition) && <Section title="Project details"><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 2 }}>
@@ -201,17 +246,12 @@ export function OpportunityDetailPage() {
             <DetailMetric label="Agreement" value={agreementLabel(item)} />
           </Box></Section>}
 
-          {!!result?.checks?.length && <Section title="Evaluation checks"><Stack spacing={1.25}>{result.checks.map(check => <Alert key={check.key} severity={check.severity === 'Block' ? 'error' : check.severity === 'Review' ? 'warning' : 'info'}><Typography sx={{ fontWeight: 800 }}>{formatCamelKey(check.key)}</Typography><Typography variant="body2">{check.explanation}</Typography>{check.evidencePassageId !== 'none' && <Link href={`#passage-${check.evidencePassageId}`} variant="caption" sx={{ display: 'inline-block', mt: 0.75 }}>View {check.evidencePassageId}</Link>}</Alert>)}</Stack></Section>}
-
-          {evaluation && <Section title="Scoring profile"><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mb: 2 }}><DetailMetric label="Rubric version" value={evaluation.rubricVersion} /><DetailMetric label="Origin" value={evaluation.origin === 'LocalRecompose' ? 'Locally recomposed from stored Jev judgments' : 'Jev provider run'} /></Box><Stack spacing={1}>{Object.entries(evaluation.effectiveWeights ?? {}).map(([key, value]) => <Stack key={key} direction="row" sx={{ justifyContent: 'space-between', gap: 2 }}><Typography variant="body2">{formatCamelKey(key)}</Typography><Typography variant="body2" sx={{ fontWeight: 800 }}>{Number(value).toFixed(2)}%</Typography></Stack>)}</Stack></Section>}
-
-          {!!result?.factors.length && <Section title="Fit factors"><Stack divider={<Box sx={{ borderTop: 1, borderColor: 'divider' }} />}>{result.factors.map(factor => <FactorScore key={factor.key} label={factor.label} score={factor.score} explanation={factor.explanation} evidencePassageId={factor.evidencePassageId} />)}</Stack></Section>}
-
-          {result && <Box><Typography variant="h6" sx={{ mb: 1.5 }}>Decision signals</Typography><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 1.5 }}><SignalCard title="Model hypotheses" values={result.hypotheses} empty="No hypotheses." tone="info" icon={<LightbulbOutlinedIcon />} /><SignalCard title="Missing information" values={result.missingInformation} empty="No major missing fields detected." tone="warning" icon={<SearchOffOutlinedIcon />} /><SignalCard title="Concerns" values={result.concerns} empty="No hard concerns detected." tone="error" icon={<ReportProblemOutlinedIcon />} /></Box></Box>}
-
+          {/* Collapsed reference material: rarely opened, so it stays out of the way until someone wants it. */}
           <SupportingSection key="source" title="Original source" subtitle="The complete imported description and source metadata."><Paper variant="outlined" sx={{ p: 2.5, bgcolor: SURFACE_SUBTLE, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{item.description}</Paper>{(item.sourceDate || item.externalId) && <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>{item.sourceDate && `Source date: ${new Date(item.sourceDate).toLocaleDateString()}`}{item.sourceDate && item.externalId && ' | '}{item.externalId && `External ID: ${item.externalId}`}</Typography>}</SupportingSection>
 
           <SupportingSection key="evidence" title="Stored evidence" subtitle="Quoted passages come directly from the stored source text."><Stack spacing={1.25}>{item.passages.map(passage => <Paper id={`passage-${passage.id}`} key={passage.id} variant="outlined" sx={{ p: 2, scrollMarginTop: 96, borderColor: evidenceIds.has(passage.id) ? 'primary.main' : 'divider', bgcolor: evidenceIds.has(passage.id) ? 'primary.light' : 'background.paper', transition: 'box-shadow .2s ease', '&:target': { boxShadow: '0 0 0 3px rgba(37,99,235,.25)' } }}><Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'baseline' }}><Typography variant="overline" color="text.secondary">{passage.id}</Typography>{passage.source && <Typography variant="caption" color="text.secondary">Source: {passage.source}</Typography>}{passage.date && <Typography variant="caption" color="text.secondary">{new Date(passage.date).toLocaleDateString()}</Typography>}</Stack><Typography sx={{ whiteSpace: 'pre-wrap' }}>{passage.text}</Typography></Paper>)}</Stack></SupportingSection>
+
+          {evaluation && <SupportingSection key="scoring-profile" title="Scoring profile" subtitle="The relative weights this evaluation used. Only changes when screening preferences are edited."><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mb: 2 }}><DetailMetric label="Rubric version" value={evaluation.rubricVersion} /><DetailMetric label="Origin" value={evaluation.origin === 'LocalRecompose' ? 'Locally recomposed from stored Jev judgments' : 'Jev provider run'} /></Box><Stack spacing={1}>{Object.entries(evaluation.effectiveWeights ?? {}).map(([key, value]) => <Stack key={key} direction="row" sx={{ justifyContent: 'space-between', gap: 2 }}><Typography variant="body2">{formatCamelKey(key)}</Typography><Typography variant="body2" sx={{ fontWeight: 800 }}>{Number(value).toFixed(2)}%</Typography></Stack>)}</Stack></SupportingSection>}
         </Stack>
 
         {desktopReview && <Stack spacing={2.5} sx={{ position: 'sticky', top: 88 }}>{reviewPanel}</Stack>}
@@ -259,8 +299,9 @@ function agreementLabel(item: OpportunityDetail) {
   return imported === evaluated ? 'Agent and Jev agree' : 'Agent and Jev disagree';
 }
 
-function FactorScore({ label, score, explanation, evidencePassageId }: { label: string; score: number; explanation: string; evidencePassageId: string }) {
-  return <Box sx={{ py: 2, '&:first-of-type': { pt: 0 }, '&:last-of-type': { pb: 0 } }}><Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ justifyContent: 'space-between', alignItems: { sm: 'flex-start' } }}><Box sx={{ minWidth: 0 }}><Typography sx={{ fontWeight: 800 }}>{label}</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.55 }}>{explanation}</Typography>{evidencePassageId !== 'none' && <Link href={`#passage-${evidencePassageId}`} underline="hover" variant="caption" sx={{ display: 'inline-block', mt: 0.75, fontWeight: 700 }}>View {evidencePassageId}</Link>}</Box><Box sx={{ width: 110, flexShrink: 0, pt: 0.25 }}><Typography variant="caption" sx={{ display: 'block', textAlign: 'right', fontWeight: 800 }}>{score.toFixed(1)} / 100</Typography><Box sx={{ height: 8, mt: 0.5, borderRadius: 99, bgcolor: 'divider', overflow: 'hidden' }}><Box sx={{ width: `${Math.max(0, Math.min(100, score))}%`, height: '100%', bgcolor: 'primary.main' }} /></Box></Box></Stack></Box>;
+function FactorScore({ factorKey, label, score, explanation, evidencePassageId }: { factorKey: string; label: string; score: number; explanation: string; evidencePassageId: string }) {
+  const help = FACTOR_HELP[factorKey];
+  return <Box sx={{ py: 2, '&:first-of-type': { pt: 0 }, '&:last-of-type': { pb: 0 } }}><Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ justifyContent: 'space-between', alignItems: { sm: 'flex-start' } }}><Box sx={{ minWidth: 0 }}><Stack direction="row" spacing={0.25} sx={{ alignItems: 'center' }}><Typography sx={{ fontWeight: 800 }}>{label}</Typography>{help && <Tooltip arrow placement="top" enterTouchDelay={0} leaveTouchDelay={6000} title={<Box sx={{ py: 0.5 }}><Typography variant="subtitle2" sx={{ mb: 0.5 }}>{label}</Typography><Typography variant="body2" sx={{ lineHeight: 1.45 }}>{help}</Typography></Box>} slotProps={{ tooltip: { sx: { maxWidth: 340, p: 1.5 } } }}><IconButton size="small" aria-label={`What ${label} means`} sx={{ p: 0.4, color: 'text.secondary', '&:hover, &:focus-visible': { color: 'primary.main', bgcolor: 'primary.light' } }}><InfoOutlinedIcon sx={{ fontSize: 18 }} /></IconButton></Tooltip>}</Stack><Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, lineHeight: 1.55 }}>{explanation}</Typography>{evidencePassageId !== 'none' && <Link href={`#passage-${evidencePassageId}`} underline="hover" variant="caption" sx={{ display: 'inline-block', mt: 0.75, fontWeight: 700 }}>View {evidencePassageId}</Link>}</Box><Box sx={{ width: 110, flexShrink: 0, pt: 0.25 }}><Typography variant="caption" sx={{ display: 'block', textAlign: 'right', fontWeight: 800 }}>{score.toFixed(1)} / 100</Typography><Box sx={{ height: 8, mt: 0.5, borderRadius: 99, bgcolor: 'divider', overflow: 'hidden' }}><Box sx={{ width: `${Math.max(0, Math.min(100, score))}%`, height: '100%', bgcolor: 'primary.main' }} /></Box></Box></Stack></Box>;
 }
 
 function SignalCard({ title, values, empty, icon, tone = 'default' }: { title: string; values: string[]; empty: string; icon: React.ReactNode; tone?: 'default' | 'info' | 'warning' | 'error' }) {

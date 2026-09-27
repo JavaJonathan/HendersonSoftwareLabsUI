@@ -1,14 +1,17 @@
-import { Box, CardActionArea, Chip, Paper, Stack, Typography } from '@mui/material';
+import { Box, CardActionArea, Chip, Paper, Stack, Tooltip, Typography } from '@mui/material';
+import BlockOutlinedIcon from '@mui/icons-material/BlockOutlined';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
+import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
+import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
+import HistoryToggleOffRoundedIcon from '@mui/icons-material/HistoryToggleOffRounded';
 import LanguageOutlinedIcon from '@mui/icons-material/LanguageOutlined';
 import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
+import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
 import WorkOutlineRoundedIcon from '@mui/icons-material/WorkOutlineRounded';
 import { Link as RouterLink } from 'react-router-dom';
-import { RECOMMENDATION_META, SOURCE_TYPE_LABELS, formatProspectType, type OpportunitySummary } from '../../api/opportunities';
-
-const accentByRecommendation: Record<string, string> = {
-  Pursue: '#16a34a', Prioritize: '#16a34a', Investigate: '#d97706', Watch: '#d97706', Pass: '#94a3b8', Skip: '#94a3b8',
-};
+import { getOpportunitySignal, SOURCE_TYPE_LABELS, TONE_HEX, formatProspectType, type OpportunitySummary } from '../../api/opportunities';
+import { Flag } from './OpportunityTable';
 
 function MetaItem({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', color: 'text.secondary', minWidth: 0 }}>
@@ -17,13 +20,9 @@ function MetaItem({ icon, children }: { icon: React.ReactNode; children: React.R
   </Stack>;
 }
 
-export function OpportunityRow({ item, to, rank, compact = false }: {
-  item: OpportunitySummary;
-  to: string;
-  rank?: number;
-  compact?: boolean;
-}) {
-  const accent = item.recommendation ? accentByRecommendation[item.recommendation] : '#cbd5e1';
+export function OpportunityRow({ item, to, rank }: { item: OpportunitySummary; to: string; rank?: number }) {
+  const signal = getOpportunitySignal(item);
+  const accent = signal ? TONE_HEX[signal.chipColor] : '#cbd5e1';
   return (
     <Paper variant="outlined"
       sx={{
@@ -36,36 +35,49 @@ export function OpportunityRow({ item, to, rank, compact = false }: {
         component={RouterLink}
         to={to}
         sx={{
-          p: compact ? { xs: 2, sm: 2.25 } : { xs: 2.25, md: 2.75 }, pl: compact ? { xs: 2.5, sm: 2.75 } : { xs: 2.75, md: 3.25 },
+          p: { xs: 2, sm: 2.25 }, pl: { xs: 2.5, sm: 2.75 },
           alignItems: 'stretch',
           '&.Mui-focusVisible': { boxShadow: 'inset 0 0 0 3px rgba(37,99,235,.32)' },
         }}
       >
-        <Stack direction="row" spacing={compact ? 1.5 : 2} sx={{ alignItems: 'flex-start' }}>
+        <Stack direction="row" spacing={1.5} sx={{ alignItems: 'flex-start' }}>
           {rank !== undefined && <Box sx={{
             width: 30, height: 30, borderRadius: '50%', bgcolor: 'primary.light', color: 'primary.main', flexShrink: 0,
             display: 'grid', placeItems: 'center', fontFamily: '"Plus Jakarta Sans"', fontWeight: 800, fontSize: 13,
           }}>{rank}</Box>}
           <Box sx={{ minWidth: 0, flexGrow: 1 }}>
-            <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap', mb: 1 }}>
-              {item.recommendation && <Chip size="small" color={RECOMMENDATION_META[item.recommendation].chipColor} label={item.recommendation} />}
-              {item.priorityBand && <Chip size="small" variant="outlined" label={`${item.priorityBand} priority`} />}
-              {item.opportunityScore != null && <Chip size="small" variant="outlined" label={`Score ${item.opportunityScore.toFixed(1)}`} />}
-              {item.jevConfidence != null && <Chip size="small" variant="outlined" label={`Jev confidence ${Math.round(item.jevConfidence * 100)}%`} />}
+            <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center', mb: 0.75 }}>
+              {signal
+                ? <Chip size="small" color={signal.chipColor} variant={signal.chipVariant} label={item.recommendation} />
+                : <Typography variant="caption" color="text.secondary">Not evaluated</Typography>}
+              {signal?.icon === 'verify' && <Flag show label={signal.iconTooltip ?? ''} icon={<FactCheckOutlinedIcon />} color="success.main" />}
+              {signal?.icon === 'blocked' && <Flag show label={signal.iconTooltip ?? ''} icon={<BlockOutlinedIcon />} color="text.secondary" />}
               {item.prospectType && <Chip size="small" variant="outlined" label={formatProspectType(item.prospectType)} />}
-              {item.needsVerification && <Chip size="small" color="warning" label="Needs verification" />}
-              {item.evaluationStatus === 'Failed' && <Chip size="small" color="error" label="Provider failure" />}
-              {item.evaluationStatus === 'Stale' && <Chip size="small" color="warning" label="Reevaluation required" />}
-              {item.duplicateOfId && <Chip size="small" color="warning" variant="outlined" label="Possible duplicate" />}
-              {item.isSynthetic && <Chip size="small" color="info" variant="outlined" label="Synthetic" />}
+              <Flag show={item.evaluationStatus === 'Failed'} label="Provider failure" icon={<ErrorOutlineRoundedIcon />} color="error.main" />
+              <Flag show={item.evaluationStatus === 'Stale'} label="Reevaluation required" icon={<HistoryToggleOffRoundedIcon />} color="warning.main" />
+              <Flag show={!!item.duplicateOfId} label="Possible duplicate" icon={<ContentCopyOutlinedIcon />} color="warning.main" />
+              <Flag show={item.isSynthetic} label="Synthetic example" icon={<ScienceOutlinedIcon />} color="info.main" />
             </Stack>
-            <Typography variant="h6" sx={{ fontSize: compact ? 16 : 18, overflowWrap: 'anywhere', lineHeight: 1.35 }}>{item.title}</Typography>
+            <Typography variant="h6" sx={{ fontSize: 16, overflowWrap: 'anywhere', lineHeight: 1.35 }}>{item.title}</Typography>
+            {item.opportunityScore != null && <Tooltip title="Score is Jev's weighted composite of factor ratings (0-100), not a probability. Confidence is separate: how sure Jev is about those ratings, not how good the opportunity is.">
+              <Stack direction="row" spacing={0.75} sx={{ alignItems: 'baseline', mt: 0.5, cursor: 'help' }}>
+                <Typography sx={{ fontWeight: 800, fontSize: 15, lineHeight: 1.2, color: signal?.scoreColor ?? 'text.secondary' }}>
+                  {item.opportunityScore.toFixed(1)}<Box component="span" sx={{ fontWeight: 400, fontSize: '0.7em', color: 'text.secondary', ml: 0.25 }}>/100</Box>
+                </Typography>
+                {(item.jevConfidence != null || item.topFactorLabel) && <Typography variant="caption" color="text.secondary" noWrap>
+                  {[
+                    item.jevConfidence != null ? `${Math.round(item.jevConfidence * 100)}% confidence` : null,
+                    item.topFactorLabel ? `mostly ${item.topFactorLabel.toLowerCase()}` : null,
+                  ].filter(Boolean).join(' · ')}
+                </Typography>}
+              </Stack>
+            </Tooltip>}
             <Typography
               color="text.secondary"
-              variant={compact ? 'body2' : 'body1'}
-              sx={{ mt: 0.5, lineHeight: 1.55, display: '-webkit-box', WebkitLineClamp: compact ? 1 : 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
+              variant="body2"
+              sx={{ mt: 0.75, lineHeight: 1.55, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
             >
-              {item.summary ?? item.preview}
+              {item.preview}
             </Typography>
             <Stack direction="row" spacing={1.5} useFlexGap sx={{ mt: 1.25, flexWrap: 'wrap' }}>
               {item.entityType === 'ActiveProject' ? <>

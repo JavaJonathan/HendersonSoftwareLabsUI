@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Alert, Autocomplete, Box, Button, Checkbox, Container, FormControl, FormControlLabel, IconButton,
-  InputAdornment, InputLabel, Menu, MenuItem, Pagination, Paper, Select, Skeleton, Stack, Tab, Tabs, TextField,
-  Typography, useMediaQuery,
+  InputAdornment, InputLabel, Menu, MenuItem, Pagination, Paper, Select, Skeleton, Stack, Tab, Table, TableBody,
+  TableCell, TableContainer, TableRow, Tabs, TextField, Typography, useMediaQuery,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import AddIcon from '@mui/icons-material/Add';
@@ -20,7 +20,7 @@ import UploadFileOutlinedIcon from '@mui/icons-material/UploadFileOutlined';
 import { AuthedAppBar } from '../components/layout/AuthedAppBar';
 import { EvaluationDialog } from '../components/opportunities/EvaluationDialog';
 import { OpportunityLaneTabs } from '../components/opportunities/OpportunityLaneTabs';
-import { OpportunityRow } from '../components/opportunities/OpportunityRow';
+import { OpportunityTable, OpportunityTableHead, SignalLegend } from '../components/opportunities/OpportunityTable';
 import { RadarDialog } from '../components/opportunities/RadarDialog';
 import { RadarPageHeader } from '../components/opportunities/RadarPageHeader';
 import { SURFACE_SUBTLE } from '../theme';
@@ -216,14 +216,28 @@ export function OpportunityRadarPage({ entityType }: { entityType: OpportunityEn
         {filterCount > 0 && <Stack direction="row" spacing={1} sx={{ mt: 1.5, alignItems: 'center' }}><TuneRoundedIcon sx={{ fontSize: 17, color: 'text.secondary' }} /><Typography variant="caption" color="text.secondary">{filterCount} active {filterCount === 1 ? 'filter' : 'filters'}</Typography><Button size="small" onClick={clearFilters} sx={{ py: 0.25, px: 1.25 }}>Clear filters</Button></Stack>}
       </Paper>
 
-      {loading && <Stack spacing={1.5} aria-label="Loading opportunities">{[0, 1, 2].map(item => <Paper key={item} variant="outlined" sx={{ p: { xs: 2.25, md: 2.75 }, borderRadius: 3 }}><Skeleton width={160} height={28} /><Skeleton width="54%" height={32} /><Skeleton width="88%" /><Skeleton width="70%" /></Paper>)}</Stack>}
+      {loading && <TableContainer component={Paper} variant="outlined" role="status" aria-label="Loading opportunities" sx={{ borderRadius: 3, '& td, & th': { px: { xs: 1.5, sm: 2 } } }}>
+        <Table><OpportunityTableHead entityType={entityType} /><TableBody>{[0, 1, 2].map(row => <TableRow key={row}>
+          <TableCell><Skeleton width="60%" /><Skeleton width="35%" sx={{ mt: 0.5 }} /></TableCell>
+          <TableCell><Skeleton width={90} height={32} /></TableCell>
+          <TableCell align="right" sx={{ display: { xs: 'none', sm: 'table-cell' } }}><Skeleton width={70} sx={{ ml: 'auto' }} /></TableCell>
+          <TableCell sx={{ width: { xs: 36, sm: 56 } }} />
+        </TableRow>)}</TableBody></Table>
+      </TableContainer>}
       {!loading && !error && list?.total === 0 && <Paper variant="outlined" sx={{ p: { xs: 3.5, md: 6 }, textAlign: 'center', borderRadius: 3, borderStyle: 'dashed' }}>
         <Box sx={{ width: 48, height: 48, borderRadius: '50%', bgcolor: 'primary.light', color: 'primary.main', display: 'grid', placeItems: 'center', mx: 'auto', mb: 1.5 }}>{filterCount ? <SearchRoundedIcon /> : <AutoAwesomeIcon />}</Box>
         <Typography variant="h6">{filterCount ? 'No matches in this view' : 'Your pipeline is ready'}</Typography>
         <Typography color="text.secondary" sx={{ mt: 0.5, mb: 2.5, maxWidth: 520, mx: 'auto' }}>{filterCount ? 'Try broadening the search or clearing one of the active filters.' : entityType === 'ActiveProject' ? 'Import a public project description or load the synthetic examples to explore the workflow.' : 'Import a public business research note or load the synthetic examples to explore the workflow.'}</Typography>
         {filterCount ? <Button variant="outlined" onClick={clearFilters}>Clear filters</Button> : <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ justifyContent: 'center' }}><Button variant="contained" startIcon={<AddIcon />} onClick={() => setImportOpen(true)}>Import</Button><Button variant="outlined" onClick={loadSamples} disabled={busy}>Load synthetic examples</Button></Stack>}
       </Paper>}
-      {!loading && !!list?.items.length && <><Stack direction="row" sx={{ mb: 1.5, alignItems: 'baseline', justifyContent: 'space-between' }}><Typography ref={resultsHeadingRef} tabIndex={-1} variant="body2" sx={{ fontWeight: 700, outline: 'none' }}>{list.total.toLocaleString()} {list.total === 1 ? 'result' : 'results'}</Typography><Typography variant="caption" color="text.secondary">Showing {start}-{end}</Typography></Stack><Stack spacing={1.5}>{list.items.map(item => <OpportunityRow key={item.id} item={item} to={`/admin/opportunities/${item.id}`} />)}</Stack></>}
+      {!loading && !!list?.items.length && <>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 1, sm: 2 }} sx={{ mb: 1.5, alignItems: { sm: 'baseline' }, justifyContent: 'space-between' }}>
+          <Typography ref={resultsHeadingRef} tabIndex={-1} variant="body2" sx={{ fontWeight: 700, outline: 'none' }}>{list.total.toLocaleString()} {list.total === 1 ? 'result' : 'results'}, ranked by score, strongest first</Typography>
+          <Typography variant="caption" color="text.secondary">Showing {start}-{end}</Typography>
+        </Stack>
+        <Box sx={{ mb: 1.5 }}><SignalLegend /></Box>
+        <OpportunityTable items={list.items} entityType={entityType} />
+      </>}
       {!!list && list.total > list.pageSize && <Pagination sx={{ mt: 3.5, display: 'flex', justifyContent: 'center' }} count={Math.ceil(list.total / list.pageSize)} page={page} onChange={(_, value) => { setParam('page', value, false); window.setTimeout(() => resultsHeadingRef.current?.focus(), 0); }} />}
     </Container>
     <ImportDialog open={importOpen} fullScreen={fullScreen} entityType={entityType} onClose={() => setImportOpen(false)} onImported={message => { setImportOpen(false); setNotice(message); setRefresh(value => value + 1); }} />

@@ -46,7 +46,7 @@ function DigestColumn({ title, description, items, requested, returned }: {
         <Box sx={{ px: 1.25, py: 0.5, borderRadius: 999, bgcolor: returned < requested ? '#fff7ed' : 'primary.light', flexShrink: 0 }}><Typography variant="caption" color={returned < requested ? 'warning.main' : 'primary.main'} sx={{ fontWeight: 800 }}>{returned} / {requested}</Typography></Box>
       </Stack>
     </Paper>
-    {items.length ? <Stack spacing={1.5}>{items.map((item, index) => <OpportunityRow key={item.id} item={item} to={`/admin/opportunities/${item.id}`} rank={index + 1} compact />)}</Stack>
+    {items.length ? <Stack spacing={1.5}>{items.map((item, index) => <OpportunityRow key={item.id} item={item} to={`/admin/opportunities/${item.id}`} rank={index + 1} />)}</Stack>
       : <Paper variant="outlined" sx={{ p: { xs: 3, md: 4 }, textAlign: 'center', borderRadius: 3, borderStyle: 'dashed' }}>
         <AutoAwesomeIcon color="disabled" /><Typography color="text.secondary" sx={{ mt: 0.75 }}>Nothing qualifies today.</Typography>
       </Paper>}
