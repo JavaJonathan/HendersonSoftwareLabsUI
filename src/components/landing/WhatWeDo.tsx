@@ -12,32 +12,32 @@ const ITEMS = [
   {
     title: 'Workflow Automation',
     description:
-      'Eliminate repetitive admin work and streamline recurring processes - like spreadsheet updates you re-type every week.',
+      'Automate one repetitive process, such as recurring reports, document handling, or order updates. Start with a focused improvement your team can use.',
     icon: SettingsOutlinedIcon,
   },
   {
-    title: 'System Integrations',
+    title: 'Custom Internal Software & Integrations',
     description:
-      "Connect the tools your business already uses so data flows where it should - like keeping order and shipping information in sync.",
+      'Build dashboards, lookup tools, portals, and connected systems around the way your business operates, replacing fragile spreadsheet and email handoffs.',
     icon: ExtensionOutlinedIcon,
   },
   {
-    title: 'Custom Internal Tools',
+    title: 'Ongoing Software Partnership',
     description:
-      'Build lightweight software tailored to your operations and team - like searching several systems from one screen.',
+      'After launch, continue with agreed maintenance, support, and improvements as your business evolves. Expand into adjacent workflows when it makes sense.',
     icon: ViewModuleOutlinedIcon,
   },
 ];
 
 export function WhatWeDo() {
   return (
-    <Container maxWidth="lg" id="what-we-do" sx={{ pt: { xs: 3, md: 4 }, pb: { xs: 4, md: 5 } }}>
+    <Container component="section" aria-labelledby="services-heading" maxWidth="lg" id="what-we-do" sx={{ pt: { xs: 3, md: 4 }, pb: { xs: 4, md: 5 }, scrollMarginTop: 100 }}>
       <Reveal>
         <Box sx={{ textAlign: 'center', mb: 4 }}>
           <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: 1 }}>
             What We Do
           </Typography>
-          <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mt: 1 }}>
+          <Typography id="services-heading" component="h2" variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mt: 1 }}>
             Solutions built around how you work.
           </Typography>
         </Box>
@@ -85,7 +85,7 @@ export function WhatWeDo() {
               >
                 <Icon />
               </Box>
-              <Typography sx={{ fontWeight: 700, color: 'text.primary' }}>{title}</Typography>
+              <Typography component="h3" sx={{ fontWeight: 700, color: 'text.primary' }}>{title}</Typography>
               <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
                 {description}
               </Typography>

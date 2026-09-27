@@ -7,28 +7,33 @@ import { Reveal } from '../motion/Reveal';
 
 const STEPS = [
   {
-    title: 'Discover',
-    description: 'We identify the bottlenecks slowing your business down.',
-    outcome: 'A clear plan and a fixed quote',
+    title: 'Understand the bottleneck',
+    description: 'An initial conversation helps us understand the work, the tools involved, and whether we can help.',
+    outcome: 'A shared understanding of the problem',
   },
   {
-    title: 'Build',
-    description: 'We create the right automation, integration, or tool for the job.',
-    outcome: 'Working software, tested and yours',
+    title: 'Scope the first win',
+    description: 'Where needed, a scoped paid discovery maps the workflow. We agree the first project and proposal before building.',
+    outcome: 'A focused scope and project proposal',
   },
   {
-    title: 'Support',
-    description: 'We help you launch, refine, and maintain what we build.',
-    outcome: 'It keeps running - and improving',
+    title: 'Build and launch',
+    description: 'We build, test, and introduce the software to the people who will use it.',
+    outcome: 'A practical solution ready to use',
+  },
+  {
+    title: 'Support and improve',
+    description: 'Choose ongoing maintenance, support, and improvements with an agreed scope as your needs evolve.',
+    outcome: 'An optional ongoing partnership',
   },
 ];
 
 const CYCLE_MS = 3400;
-/** Distance from each edge to the first / last circle centre in a 3-column grid (1/6). */
-const TRACK_INSET = 16.667;
+/** Distance from each edge to the first / last circle centre in the desktop grid. */
+const TRACK_INSET = 100 / (STEPS.length * 2);
 
 /**
- * The three-step process. A single marker travels 1 → 2 → 3 on a slow loop, filling the
+ * The four-step process. A single marker travels through the steps on a slow loop, filling the
  * track behind it and lighting up each step as it arrives; hovering or focusing a step
  * pins the marker there so you can read it. Collapses to a still, stacked layout under
  * reduced motion.
@@ -49,25 +54,25 @@ export function HowItWorks() {
   const fill = reduce ? 1 : shown / (STEPS.length - 1);
 
   return (
-    <Container maxWidth="lg" id="how-it-works" sx={{ py: { xs: 4, md: 6 } }}>
+    <Container component="section" aria-labelledby="process-heading" maxWidth="lg" id="how-it-works" sx={{ py: { xs: 4, md: 6 }, scrollMarginTop: 100 }}>
       <Reveal>
         <Box sx={{ textAlign: 'center', mb: { xs: 4, md: 5 } }}>
           <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: 1 }}>
             How It Works
           </Typography>
-          <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mt: 1 }}>
+          <Typography id="process-heading" component="h2" variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mt: 1 }}>
             A simple process. Real results.
           </Typography>
         </Box>
       </Reveal>
 
       <Reveal delay={0.08} fullWidth>
-        <Box sx={{ position: 'relative', maxWidth: 880, mx: 'auto' }}>
+        <Box sx={{ position: 'relative', mx: 'auto' }}>
           {/* the track the marker runs along (desktop) */}
           <Box
             aria-hidden
             sx={{
-              display: { xs: 'none', sm: 'block' },
+              display: { xs: 'none', md: 'block' },
               position: 'absolute',
               top: 24,
               left: `${TRACK_INSET}%`,
@@ -106,7 +111,7 @@ export function HowItWorks() {
           <Box
             sx={{
               display: 'grid',
-              gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
+              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: `repeat(${STEPS.length}, 1fr)` },
               gap: { xs: 4, sm: 2 },
             }}
           >

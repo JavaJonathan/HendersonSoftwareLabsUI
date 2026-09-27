@@ -6,7 +6,7 @@ import { usePageMeta } from '../hooks/usePageMeta';
 import { submitInquiry } from '../api/inquiries';
 
 export function ContactPage() {
-  usePageMeta({ title: 'Contact | Henderson Software Labs', description: 'Tell Jonathan about the business task that is slowing you down.', canonical: 'https://hendersonsoftwarelabs.com/contact' });
+  usePageMeta({ title: 'Contact | Henderson Software Labs', description: 'Discuss workflow automation, custom internal software, ongoing support, an application audit, or a business website with Jonathan.', canonical: 'https://hendersonsoftwarelabs.com/contact' });
   const [values, setValues] = useState({ name: '', email: '', message: '', website: '' });
   const [busy, setBusy] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -42,7 +42,8 @@ export function ContactPage() {
 
   return <><NavBar /><Container component="main" maxWidth="sm" sx={{ py: { xs: 5, md: 8 } }}>
     <Typography variant="h3" component="h1" sx={{ fontSize: { xs: 32, md: 42 }, mb: 2 }}>Tell me what’s slowing you down.</Typography>
-    <Typography color="text.secondary" sx={{ mb: 4 }}>Describe the task and the tools you use. You don’t need a technical specification.</Typography>
+    <Typography color="text.secondary" sx={{ mb: 2 }}>Tell us how the work happens today, how often it comes up, which tools you use, and what you’d like to improve. You don’t need a technical specification.</Typography>
+    <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>You can also get in touch about existing software, ongoing support, a production-readiness audit, or a business website. Jonathan will reply to discuss whether HSL is a good fit and suggest a next step.</Typography>
     <Paper variant="outlined" sx={{ p: { xs: 2.5, sm: 4 } }}>
       {success ? <Alert severity="success" tabIndex={-1} ref={notice}>Thanks for getting in touch. Your inquiry has been received. Jonathan will reply by email.</Alert>
         : <Box component="form" noValidate onSubmit={submit} aria-busy={busy}>

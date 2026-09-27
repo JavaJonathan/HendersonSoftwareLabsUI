@@ -33,7 +33,7 @@ export function CalculatorPromo() {
               <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: 1 }}>
                 Free Tool
               </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mt: 1 }}>
+              <Typography component="h2" variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mt: 1 }}>
                 Not sure a task is worth fixing? Run the numbers first.
               </Typography>
               <Typography sx={{ mt: 2, color: 'text.secondary', fontSize: 16, lineHeight: 1.6, maxWidth: 480 }}>

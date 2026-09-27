@@ -29,7 +29,7 @@ export function Hero() {
           <Box>
             <Reveal>
               <Chip
-                label="On-Demand Software Engineering"
+                label="Custom Software & Workflow Automation"
                 icon={<Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'primary.main', ml: '10px' }} />}
                 sx={{ bgcolor: 'primary.light', color: 'primary.main', fontSize: 13, mb: { xs: 2.5, md: 3 } }}
               />
@@ -40,9 +40,9 @@ export function Hero() {
                 variant="h1"
                 sx={{ fontSize: { xs: 33, md: 50 }, color: 'text.primary', lineHeight: { xs: 1.18, md: 1.12 }, textWrap: 'balance' }}
               >
-                Custom software for businesses that don't need{' '}
+                Remove the manual work{' '}
                 <Box component="span" sx={{ color: 'primary.main' }}>
-                  a full{'‑'}time software team
+                  slowing down your business
                 </Box>
                 .
               </Typography>
@@ -50,8 +50,11 @@ export function Hero() {
 
             <Reveal delay={0.16}>
               <Typography sx={{ mt: { xs: 2.5, md: 3 }, maxWidth: 500, color: 'text.secondary', fontSize: { xs: 16, md: 17 }, lineHeight: 1.6 }}>
-                We build the internal tools, automations, and integrations that take the busywork off
-                your team - without the overhead of hiring.
+                We build practical software, automations, and integrations that reduce repetitive
+                tasks, connect your systems, and give your team time back.
+              </Typography>
+              <Typography variant="body2" sx={{ mt: 1.5, maxWidth: 500, color: 'text.secondary' }}>
+                Custom software for businesses that don’t need a full-time software team.
               </Typography>
             </Reveal>
 
@@ -67,7 +70,7 @@ export function Hero() {
                     variant="contained"
                     size="large"
                     component={RouterLink}
-              to="/contact"
+                    to="/contact"
                     endIcon={<ArrowForwardIcon />}
                   >
                     What’s slowing you down?
@@ -75,7 +78,7 @@ export function Hero() {
                 </MagneticWrap>
 
                 <Link
-                  href="#how-it-works"
+                  href="#what-we-do"
                   underline="none"
                   sx={{
                     display: 'inline-flex',
@@ -90,7 +93,7 @@ export function Hero() {
                     '&:hover svg': { transform: 'translateX(3px)' },
                   }}
                 >
-                  See how it works
+                  See what we build
                   <ArrowForwardIcon />
                 </Link>
               </Stack>

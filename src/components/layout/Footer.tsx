@@ -106,7 +106,7 @@ export function Footer() {
               <Box component="img" src={wordmark} alt="" sx={{ height: 38, width: 'auto', display: 'block', userSelect: 'none' }} />
             </Box>
             <Typography variant="body2" sx={{ mt: 2.5, maxWidth: 300, color: 'rgba(255,255,255,0.55)' }}>
-              Custom software and automation for small businesses.
+              Practical software and workflow automation that remove repetitive work from growing businesses.
             </Typography>
             <LiveClock />
           </Box>

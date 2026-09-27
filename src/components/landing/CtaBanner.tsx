@@ -52,12 +52,12 @@ export function CtaBanner() {
             </Box>
 
             <Box sx={{ flexGrow: 1 }}>
-              <Typography variant="h5" sx={{ fontWeight: 800, color: 'white' }}>
-                Let's simplify how your business runs.
+              <Typography component="h2" variant="h5" sx={{ fontWeight: 800, color: 'white' }}>
+                What repetitive work is costing your business time?
               </Typography>
               <Typography sx={{ mt: 1, color: 'rgba(255,255,255,0.7)' }}>
-                That's what automation buys you: less busywork, no new hire. Let's talk about
-                what's piling up in yours.
+                Tell us about the task, how often it happens, and the tools involved.
+                You don’t need a technical specification. We’ll help determine whether software could help.
               </Typography>
             </Box>
 

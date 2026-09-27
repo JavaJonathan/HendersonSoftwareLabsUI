@@ -8,6 +8,8 @@ import { HowItWorks } from '../components/landing/HowItWorks';
 import { Faq } from '../components/landing/Faq';
 import { CtaBanner } from '../components/landing/CtaBanner';
 import { ScrollProgressBar } from '../components/motion/ScrollProgressBar';
+import { WorkflowRecognition } from '../components/landing/WorkflowRecognition';
+import { SecondaryOffers } from '../components/landing/SecondaryOffers';
 
 export function HomePage() {
   return (
@@ -15,9 +17,11 @@ export function HomePage() {
       <ScrollProgressBar />
       <NavBar />
       <Hero />
+      <WorkflowRecognition />
       <WhatWeDo />
       <HowItWorks />
       <CalculatorPromo />
+      <SecondaryOffers />
       <TheLine />
       <Faq />
       <CtaBanner />

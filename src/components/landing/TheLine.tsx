@@ -492,15 +492,15 @@ export function TheLine() {
       <Reveal>
         <Box sx={{ textAlign: 'center', mb: 3 }}>
           <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 700, letterSpacing: 1 }}>
-            Interactive shared game
+            Interactive automation illustration
           </Typography>
-          <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mt: 1 }}>
+          <Typography component="h2" variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mt: 1 }}>
             Work piles up. Clear some.
           </Typography>
           <Typography sx={{ mt: 1.5, color: 'text.secondary', maxWidth: 620, mx: 'auto' }}>
             Live and shared with everyone here right now, not just you. Click to clear a lane by
             hand, or let the automated ones handle themselves - a small, playful demo of what
-            automation buys a business.
+            automation can do. This game illustrates the idea; it is not a forecast of project results.
           </Typography>
         </Box>
       </Reveal>
