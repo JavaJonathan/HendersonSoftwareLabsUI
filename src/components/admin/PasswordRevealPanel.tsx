@@ -6,6 +6,7 @@ import Alert from '@mui/material/Alert';
 import IconButton from '@mui/material/IconButton';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
+import { copyToClipboard } from '../../lib/clipboard';
 import { SURFACE_SUBTLE } from '../../theme';
 
 const MONOSPACE = '"SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace';
@@ -27,13 +28,12 @@ export function PasswordRevealPanel({ password }: PasswordRevealPanelProps) {
   );
 
   async function handleCopy() {
-    // Clipboard access rejects on a non-secure origin or a denied permission. This is the one
-    // screen where a silent failure costs the admin a password they can never see again.
-    try {
-      await navigator.clipboard.writeText(password);
+    // This is the one screen where a silent failure costs the admin a password they can never
+    // see again, so copyToClipboard's execCommand fallback matters here more than anywhere else.
+    if (await copyToClipboard(password)) {
       setCopied(true);
       setCopyFailed(false);
-    } catch {
+    } else {
       setCopied(false);
       setCopyFailed(true);
     }

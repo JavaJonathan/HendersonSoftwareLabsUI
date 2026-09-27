@@ -1,25 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { Alert, Box, Button, Chip, CircularProgress, Container, Dialog, DialogActions, DialogContent, DialogTitle, Divider, FormControl, FormHelperText, IconButton, InputLabel, Link, MenuItem, Pagination, Paper, Select, Stack, Typography, useMediaQuery } from '@mui/material';
+import { Alert, Box, Button, Chip, CircularProgress, Container, Divider, FormControl, FormHelperText, InputLabel, Link, MenuItem, Pagination, Paper, Select, Stack, Typography, useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import CloseIcon from '@mui/icons-material/Close';
 import EmailIcon from '@mui/icons-material/Email';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { AuthedAppBar } from '../components/layout/AuthedAppBar';
+import { AppDialog } from '../components/common/AppDialog';
+import { copyToClipboard } from '../lib/clipboard';
 import { SURFACE_SUBTLE } from '../theme';
 import { getInquiries, getInquiry, updateInquiryStatus, type Inquiry, type InquiryList, type InquiryStatus } from '../api/inquiries';
-
-const TITLE_SX = {
-  fontFamily: '"Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif',
-  fontWeight: 800,
-  fontSize: 20,
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: 2,
-};
 
 /** Chip color and menu-dot color share one source so the list, the dialog chip and the status
  * picker all agree on what New/Contacted/Archived look like. */
@@ -74,8 +65,7 @@ export function AdminInquiriesPage() {
   }
   async function copyEmail() {
     if (!selected) return;
-    try { await navigator.clipboard.writeText(selected.email); setCopyState('copied'); }
-    catch { setCopyState('failed'); }
+    setCopyState(await copyToClipboard(selected.email) ? 'copied' : 'failed');
   }
 
   return <Box sx={{ minHeight: '100vh', bgcolor: SURFACE_SUBTLE }}><AuthedAppBar /><Container component="main" maxWidth="lg" sx={{ py: { xs: 4, md: 6 } }}>
@@ -101,13 +91,8 @@ export function AdminInquiriesPage() {
       </Paper>)}</Stack>
       {!!list && list.total > 25 && <Pagination sx={{ mt: 3 }} count={Math.ceil(list.total / 25)} page={page} onChange={(_, value) => setPage(value)} />}
     </>}
-    <Dialog open={open} onClose={close} fullScreen={fullScreen} fullWidth maxWidth="sm" aria-labelledby="inquiry-title" slotProps={{ paper: { sx: { borderRadius: fullScreen ? 0 : 4, overflow: 'hidden' } } }}>
-      <Box sx={{ height: 5, background: 'linear-gradient(90deg, #2563eb, #60a5fa)' }} />
-      <DialogTitle id="inquiry-title" sx={TITLE_SX}>
-        <Box component="span" sx={{ overflowWrap: 'anywhere', minWidth: 0 }}>{selected?.name ?? 'Inquiry'}</Box>
-        <IconButton aria-label="Close" size="small" onClick={close} disabled={busy} sx={{ color: 'text.secondary', mr: -1, flexShrink: 0 }}><CloseIcon fontSize="small" /></IconButton>
-      </DialogTitle>
-      <DialogContent sx={{ pt: 1 }}>
+    <AppDialog open={open} fullScreen={fullScreen} maxWidth="sm" title={selected?.name ?? 'Inquiry'} busy={busy} onClose={close}
+      actions={<Button onClick={close} disabled={busy}>Close</Button>}>
         {detailError && <Alert severity="error" sx={{ mb: 2 }}>{detailError}</Alert>}
         {!selected && !detailError && <Typography role="status">Loading inquiry…</Typography>}
         {selected && <Stack spacing={2.5}>
@@ -154,7 +139,6 @@ export function AdminInquiriesPage() {
             </FormHelperText>
           </FormControl>
         </Stack>}
-      </DialogContent><DialogActions sx={{ px: 3, pb: 2.5 }}><Button onClick={close} disabled={busy}>Close</Button></DialogActions>
-    </Dialog>
+    </AppDialog>
   </Container></Box>;
 }

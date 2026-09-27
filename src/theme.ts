@@ -9,6 +9,17 @@ export const SURFACE_SUBTLE = '#f8fafc';
 /** Dark brand surface used for hero-style panels on a dark background (CTA banner, footer, login branding panel). */
 export const SURFACE_DARK = '#0b1734';
 
+/** The primary-to-light-blue accent bar/line used atop every dialog (see AppDialog), the login panel, and the scroll progress bar. */
+export const ACCENT_GRADIENT = 'linear-gradient(90deg, #2563eb, #60a5fa)';
+
+/** Generic severity tint (background/foreground/border) for callouts and panels that need a tone outside MUI's own Alert/Chip palette. */
+export const SEVERITY_TINT: Record<'info' | 'warning' | 'error' | 'default', { bg: string; fg: string; border: string }> = {
+  info: { bg: '#eff6ff', fg: '#2563eb', border: '#bfdbfe' },
+  warning: { bg: '#fff7ed', fg: '#c2410c', border: '#fed7aa' },
+  error: { bg: '#fef2f2', fg: '#b91c1c', border: '#fecaca' },
+  default: { bg: '#ffffff', fg: '#475569', border: '#e2e8f0' },
+};
+
 export const theme = createTheme({
   palette: {
     primary: {

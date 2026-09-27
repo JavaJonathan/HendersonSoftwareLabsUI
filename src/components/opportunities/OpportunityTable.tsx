@@ -10,8 +10,9 @@ import HistoryToggleOffRoundedIcon from '@mui/icons-material/HistoryToggleOffRou
 import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import {
-  getOpportunitySignal, SOURCE_TYPE_LABELS, TONE_HEX, type OpportunityEntityType, type OpportunitySummary,
+  confidenceCaption, getOpportunitySignal, SOURCE_TYPE_LABELS, TONE_HEX, type OpportunityEntityType, type OpportunitySummary,
 } from '../../api/opportunities';
+import { Flag } from './OpportunitySignals';
 import { SURFACE_SUBTLE } from '../../theme';
 
 const HIDE_BELOW_SM = { display: { xs: 'none', sm: 'table-cell' } };
@@ -48,11 +49,6 @@ function metaLine(item: OpportunitySummary) {
   return parts.filter(Boolean).join(' · ');
 }
 
-export function Flag({ show, label, icon, color }: { show: boolean; label: string; icon: React.ReactNode; color: string }) {
-  if (!show) return null;
-  return <Tooltip title={label}><Box sx={{ display: 'inline-flex', color, verticalAlign: 'middle', '& svg': { fontSize: 18 } }}>{icon}</Box></Tooltip>;
-}
-
 /** Rendered by both the skeleton and the loaded table so the two have identical geometry. */
 export function OpportunityTableHead({ entityType }: { entityType: OpportunityEntityType }) {
   return (
@@ -86,6 +82,7 @@ export function OpportunityTable({ items, entityType }: { items: OpportunitySumm
             const meta = metaLine(item);
             const signal = getOpportunitySignal(item);
             const liveJev = item.evaluationProvider === 'Jev' && item.evaluationStatus === 'Ready';
+            const caption = confidenceCaption(item);
             return (
               <TableRow
                 key={item.id}
@@ -133,12 +130,7 @@ export function OpportunityTable({ items, entityType }: { items: OpportunitySumm
                           {item.opportunityScore.toFixed(1)}
                           <Box component="span" sx={{ fontWeight: 400, fontSize: '0.7em', color: 'text.secondary', ml: 0.25 }}>/100</Box>
                         </Typography>
-                        {(item.jevConfidence != null || item.topFactorLabel) && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.3 }}>
-                          {[
-                            item.jevConfidence != null ? `${Math.round(item.jevConfidence * 100)}% confidence` : null,
-                            item.topFactorLabel ? `mostly ${item.topFactorLabel.toLowerCase()}` : null,
-                          ].filter(Boolean).join(' · ')}
-                        </Typography>}
+                        {caption && <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.3 }}>{caption}</Typography>}
                       </Box>
                     </Tooltip>}
                   </Box>

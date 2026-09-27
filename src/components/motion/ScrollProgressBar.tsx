@@ -1,4 +1,5 @@
 import { motion, useScroll } from 'framer-motion';
+import { ACCENT_GRADIENT } from '../../theme';
 
 /** Thin gradient line at the very top of the viewport, filling as the page scrolls. */
 export function ScrollProgressBar() {
@@ -14,7 +15,7 @@ export function ScrollProgressBar() {
         right: 0,
         height: 3,
         transformOrigin: '0%',
-        background: 'linear-gradient(90deg, #2563eb, #60a5fa)',
+        background: ACCENT_GRADIENT,
         zIndex: 2000,
         pointerEvents: 'none',
         scaleX: scrollYProgress,

@@ -15,8 +15,8 @@ import ReportProblemOutlinedIcon from '@mui/icons-material/ReportProblemOutlined
 import SearchOffOutlinedIcon from '@mui/icons-material/SearchOffOutlined';
 import { AuthedAppBar } from '../components/layout/AuthedAppBar';
 import { EvaluationDialog } from '../components/opportunities/EvaluationDialog';
-import { RadarDialog } from '../components/opportunities/RadarDialog';
-import { SURFACE_SUBTLE } from '../theme';
+import { AppDialog } from '../components/common/AppDialog';
+import { SURFACE_SUBTLE, SEVERITY_TINT } from '../theme';
 import {
   getOpportunity, getOpportunitySignal, getRadarProvider, updateOpportunityReview, updateProspectTypeOverride, deleteOpportunity, clearOpportunityDuplicate,
   SOURCE_TYPE_LABELS, formatProspectType,
@@ -288,10 +288,10 @@ export function OpportunityDetailPage() {
       <Paper variant="outlined" sx={{ mt: 4, p: { xs: 2.5, md: 3 }, borderRadius: 3, borderColor: '#fecaca', bgcolor: '#fffafa' }}><Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ justifyContent: 'space-between', alignItems: { sm: 'center' } }}><Box><Typography variant="h6" color="error.main">Danger zone</Typography><Typography variant="body2" color="text.secondary" sx={{ mt: 0.35 }}>Delete a bad import or synthetic example and its evaluation history. This cannot be undone.</Typography></Box><Button color="error" variant="outlined" onClick={() => setDeleteOpen(true)} sx={{ flexShrink: 0 }}>Delete opportunity</Button></Stack></Paper>
     </Container>
 
-    <RadarDialog open={deleteOpen} fullScreen={fullScreen} maxWidth="xs" title="Delete opportunity" busy={deleting} onClose={() => { setDeleteOpen(false); setDeleteError(''); }} actions={<><Button onClick={() => { setDeleteOpen(false); setDeleteError(''); }} disabled={deleting}>Cancel</Button><Button variant="contained" color="error" onClick={confirmDelete} loading={deleting}>Delete</Button></>}>
+    <AppDialog open={deleteOpen} fullScreen={fullScreen} maxWidth="xs" title="Delete opportunity" busy={deleting} onClose={() => { setDeleteOpen(false); setDeleteError(''); }} actions={<><Button onClick={() => { setDeleteOpen(false); setDeleteError(''); }} disabled={deleting}>Cancel</Button><Button variant="contained" color="error" onClick={confirmDelete} loading={deleting}>Delete</Button></>}>
       <Typography variant="body2" color="text.secondary">This permanently deletes &quot;{item.title}&quot; and its evaluation history. This cannot be undone.</Typography>
       {deleteError && <Alert severity="error" sx={{ mt: 2 }}>{deleteError}</Alert>}
-    </RadarDialog>
+    </AppDialog>
 
     <EvaluationDialog open={evaluationOpen} fullScreen={fullScreen} opportunityIds={[item.id]} liveAvailable={liveAvailable} onClose={() => setEvaluationOpen(false)} onEvaluated={async message => { setEvaluationOpen(false); setNotice(message); await reloadAfterEvaluation(); }} />
   </Box>;
@@ -306,7 +306,7 @@ function DetailMetric({ label, value }: { label: string; value: React.ReactNode 
 }
 
 function AssessmentBlock({ label, value, tone = 'default' }: { label: string; value: string; tone?: 'default' | 'warning' }) {
-  return <Box sx={tone === 'warning' ? { p: 1.5, borderRadius: 2, bgcolor: '#fff7ed', border: '1px solid #fed7aa' } : undefined}>
+  return <Box sx={tone === 'warning' ? { p: 1.5, borderRadius: 2, bgcolor: SEVERITY_TINT.warning.bg, border: `1px solid ${SEVERITY_TINT.warning.border}` } : undefined}>
     <Typography variant="overline" color={tone === 'warning' ? 'warning.dark' : 'text.secondary'}>{label}</Typography>
     <Typography sx={{ mt: 0.25, whiteSpace: 'pre-wrap' }}>{value}</Typography>
   </Box>;
@@ -357,7 +357,7 @@ function FactorScore({ factorKey, label, score, explanation, evidencePassageId }
 }
 
 function SignalCard({ title, values, empty, icon, tone = 'default' }: { title: string; values: string[]; empty: string; icon: React.ReactNode; tone?: 'default' | 'info' | 'warning' | 'error' }) {
-  const colors = tone === 'info' ? { bg: '#eff6ff', fg: '#2563eb', border: '#bfdbfe' } : tone === 'warning' ? { bg: '#fff7ed', fg: '#c2410c', border: '#fed7aa' } : tone === 'error' ? { bg: '#fef2f2', fg: '#b91c1c', border: '#fecaca' } : { bg: '#ffffff', fg: '#475569', border: '#e2e8f0' };
+  const colors = SEVERITY_TINT[tone];
   return <Paper variant="outlined" sx={{ p: 2.25, borderRadius: 3, bgcolor: colors.bg, borderColor: colors.border }}><Stack direction="row" spacing={1} sx={{ alignItems: 'center', color: colors.fg }}><Box sx={{ display: 'flex', '& svg': { fontSize: 20 } }}>{icon}</Box><Typography sx={{ fontWeight: 800 }}>{title}</Typography><Chip size="small" label={values.length} sx={{ ml: 'auto !important', height: 22, bgcolor: 'rgba(255,255,255,.7)' }} /></Stack>{values.length ? <Box component="ul" sx={{ pl: 2.5, mb: 0 }}>{values.map(value => <Typography component="li" key={value} variant="body2" sx={{ mt: 1 }}>{value}</Typography>)}</Box> : <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{empty}</Typography>}</Paper>;
 }
 

@@ -12,6 +12,7 @@ import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import BoltRoundedIcon from '@mui/icons-material/BoltRounded';
 import { motion, useInView, useReducedMotion } from 'framer-motion';
 import wordmark from '../../assets/branding/wordmark-light.webp';
+import { copyToClipboard } from '../../lib/clipboard';
 import { SURFACE_DARK } from '../../theme';
 import { GradientBackdrop } from '../motion/GradientBackdrop';
 
@@ -240,24 +241,7 @@ function CopyEmail() {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
-    let ok = false;
-    try {
-      await navigator.clipboard.writeText(EMAIL);
-      ok = true;
-    } catch {
-      try {
-        const ta = document.createElement('textarea');
-        ta.value = EMAIL;
-        ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
-        document.body.appendChild(ta);
-        ta.select();
-        ok = document.execCommand('copy');
-        document.body.removeChild(ta);
-      } catch {
-        ok = false;
-      }
-    }
-    if (!ok) return;
+    if (!(await copyToClipboard(EMAIL))) return;
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2000);
   }

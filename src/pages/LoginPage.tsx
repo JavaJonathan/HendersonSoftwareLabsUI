@@ -18,7 +18,7 @@ import { useAuth } from '../auth/useAuth';
 import { ApiError, getApiErrorMessage } from '../api/client';
 import { Reveal } from '../components/motion/Reveal';
 import { GradientBackdrop } from '../components/motion/GradientBackdrop';
-import { SURFACE_SUBTLE, SURFACE_DARK } from '../theme';
+import { SURFACE_SUBTLE, SURFACE_DARK, ACCENT_GRADIENT } from '../theme';
 import wordmarkLight from '../assets/branding/wordmark-light.webp';
 import wordmarkDark from '../assets/branding/wordmark-dark.webp';
 
@@ -146,7 +146,7 @@ export function LoginPage() {
                   boxShadow: '0 24px 48px -24px rgba(15,23,42,0.22)',
                 }}
               >
-                <Box sx={{ height: 5, background: 'linear-gradient(90deg, #2563eb, #60a5fa)' }} />
+                <Box sx={{ height: 5, background: ACCENT_GRADIENT }} />
 
                 <Box sx={{ p: 4 }}>
                   <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary' }}>

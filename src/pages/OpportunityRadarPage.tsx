@@ -21,8 +21,9 @@ import { AuthedAppBar } from '../components/layout/AuthedAppBar';
 import { EvaluationDialog } from '../components/opportunities/EvaluationDialog';
 import { OpportunityLaneTabs } from '../components/opportunities/OpportunityLaneTabs';
 import { OpportunityTable, OpportunityTableHead, SignalLegend } from '../components/opportunities/OpportunityTable';
-import { RadarDialog } from '../components/opportunities/RadarDialog';
+import { AppDialog } from '../components/common/AppDialog';
 import { RadarPageHeader } from '../components/opportunities/RadarPageHeader';
+import { copyToClipboard } from '../lib/clipboard';
 import { SURFACE_SUBTLE } from '../theme';
 import {
   downloadOpportunityExport, getOpportunities, getRadarPreferences, getRadarProvider,
@@ -55,31 +56,6 @@ function downloadJsonFile(content: string, filename: string) {
 function downloadJsonSchema(entityType: OpportunityEntityType) {
   const template = getOpportunityJsonTemplate(entityType);
   downloadJsonFile(template.schema, template.schemaFilename);
-}
-
-async function copyText(text: string): Promise<boolean> {
-  try {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch {
-    // Fall through to the selection-based fallback.
-  }
-
-  const textarea = document.createElement('textarea');
-  textarea.value = text;
-  textarea.style.position = 'fixed';
-  textarea.style.opacity = '0';
-  try {
-    document.body.appendChild(textarea);
-    textarea.select();
-    return document.execCommand('copy');
-  } catch {
-    return false;
-  } finally {
-    textarea.remove();
-  }
 }
 
 export function OpportunityRadarPage({ entityType }: { entityType: OpportunityEntityType }) {
@@ -253,7 +229,7 @@ function ExportDialog({ open, fullScreen, onClose }: { open: boolean; fullScreen
   const [includeSynthetic, setIncludeSynthetic] = useState(false); const [busy, setBusy] = useState(false); const [error, setError] = useState('');
   useEffect(() => { if (open) { setIncludeSynthetic(false); setError(''); } }, [open]);
   async function download() { setBusy(true); setError(''); try { const blob = await downloadOpportunityExport(includeSynthetic); const url = URL.createObjectURL(blob); const anchor = document.createElement('a'); anchor.href = url; anchor.download = `hsl-opportunity-radar-${new Date().toISOString().slice(0, 10).replaceAll('-', '')}.csv`; anchor.click(); URL.revokeObjectURL(url); onClose(); } catch (err) { setError(getApiErrorMessage(err, 'Unable to export opportunities.')); } finally { setBusy(false); } }
-  return <RadarDialog open={open} fullScreen={fullScreen} title="Export review data" busy={busy} onClose={onClose} actions={<><Button onClick={onClose} disabled={busy}>Cancel</Button><Button variant="contained" startIcon={<DownloadOutlinedIcon />} onClick={download} disabled={busy}>{busy ? 'Preparing...' : 'Download CSV'}</Button></>}><Stack spacing={2}>{error && <Alert severity="error">{error}</Alert>}<Typography color="text.secondary">Download both lanes with source metadata, model details, semantic factors, decisions, and notes.</Typography><Paper variant="outlined" sx={{ p: 2, bgcolor: SURFACE_SUBTLE }}><Stack direction="row" spacing={1.25} sx={{ alignItems: 'flex-start' }}><CheckCircleOutlineRoundedIcon color="primary" /><Typography variant="body2">Imported and user-written cells are sanitized against spreadsheet formula injection. Stored source data is unchanged.</Typography></Stack></Paper><FormControlLabel control={<Checkbox checked={includeSynthetic} onChange={event => setIncludeSynthetic(event.target.checked)} />} label="Include synthetic examples" />{!includeSynthetic && <Typography variant="caption" color="text.secondary">Synthetic illustrations are excluded by default so they do not mix with real review data.</Typography>}</Stack></RadarDialog>;
+  return <AppDialog open={open} fullScreen={fullScreen} title="Export review data" busy={busy} onClose={onClose} actions={<><Button onClick={onClose} disabled={busy}>Cancel</Button><Button variant="contained" startIcon={<DownloadOutlinedIcon />} onClick={download} disabled={busy}>{busy ? 'Preparing...' : 'Download CSV'}</Button></>}><Stack spacing={2}>{error && <Alert severity="error">{error}</Alert>}<Typography color="text.secondary">Download both lanes with source metadata, model details, semantic factors, decisions, and notes.</Typography><Paper variant="outlined" sx={{ p: 2, bgcolor: SURFACE_SUBTLE }}><Stack direction="row" spacing={1.25} sx={{ alignItems: 'flex-start' }}><CheckCircleOutlineRoundedIcon color="primary" /><Typography variant="body2">Imported and user-written cells are sanitized against spreadsheet formula injection. Stored source data is unchanged.</Typography></Stack></Paper><FormControlLabel control={<Checkbox checked={includeSynthetic} onChange={event => setIncludeSynthetic(event.target.checked)} />} label="Include synthetic examples" />{!includeSynthetic && <Typography variant="caption" color="text.secondary">Synthetic illustrations are excluded by default so they do not mix with real review data.</Typography>}</Stack></AppDialog>;
 }
 
 interface EvidenceRow { fact: string; source: string; date: string }
@@ -295,7 +271,7 @@ function ImportDialog({ open, fullScreen, entityType, onClose, onImported }: { o
     setResearchAgent(''); setFile(null); setError(''); setCopyStatus('idle');
   }, [open]);
 
-  async function copySchema() { setCopyStatus(await copyText(getOpportunityJsonTemplate(entityType).schema) ? 'copied' : 'failed'); }
+  async function copySchema() { setCopyStatus(await copyToClipboard(getOpportunityJsonTemplate(entityType).schema) ? 'copied' : 'failed'); }
   function updateEvidenceRow(index: number, patch: Partial<EvidenceRow>) { setEvidence(rows => rows.map((row, i) => i === index ? { ...row, ...patch } : row)); }
   function removeEvidenceRow(index: number) { setEvidence(rows => rows.length > 1 ? rows.filter((_, i) => i !== index) : rows); }
 
@@ -342,7 +318,7 @@ function ImportDialog({ open, fullScreen, entityType, onClose, onImported }: { o
     finally { setBusy(false); }
   }
 
-  return <RadarDialog open={open} fullScreen={fullScreen} maxWidth="sm" title={entityType === 'ActiveProject' ? 'Import active projects' : 'Import business prospects'} busy={busy} onClose={onClose} actions={<><Button onClick={onClose} disabled={busy}>Cancel</Button><Button variant="contained" onClick={submit} disabled={busy}>{busy ? 'Importing...' : mode === 'batch' ? 'Import batch' : 'Import record'}</Button></>}>
+  return <AppDialog open={open} fullScreen={fullScreen} maxWidth="sm" title={entityType === 'ActiveProject' ? 'Import active projects' : 'Import business prospects'} busy={busy} onClose={onClose} actions={<><Button onClick={onClose} disabled={busy}>Cancel</Button><Button variant="contained" onClick={submit} disabled={busy}>{busy ? 'Importing...' : mode === 'batch' ? 'Import batch' : 'Import record'}</Button></>}>
     <Stack spacing={2.5}>
       <Tabs value={mode} onChange={(_, value: 'paste' | 'batch') => setMode(value)}><Tab value="paste" label="Paste one" /><Tab value="batch" label="Upload JSON" /></Tabs>
       {error && <Alert severity="error">{error}</Alert>}
@@ -386,7 +362,7 @@ function ImportDialog({ open, fullScreen, entityType, onClose, onImported }: { o
         <TextField label="Research agent (optional)" value={researchAgent} onChange={event => setResearchAgent(event.target.value)} slotProps={{ htmlInput: { maxLength: 100 } }} />
       </Stack> : <Paper variant="outlined" sx={{ p: 2.5, bgcolor: SURFACE_SUBTLE, borderRadius: 3 }}><Stack spacing={1.5}><Typography sx={{ fontWeight: 800 }}>JSON Schema</Typography><Typography variant="body2" color="text.secondary">Hand your AI agent this schema, its field descriptions carry the field rules and a worked example is embedded under its top-level "examples".</Typography><Stack direction="row" spacing={1}><Button onClick={() => downloadJsonSchema(entityType)}>Download JSON Schema</Button><Button variant="outlined" startIcon={<ContentCopyOutlinedIcon />} onClick={copySchema}>Copy JSON Schema</Button></Stack><Typography role="status" variant="caption" sx={{ minHeight: 18, color: copyStatus === 'failed' ? 'error.main' : 'success.dark' }}>{copyStatus === 'copied' && 'JSON Schema copied.'}{copyStatus === 'failed' && 'Unable to copy the JSON Schema.'}</Typography><Button component="label" variant="outlined" startIcon={<UploadFileOutlinedIcon />} sx={{ alignSelf: 'flex-start' }}>Choose JSON<input hidden type="file" accept=".json,application/json" onChange={event => setFile(event.target.files?.[0] ?? null)} /></Button><Typography variant="body2">{file?.name ?? 'No file selected'}</Typography></Stack></Paper>}
     </Stack>
-  </RadarDialog>;
+  </AppDialog>;
 }
 
 const ACTIVE_WEIGHTS = [['problemClarity', 'Problem clarity'], ['hslDeliveryFit', 'HSL delivery fit'], ['independentScope', 'Independent scope'], ['economicViability', 'Economic viability'], ['urgency', 'Urgency'], ['buyerReadiness', 'Buyer readiness'], ['informationMarketFit', 'Information and market fit']] as const;
@@ -400,7 +376,7 @@ function PreferencesDialog({ open, fullScreen, onClose, onSaved }: { open: boole
   useEffect(() => { if (!open) return; setError(''); setSection('projects'); getRadarPreferences().then(setValue).catch(() => setError('Unable to load preferences.')); }, [open]);
   const validation = !value ? '' : value.activeProject.minimumBudget < 0 ? 'Minimum budget cannot be negative.' : [...Object.values(value.activeProject.weightsV2), ...Object.values(value.businessProspect.operationalPainWeights), ...Object.values(value.businessProspect.digitalPresenceWeights)].some(weight => weight < 0 || weight > 100) ? 'Each relative weight must be between 0 and 100.' : value.digestActiveProjectCount < 0 || value.digestActiveProjectCount > 25 || value.digestBusinessProspectCount < 0 || value.digestBusinessProspectCount > 25 ? 'Digest counts must stay between 0 and 25.' : '';
   async function save() { if (!value || validation) return; setBusy(true); setError(''); try { await updateRadarPreferences({ activeProject: value.activeProject, businessProspect: value.businessProspect, digestActiveProjectCount: value.digestActiveProjectCount, digestBusinessProspectCount: value.digestBusinessProspectCount }); onSaved(); } catch (err) { setError(getApiErrorMessage(err, 'Unable to save preferences.')); } finally { setBusy(false); } }
-  return <RadarDialog open={open} fullScreen={fullScreen} title="Screening preferences" busy={busy} maxWidth="md" onClose={onClose} actions={<><Button onClick={onClose} disabled={busy}>Cancel</Button><Button variant="contained" onClick={save} disabled={busy || !value || Boolean(validation)}>{busy ? 'Saving...' : 'Save and recompose'}</Button></>}>
+  return <AppDialog open={open} fullScreen={fullScreen} title="Screening preferences" busy={busy} maxWidth="md" onClose={onClose} actions={<><Button onClick={onClose} disabled={busy}>Cancel</Button><Button variant="contained" onClick={save} disabled={busy || !value || Boolean(validation)}>{busy ? 'Saving...' : 'Save and recompose'}</Button></>}>
     <Stack spacing={2.5}>{error && <Alert severity="error">{error}</Alert>}{validation && <Alert severity="warning">{validation}</Alert>}{!value ? !error && <Stack spacing={1}><Skeleton height={48} /><Skeleton height={72} /><Skeleton height={72} /></Stack> : <>
       <Tabs value={section} onChange={(_, next) => setSection(next)} variant="scrollable" scrollButtons="auto"><Tab value="projects" label="Active Projects" /><Tab value="prospects" label="Business Prospects" /><Tab value="digest" label="Digest" /></Tabs>
       {section === 'projects' && <Stack spacing={2.25}>
@@ -422,7 +398,7 @@ function PreferencesDialog({ open, fullScreen, onClose, onSaved }: { open: boole
       </Stack>}
       {section === 'digest' && <Stack spacing={2}><Typography color="text.secondary">Choose the maximum number of clear, unreviewed records shown in each daily view.</Typography><Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}><TextField label="Active projects" type="number" value={value.digestActiveProjectCount} onChange={event => setValue({ ...value, digestActiveProjectCount: Number(event.target.value) })} fullWidth /><TextField label="Business prospects" type="number" value={value.digestBusinessProspectCount} onChange={event => setValue({ ...value, digestBusinessProspectCount: Number(event.target.value) })} fullWidth /></Stack></Stack>}
     </>}</Stack>
-  </RadarDialog>;
+  </AppDialog>;
 }
 
 function WeightGrid<K extends string>({ title, note, items, values, onChange }: { title: string; note: string; items: readonly (readonly [K, string])[]; values: Record<K, number>; onChange: (key: K, value: number) => void }) { return <Box><Typography sx={{ fontWeight: 800 }}>{title}</Typography><Typography variant="caption" color="text.secondary">{note}</Typography><Box sx={{ display: 'grid', gridTemplateColumns: { xs: items.length > 4 ? '1fr' : '1fr 1fr', sm: 'repeat(4, 1fr)' }, gap: 1.5, mt: 1.5 }}>{items.map(([key, label]) => <TextField key={key} label={label} type="number" size="small" value={values[key] ?? 0} onChange={event => onChange(key, Number(event.target.value))} slotProps={{ htmlInput: { min: 0, max: 100 } }} />)}</Box></Box>; }

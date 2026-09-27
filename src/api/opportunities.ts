@@ -96,6 +96,15 @@ export function getOpportunitySignal(item: OpportunitySignalInput): OpportunityS
   return { tone: 'mid', chipColor: 'warning', chipVariant: 'filled', icon: null, iconTooltip: null, scoreColor: 'warning.main' };
 }
 
+/** The "82% confidence · mostly problem clarity" caption under a score, shared by the inbox table row and the ranked card row. */
+export function confidenceCaption(item: Pick<OpportunitySummary, 'jevConfidence' | 'topFactorLabel'>): string | null {
+  if (item.jevConfidence == null && !item.topFactorLabel) return null;
+  return [
+    item.jevConfidence != null ? `${Math.round(item.jevConfidence * 100)}% confidence` : null,
+    item.topFactorLabel ? `mostly ${item.topFactorLabel.toLowerCase()}` : null,
+  ].filter(Boolean).join(' · ');
+}
+
 /** The chip-color families above, as hex, for places that need a raw color rather than an MUI Chip `color` prop (row accent bars, the legend dots). */
 export const TONE_HEX = { success: '#16a34a', warning: '#d97706', default: '#94a3b8' } as const;
 

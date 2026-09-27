@@ -10,6 +10,7 @@ import LinkRoundedIcon from '@mui/icons-material/LinkRounded';
 import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
 import DownloadRoundedIcon from '@mui/icons-material/DownloadRounded';
 import PrintRoundedIcon from '@mui/icons-material/PrintRounded';
+import { copyToClipboard } from '../../lib/clipboard';
 
 /**
  * Getting the result out of the browser and in front of whoever signs off on it.
@@ -31,33 +32,6 @@ interface ShareBarProps {
   filename: string;
   taskName: string;
   onTaskNameChange: (value: string) => void;
-}
-
-/** `navigator.clipboard` needs a secure context; fall back to the old selection trick. */
-async function copyText(text: string): Promise<boolean> {
-  try {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
-  } catch {
-    // Fall through to the textarea approach below.
-  }
-
-  try {
-    const area = document.createElement('textarea');
-    area.value = text;
-    area.setAttribute('readonly', '');
-    area.style.position = 'fixed';
-    area.style.opacity = '0';
-    document.body.appendChild(area);
-    area.select();
-    const ok = document.execCommand('copy');
-    document.body.removeChild(area);
-    return ok;
-  } catch {
-    return false;
-  }
 }
 
 function downloadCsv(csvText: string, filename: string) {
@@ -84,7 +58,7 @@ export function ShareBar({
   const [toast, setToast] = useState<string | null>(null);
 
   async function handleCopy(text: string, successMessage: string) {
-    const ok = await copyText(text);
+    const ok = await copyToClipboard(text);
     setToast(ok ? successMessage : 'Could not copy. Select the text and copy it manually.');
   }
 

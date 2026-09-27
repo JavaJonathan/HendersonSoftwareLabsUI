@@ -10,8 +10,8 @@ import LocationOnOutlinedIcon from '@mui/icons-material/LocationOnOutlined';
 import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
 import WorkOutlineRoundedIcon from '@mui/icons-material/WorkOutlineRounded';
 import { Link as RouterLink } from 'react-router-dom';
-import { getOpportunitySignal, SOURCE_TYPE_LABELS, TONE_HEX, formatProspectType, type OpportunitySummary } from '../../api/opportunities';
-import { Flag } from './OpportunityTable';
+import { confidenceCaption, getOpportunitySignal, SOURCE_TYPE_LABELS, TONE_HEX, formatProspectType, type OpportunitySummary } from '../../api/opportunities';
+import { Flag } from './OpportunitySignals';
 
 function MetaItem({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', color: 'text.secondary', minWidth: 0 }}>
@@ -23,6 +23,7 @@ function MetaItem({ icon, children }: { icon: React.ReactNode; children: React.R
 export function OpportunityRow({ item, to, rank }: { item: OpportunitySummary; to: string; rank?: number }) {
   const signal = getOpportunitySignal(item);
   const accent = signal ? TONE_HEX[signal.chipColor] : '#cbd5e1';
+  const caption = confidenceCaption(item);
   return (
     <Paper variant="outlined"
       sx={{
@@ -64,12 +65,7 @@ export function OpportunityRow({ item, to, rank }: { item: OpportunitySummary; t
                 <Typography sx={{ fontWeight: 800, fontSize: 15, lineHeight: 1.2, color: signal?.scoreColor ?? 'text.secondary' }}>
                   {item.opportunityScore.toFixed(1)}<Box component="span" sx={{ fontWeight: 400, fontSize: '0.7em', color: 'text.secondary', ml: 0.25 }}>/100</Box>
                 </Typography>
-                {(item.jevConfidence != null || item.topFactorLabel) && <Typography variant="caption" color="text.secondary" noWrap>
-                  {[
-                    item.jevConfidence != null ? `${Math.round(item.jevConfidence * 100)}% confidence` : null,
-                    item.topFactorLabel ? `mostly ${item.topFactorLabel.toLowerCase()}` : null,
-                  ].filter(Boolean).join(' · ')}
-                </Typography>}
+                {caption && <Typography variant="caption" color="text.secondary" noWrap>{caption}</Typography>}
               </Stack>
             </Tooltip>}
             <Typography
