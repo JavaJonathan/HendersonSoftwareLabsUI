@@ -2,7 +2,7 @@ import { Box, Link, Paper, Skeleton, Stack, Table, TableBody, TableCell, TableCo
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { TONE_HEX, type OpportunityEntityType, type OpportunitySummary } from '../../api/opportunities';
-import { OpportunityFlags, OpportunityMetadata, OpportunitySignalSummary } from './OpportunityPresentation';
+import { OpportunityFlags, OpportunityMetadata, OpportunitySignalSummary, OpportunitySourcingRating } from './OpportunityPresentation';
 import { OpportunityRow, OpportunityRowSkeleton } from './OpportunityRow';
 import { SURFACE_SUBTLE } from '../../theme';
 
@@ -53,8 +53,9 @@ export function OpportunityTable({ items, entityType }: { items: OpportunitySumm
             <TableCell>
               <Link component={RouterLink} to={to} underline="none" onClick={event => event.stopPropagation()} sx={{ display: 'inline-block', fontWeight: 700, fontSize: 14, lineHeight: 1.7, color: 'text.primary', overflowWrap: 'anywhere', '&:hover': { color: 'primary.main' }, '&:focus-visible': { outline: 'none', borderRadius: 1, boxShadow: '0 0 0 3px rgba(37,99,235,.35)' } }}>{item.title}</Link>
               <Box sx={{ mt: 0.5 }}><OpportunityMetadata item={item} /></Box><OpportunityFlags item={item} />
+              {item.preview && <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.75, lineHeight: 1.6, overflowWrap: 'anywhere', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.preview}</Typography>}
             </TableCell>
-            <TableCell><OpportunitySignalSummary item={item} /></TableCell>
+            <TableCell><Stack spacing={0.75}><OpportunitySourcingRating item={item} /><OpportunitySignalSummary item={item} /></Stack></TableCell>
             <TableCell align="right"><Typography variant="body2" sx={{ lineHeight: '24px', fontWeight: 600, color: item.userDecision ? 'primary.main' : 'text.secondary' }}>{item.userDecision ?? 'Awaiting'}</Typography></TableCell>
             <TableCell><ChevronRightIcon className="opportunity-row-chevron" sx={{ display: 'block', fontSize: 20, mt: 0.25, color: 'text.secondary', opacity: 0.4, transition: 'opacity 0.18s ease, transform 0.18s ease' }} /></TableCell>
           </TableRow>;
@@ -69,8 +70,8 @@ export function OpportunityTableSkeleton({ entityType }: { entityType: Opportuni
     <Stack spacing={1.5} sx={{ display: { xs: 'flex', sm: 'none' } }}>{[0, 1, 2].map(row => <OpportunityRowSkeleton key={row} compact />)}</Stack>
     <TableContainer component={Paper} variant="outlined" sx={{ ...TABLE_SURFACE_SX, display: { xs: 'none', sm: 'block' } }}>
       <Table sx={{ tableLayout: 'fixed' }}><OpportunityColumns /><OpportunityTableHead entityType={entityType} /><TableBody>{[0, 1, 2].map(row => <TableRow key={row}>
-        <TableCell><Skeleton width="70%" height={24} /><Skeleton width="90%" sx={{ mt: 0.5 }} /><Skeleton width="55%" /></TableCell>
-        <TableCell><Stack direction="row" spacing={1}><Skeleton width={60} height={24} /><Skeleton width={45} height={24} /></Stack><Skeleton width="85%" sx={{ mt: 0.75 }} /></TableCell>
+        <TableCell><Skeleton width="70%" height={24} /><Skeleton width="90%" sx={{ mt: 0.5 }} /><Skeleton width="55%" /><Skeleton width="80%" sx={{ mt: 0.75 }} /></TableCell>
+        <TableCell><Skeleton width={90} height={24} /><Stack direction="row" spacing={1} sx={{ mt: 0.75 }}><Skeleton width={60} height={24} /><Skeleton width={45} height={24} /></Stack><Skeleton width="85%" sx={{ mt: 0.75 }} /></TableCell>
         <TableCell><Skeleton width={70} height={24} sx={{ ml: 'auto' }} /></TableCell><TableCell />
       </TableRow>)}</TableBody></Table>
     </TableContainer>

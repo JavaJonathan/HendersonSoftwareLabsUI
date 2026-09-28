@@ -2,7 +2,7 @@ import { Box, CardActionArea, Chip, Paper, Skeleton, Stack, Typography } from '@
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Link as RouterLink } from 'react-router-dom';
 import { getOpportunitySignal, TONE_HEX, formatProspectType, type OpportunitySummary } from '../../api/opportunities';
-import { OpportunityFlags, OpportunityMetadata, OpportunitySignalSummary } from './OpportunityPresentation';
+import { OpportunityFlags, OpportunityMetadata, OpportunitySignalSummary, OpportunitySourcingRating } from './OpportunityPresentation';
 
 export function OpportunityRow({ item, to, rank, compact = false }: { item: OpportunitySummary; to: string; rank?: number; compact?: boolean }) {
   const signal = getOpportunitySignal(item);
@@ -25,11 +25,14 @@ export function OpportunityRow({ item, to, rank, compact = false }: { item: Oppo
           </Box>
           <ChevronRightIcon sx={{ color: 'text.secondary', opacity: 0.5, flexShrink: 0, fontSize: 20, mt: 0.25 }} />
         </Stack>
+        {item.preview && <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6, overflowWrap: 'anywhere', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.preview}</Typography>}
         <Box>
-          <OpportunitySignalSummary item={item} />
+          <Stack spacing={0.75}>
+            <OpportunitySourcingRating item={item} />
+            <OpportunitySignalSummary item={item} />
+          </Stack>
           {!compact && item.prospectType && <Chip size="small" variant="outlined" label={formatProspectType(item.prospectType)} sx={{ mt: 1 }} />}
         </Box>
-        {!compact && item.preview && <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6, overflowWrap: 'anywhere', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{item.preview}</Typography>}
         <Typography variant="caption" sx={{ pt: 1.25, borderTop: 1, borderColor: 'divider', color: item.userDecision ? 'primary.main' : 'text.secondary', fontWeight: 700 }}>{item.userDecision ? `Decision: ${item.userDecision}` : 'Awaiting your decision'}</Typography>
       </Stack>
     </CardActionArea>
@@ -39,8 +42,9 @@ export function OpportunityRow({ item, to, rank, compact = false }: { item: Oppo
 export function OpportunityRowSkeleton({ compact = false }: { compact?: boolean }) {
   return <Paper variant="outlined" sx={{ p: compact ? 2 : { xs: 2, sm: 2.5 }, borderRadius: 3 }}>
     <Skeleton width="70%" height={26} /><Skeleton width="90%" /><Skeleton width="55%" />
-    <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}><Skeleton width={75} height={28} /><Skeleton width={55} height={28} /></Stack>
-    <Skeleton width="85%" />{!compact && <Skeleton width="90%" sx={{ mt: 1.5 }} />}
+    <Skeleton width="85%" sx={{ mt: 1 }} /><Skeleton width="90%" />
+    <Skeleton width={90} height={24} sx={{ mt: 1 }} />
+    <Stack direction="row" spacing={1} sx={{ mt: 0.75 }}><Skeleton width={75} height={28} /><Skeleton width={55} height={28} /></Stack>
     <Box sx={{ mt: 1.5, pt: 1.25, borderTop: 1, borderColor: 'divider' }}><Skeleton width={135} /></Box>
   </Paper>;
 }

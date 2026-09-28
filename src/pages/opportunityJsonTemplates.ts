@@ -17,6 +17,11 @@ const CONFIDENCE_REASON_PROPERTY = {
   description: 'What supports the confidence level; for Low, name a concrete verification step.',
 };
 
+const OPPORTUNITY_RATING_PROPERTY = {
+  enum: ['Low', 'Medium', 'High'],
+  description: 'Your own judgment of how valuable this opportunity is for HSL to pursue: how strong the fit, timing, and potential upside are. Separate from confidence below, which rates only how well the evidence supports the facts, not how good the opportunity is.',
+};
+
 function dateOrDateTimeProperty(description: string) {
   return {
     oneOf: [
@@ -30,7 +35,7 @@ function dateOrDateTimeProperty(description: string) {
 const ACTIVE_PROJECT_SCHEMA = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
   title: 'Opportunity Radar Active Project import',
-  description: 'Use this schema only for explicit software or automation demand: a person or organization directly requesting help. If a finding only shows an established business\'s operational pain, manual workflow, hiring for manual work, or a weak digital presence, with no direct stated request for software or automation help, use the sibling Business Prospect schema instead, not this one. Produce one item per distinct project listing, not one item per mirror or repost of the same project, preferring the original listing as the source when one exists, and no more than 100 items. If nothing from this run belongs here, submit an empty items array rather than guessing, and every fact must trace to a real source, never invent one to fill a field. Before finishing, check: mirrored or reposted listings are consolidated into one item, no item repeats an externalId already used earlier in this file, request contains only verified facts with fit/proposalAngle/risk carrying any analysis, and every item has a confidence level and reason.',
+  description: 'Use this schema only for explicit software or automation demand: a person or organization directly requesting help. If a finding only shows an established business\'s operational pain, manual workflow, hiring for manual work, or a weak digital presence, with no direct stated request for software or automation help, use the sibling Business Prospect schema instead, not this one. Produce one item per distinct project listing, not one item per mirror or repost of the same project, preferring the original listing as the source when one exists, and no more than 100 items. If nothing from this run belongs here, submit an empty items array rather than guessing, and every fact must trace to a real source, never invent one to fill a field. Before finishing, check: mirrored or reposted listings are consolidated into one item, no item repeats an externalId already used earlier in this file, request contains only verified facts with fit/proposalAngle/risk carrying any analysis, and every item has an opportunity rating and a confidence level and reason.',
   type: 'object',
   required: ['researchAgent', 'items'],
   additionalProperties: false,
@@ -49,6 +54,7 @@ const ACTIVE_PROJECT_SCHEMA = {
       fit: "Strong match for HSL's integration and automation work.",
       proposalAngle: 'Lead with comparable reconciliation work and offer a paid architecture milestone.',
       risk: 'Supplier spreadsheet formats vary by vendor; confirm sample files before scoping.',
+      opportunityRating: 'High',
       confidence: { level: 'High', reason: 'The listing states scope, budget, and schedule directly.' },
     }],
   }],
@@ -63,7 +69,7 @@ const ACTIVE_PROJECT_SCHEMA = {
   $defs: {
     activeProject: {
       type: 'object',
-      required: ['title', 'request', 'sourceType', 'sourceUrl', 'confidence'],
+      required: ['title', 'request', 'sourceType', 'sourceUrl', 'opportunityRating', 'confidence'],
       additionalProperties: false,
       properties: {
         title: {
@@ -113,6 +119,7 @@ const ACTIVE_PROJECT_SCHEMA = {
           type: 'string', maxLength: 1000,
           description: 'Material concerns and anything that should be confirmed before applying.',
         },
+        opportunityRating: OPPORTUNITY_RATING_PROPERTY,
         confidence: {
           type: 'object',
           required: ['level', 'reason'],
@@ -150,7 +157,7 @@ const EVIDENCE_CATEGORY_PROPERTY = {
 const BUSINESS_PROSPECT_SCHEMA = {
   $schema: 'https://json-schema.org/draft/2020-12/schema',
   title: 'Opportunity Radar Business Prospect import',
-  description: 'Use this schema for an established business with an observed operational pain, inefficient manual workflow, hiring signal for manual work, weak digital presence, or similar signal, whether or not the business has stated any intention to buy software. If the source shows a direct, stated request for software or automation help instead, use the sibling Active Project schema for that record. Produce one item per distinct business opportunity, not one item per supporting source; when multiple sources support the same opportunity, add one evidence entry per source rather than merging them or duplicating the item, and no more than 100 items. If nothing from this run belongs here, submit an empty items array rather than guessing. Before finishing, check: sources for the same opportunity are separate evidence entries on one item, no item repeats an externalId already used earlier in this file, every evidence fact traces to observation rather than industry assumption, DigitalPresence items name a specific defect rather than a dated look, Hybrid items have independent evidence for both halves, every item has a prospectType and a confidence level and reason, and each evidence signal that plausibly has public evidence (especially urgency and buyer access, which are easy to skip) has at least one categorized fact rather than being left to chance - a signal that genuinely lacks evidence should stay uncovered rather than guessed at.',
+  description: 'Use this schema for an established business with an observed operational pain, inefficient manual workflow, hiring signal for manual work, weak digital presence, or similar signal, whether or not the business has stated any intention to buy software. If the source shows a direct, stated request for software or automation help instead, use the sibling Active Project schema for that record. Produce one item per distinct business opportunity, not one item per supporting source; when multiple sources support the same opportunity, add one evidence entry per source rather than merging them or duplicating the item, and no more than 100 items. If nothing from this run belongs here, submit an empty items array rather than guessing. Before finishing, check: sources for the same opportunity are separate evidence entries on one item, no item repeats an externalId already used earlier in this file, every evidence fact traces to observation rather than industry assumption, DigitalPresence items name a specific defect rather than a dated look, Hybrid items have independent evidence for both halves, every item has a prospectType, an opportunity rating, and a confidence level and reason, and each evidence signal that plausibly has public evidence (especially urgency and buyer access, which are easy to skip) has at least one categorized fact rather than being left to chance - a signal that genuinely lacks evidence should stay uncovered rather than guessed at.',
   type: 'object',
   required: ['researchAgent', 'items'],
   additionalProperties: false,
@@ -171,6 +178,7 @@ const BUSINESS_PROSPECT_SCHEMA = {
       fit: 'The practice needs a modern, mobile-friendly site with online booking.',
       entryOffer: 'Prototype a booking-enabled homepage as a fixed-scope first engagement.',
       risk: 'Confirm whether an existing practice-management system already offers booking before proposing a new one.',
+      opportunityRating: 'Medium',
       confidence: { level: 'High', reason: 'The business website directly supports the observed weaknesses.' },
     }],
   }],
@@ -185,7 +193,7 @@ const BUSINESS_PROSPECT_SCHEMA = {
   $defs: {
     businessProspect: {
       type: 'object',
-      required: ['businessName', 'evidence', 'prospectType', 'confidence'],
+      required: ['businessName', 'evidence', 'prospectType', 'opportunityRating', 'confidence'],
       additionalProperties: false,
       properties: {
         businessName: { type: 'string', minLength: 1, maxLength: 200, description: "The business's current public name." },
@@ -241,6 +249,7 @@ const BUSINESS_PROSPECT_SCHEMA = {
           type: 'string', maxLength: 1000,
           description: 'What must be confirmed during discovery, such as incumbent vendors, existing systems, integration rights, workflow volume, ownership, contracts, or whether the signal reflects growth rather than inefficiency.',
         },
+        opportunityRating: OPPORTUNITY_RATING_PROPERTY,
         confidence: {
           type: 'object',
           required: ['level', 'reason'],

@@ -5,7 +5,7 @@ import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
 import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
 import HistoryToggleOffRoundedIcon from '@mui/icons-material/HistoryToggleOffRounded';
 import ScienceOutlinedIcon from '@mui/icons-material/ScienceOutlined';
-import { confidenceCaption, getOpportunitySignal, SOURCE_TYPE_LABELS, type OpportunitySummary } from '../../api/opportunities';
+import { confidenceCaption, getOpportunitySignal, RATING_TONE, SOURCE_TYPE_LABELS, type OpportunitySummary } from '../../api/opportunities';
 import { Flag } from './OpportunitySignals';
 
 export function OpportunityMetadata({ item }: { item: OpportunitySummary }) {
@@ -29,6 +29,17 @@ export function OpportunityFlags({ item }: { item: OpportunitySummary }) {
     <Flag show={!!item.duplicateOfId} label="Possible duplicate" icon={<ContentCopyOutlinedIcon />} color="warning.main" />
     <Flag show={item.isSynthetic} label="Synthetic example" icon={<ScienceOutlinedIcon />} color="info.main" />
   </Stack>;
+}
+
+/** The sourcing agent's own rating + confidence, shown as a pair parallel to Jev's OpportunitySignalSummary below. */
+export function OpportunitySourcingRating({ item }: { item: Pick<OpportunitySummary, 'opportunityRating' | 'researchConfidence'> }) {
+  return <Box sx={{ minWidth: 0 }}>
+    <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center', minHeight: 24 }}>
+      <Typography variant="caption" sx={{ color: 'text.secondary' }}>Sourcing agent</Typography>
+      <Chip size="small" variant="outlined" color={item.opportunityRating ? RATING_TONE[item.opportunityRating] : 'default'} label={item.opportunityRating ?? 'Not rated'} />
+    </Stack>
+    {item.researchConfidence && <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.75, lineHeight: 1.6 }}>{item.researchConfidence} confidence</Typography>}
+  </Box>;
 }
 
 export function OpportunitySignalSummary({ item }: { item: OpportunitySummary }) {

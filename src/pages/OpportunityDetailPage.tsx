@@ -19,7 +19,7 @@ import { RadarDialog as AppDialog } from '../components/opportunities/RadarDialo
 import { SURFACE_SUBTLE, SEVERITY_TINT } from '../theme';
 import {
   getOpportunity, getOpportunitySignal, getRadarProvider, updateOpportunityReview, updateProspectTypeOverride, deleteOpportunity, clearOpportunityDuplicate,
-  SOURCE_TYPE_LABELS, formatProspectType,
+  SOURCE_TYPE_LABELS, RATING_TONE, formatProspectType,
   type ActiveProjectDecision, type BusinessProspectDecision, type BusinessProspectType, type OpportunityDetail,
   type RadarProviderStatus, type SignalTone,
 } from '../api/opportunities';
@@ -92,7 +92,7 @@ export function OpportunityDetailPage() {
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const desktopReview = useMediaQuery(theme.breakpoints.up('lg'));
   const [retryKey, setRetryKey] = useState(0);
-  const [evidenceOpen, setEvidenceOpen] = useState(false);
+  const [showAllPassages, setShowAllPassages] = useState(false);
   const [pendingPassage, setPendingPassage] = useState<string | null>(null);
   const [item, setItem] = useState<OpportunityDetail | null>(null);
   const [error, setError] = useState('');
@@ -174,13 +174,13 @@ export function OpportunityDetailPage() {
     if (!item) return;
     const hash = decodeURIComponent(window.location.hash.slice(1));
     if (hash.startsWith('passage-') && item.passages.some(passage => `passage-${passage.id}` === hash)) {
-      setEvidenceOpen(true); setPendingPassage(hash);
+      setShowAllPassages(true); setPendingPassage(hash);
     }
   }, [item?.id]);
   /* oxlint-enable react/exhaustive-deps */
 
   useEffect(() => {
-    if (!evidenceOpen || !pendingPassage) return;
+    if (!showAllPassages || !pendingPassage) return;
     const timeout = window.setTimeout(() => {
       const target = document.getElementById(pendingPassage);
       if (target) {
@@ -191,7 +191,7 @@ export function OpportunityDetailPage() {
       setPendingPassage(null);
     }, 350);
     return () => window.clearTimeout(timeout);
-  }, [evidenceOpen, pendingPassage]);
+  }, [showAllPassages, pendingPassage]);
 
   if (error && !item) return <Box sx={{ minHeight: '100vh', bgcolor: SURFACE_SUBTLE }}><AuthedAppBar subtitle="Opportunity Radar" /><Container component="main" maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}><Alert severity="error" action={<Button color="inherit" onClick={() => setRetryKey(value => value + 1)}>Retry</Button>}>{error}</Alert></Container></Box>;
   if (!item) return <Box sx={{ minHeight: '100vh', bgcolor: SURFACE_SUBTLE }}><AuthedAppBar subtitle="Opportunity Radar" /><Container component="main" maxWidth="lg" sx={{ py: { xs: 3, md: 5 } }}><Box role="status" aria-label="Loading opportunity"><Skeleton width={160} /><Skeleton width="70%" height={56} sx={{ mt: 3 }} /><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' }, gap: 3, mt: 3 }}>{[0, 1].map(column => <Paper key={column} variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 3 }}><Skeleton width="40%" height={32} /><Skeleton height={48} /><Skeleton /><Skeleton /><Skeleton height={80} sx={{ mt: 2 }} /></Paper>)}</Box></Box></Container></Box>;
@@ -225,7 +225,7 @@ export function OpportunityDetailPage() {
       const anchor = (event.target as HTMLElement).closest('a');
       const hash = anchor?.getAttribute('href');
       if (hash?.startsWith('#passage-')) {
-        event.preventDefault(); setEvidenceOpen(true); setPendingPassage(decodeURIComponent(hash.slice(1)));
+        event.preventDefault(); setShowAllPassages(true); setPendingPassage(decodeURIComponent(hash.slice(1)));
       }
     }} sx={{ py: { xs: 3, md: 5 } }}>
       <Link component={RouterLink} to={backTo}>Back to {isActiveProject ? 'active projects' : 'business prospects'}</Link>
@@ -257,6 +257,63 @@ export function OpportunityDetailPage() {
 
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.65fr) minmax(310px, .85fr)' }, gap: 3, alignItems: 'start' }}>
         <Stack spacing={3} sx={{ minWidth: 0 }}>
+          {/* Sourced opportunity: the sourcing agent's own findings, facts, and judgment. Promoted to the
+              top of the page since this is what the opportunity actually is, ahead of Jev's read of it below. */}
+          {(fitValue || secondaryAssessmentValue || riskValue || item.passages.length > 0) && <Section title="Sourcing agent assessment"><Stack spacing={2}>
+            {fitValue && <AssessmentBlock label="Fit" value={fitValue} />}
+            {secondaryAssessmentValue && <AssessmentBlock label={secondaryAssessmentLabel} value={secondaryAssessmentValue} />}
+            {riskValue && <AssessmentBlock label="Risk" value={riskValue} tone="warning" />}
+            {item.passages.length > 0 && <Box>
+              <Typography variant="overline" sx={{ color: 'text.secondary' }}>Evidence</Typography>
+              <Stack spacing={1.25} sx={{ mt: 1 }}>{(showAllPassages ? item.passages : item.passages.slice(0, 4)).map(passage => <Paper id={`passage-${passage.id}`} tabIndex={-1} key={passage.id} variant="outlined" sx={{ p: 2, scrollMarginTop: 96, borderColor: evidenceIds.has(passage.id) ? 'primary.main' : 'divider', bgcolor: evidenceIds.has(passage.id) ? 'primary.light' : 'background.paper', transition: 'box-shadow .2s ease', '&:target': { boxShadow: '0 0 0 3px rgba(37,99,235,.25)' } }}><Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}><Typography variant="overline" sx={{ color: 'text.secondary' }}>{passage.id}</Typography>{passage.category && <Chip size="small" variant="outlined" label={formatCamelKey(passage.category)} />}{passage.source && <Typography variant="caption" sx={{ color: 'text.secondary' }}>Source: {passage.source}</Typography>}{passage.date && <Typography variant="caption" sx={{ color: 'text.secondary' }}>{new Date(passage.date).toLocaleDateString()}</Typography>}</Stack><Typography sx={{ whiteSpace: 'pre-wrap' }}>{passage.text}</Typography></Paper>)}</Stack>
+              {!showAllPassages && item.passages.length > 4 && <Button size="small" onClick={() => setShowAllPassages(true)} sx={{ mt: 1.25 }}>Show all {item.passages.length} passages</Button>}
+            </Box>}
+          </Stack></Section>}
+
+          <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 3 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>Both agents' read</Typography>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+              <Box>
+                <Typography variant="overline" sx={{ color: 'text.secondary' }}>Sourcing agent</Typography>
+                <Box sx={{ mt: 0.5 }}>
+                  <Chip size="small" variant="outlined" color={item.opportunityRating ? RATING_TONE[item.opportunityRating] : 'default'} label={item.opportunityRating ?? 'Not rated'} />
+                </Box>
+                {item.researchConfidence && <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.75 }}>{item.researchConfidence} confidence</Typography>}
+              </Box>
+              <Box>
+                <Typography variant="overline" sx={{ color: 'text.secondary' }}>Jev</Typography>
+                <Box sx={{ mt: 0.5 }}>
+                  <Chip size="small" variant="outlined" color={evaluation?.priorityBand ? RATING_TONE[evaluation.priorityBand] : 'default'} label={evaluation?.priorityBand ?? 'Not evaluated'} />
+                </Box>
+                {evaluation?.jevConfidence != null && <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.75 }}>{Math.round(evaluation.jevConfidence * 100)}% confidence</Typography>}
+              </Box>
+            </Box>
+          </Paper>
+
+          {!isActiveProject && item.businessProspect && <Section title="Business details"><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', md: 'repeat(3, minmax(0, 1fr))' }, gap: 2 }}><DetailMetric label="Website" value={item.businessProspect.websiteUrl ? <Link href={item.businessProspect.websiteUrl} target="_blank" rel="noopener noreferrer">Visit website</Link> : 'No website found'} /><DetailMetric label="Geography" value={item.businessProspect.geography ?? 'Unknown'} /><DetailMetric label="Industry" value={item.businessProspect.industry ?? 'Unknown'} /></Box></Section>}
+
+          {isActiveProject && item.activeProject && (item.activeProject.budget || item.activeProject.competition) && <Section title="Project details"><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', md: 'repeat(3, minmax(0, 1fr))' }, gap: 2 }}>
+            <DetailMetric label="Budget" value={item.activeProject.budget ?? 'Not supplied'} />
+            <DetailMetric label="Proposals" value={item.activeProject.competition?.proposals ?? 'Unknown'} />
+            <DetailMetric label="Interviewing / hires" value={item.activeProject.competition ? `${item.activeProject.competition.interviewing ?? 'Unknown'} / ${item.activeProject.competition.hires ?? 'Unknown'}` : 'Unknown'} />
+          </Box></Section>}
+
+          {!isActiveProject && item.businessProspect && <Section title="Evaluation agreement"><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
+            <DetailMetric label="Imported type" value={item.businessProspect.importedProspectType ? formatProspectType(item.businessProspect.importedProspectType) : 'Not supplied'} />
+            <DetailMetric label="Imported research confidence" value={item.researchConfidence ?? 'Not supplied'} />
+            <DetailMetric label="Research confidence reason" value={item.researchConfidenceReason ?? 'Not supplied'} />
+            <DetailMetric label="Research agent" value={item.researchAgent ?? 'Not supplied'} />
+            <DetailMetric label="Jev type" value={evaluation?.evaluatedProspectType ? formatProspectType(evaluation.evaluatedProspectType) : 'Not evaluated'} />
+            <DetailMetric label="Jev confidence" value={evaluation?.jevConfidence == null ? 'Not evaluated' : `${Math.round(evaluation.jevConfidence * 100)}%`} />
+            <Box><Typography variant="overline" sx={{ color: 'text.secondary' }}>Human override</Typography><Select inputProps={{ 'aria-label': 'Human override' }} size="small" fullWidth value={item.businessProspect.prospectTypeOverride ?? ''} disabled={busy || !evaluation} onChange={event => setTypeOverride(event.target.value as BusinessProspectType | '')} sx={{ mt: 0.5 }}><MenuItem value="">No override</MenuItem>{(['OperationalPain', 'DigitalPresence', 'Hybrid', 'Unknown'] as BusinessProspectType[]).map(value => <MenuItem key={value} value={value}>{formatProspectType(value)}</MenuItem>)}</Select></Box>
+            <DetailMetric label="Agreement" value={agreementLabel(item)} />
+          </Box></Section>}
+
+          {!desktopReview && reviewPanel}
+
+          {/* Jev's detailed evaluation: the decision signals, fit factors, and checks behind the rating
+              shown above. Supporting detail, kept below the sourced opportunity and both agents' ratings
+              rather than leading the page. */}
           {evaluation?.status === 'Failed' ? <Alert severity="error" action={<Button color="inherit" size="small" onClick={() => setEvaluationOpen(true)}>Retry evaluation</Button>}>Evaluation failed without changing the opportunity score. {evaluation.errorMessage ?? 'Retry when the provider is available.'}</Alert> : evaluation ? <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 3, background: signal ? PANEL_TINT[signal.tone].background : 'linear-gradient(145deg, #ffffff 25%, #f8fafc 100%)', borderColor: signal ? PANEL_TINT[signal.tone].borderColor : 'rgba(100,116,139,.25)' }}>
             <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}>
               <Typography variant="overline" sx={{ color: 'primary.main' }}>Radar recommendation</Typography>
@@ -277,46 +334,13 @@ export function OpportunityDetailPage() {
             <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 2.5 }}>{evaluation.provider === 'Jev' ? `Assembled deterministically from stored Jev judgments and source evidence. Usage: ${evaluation.inputTokens?.toLocaleString() ?? 'unknown'} input tokens.` : 'Generated deterministically from a simulated evaluation. It is not a Jev result.'}</Typography>
           </Paper> : <Alert severity="info" action={<Button color="inherit" size="small" onClick={() => setEvaluationOpen(true)}>Evaluate now</Button>}>This record has not been evaluated yet.</Alert>}
 
-          {!desktopReview && reviewPanel}
-
-          {/* AI evidence: what actually drove the recommendation above, promoted ahead of imported/reference facts. */}
           {result && <Box><Typography variant="h6" sx={{ mb: 1.5 }}>Decision signals</Typography><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 1.5 }}><SignalCard title="Model hypotheses" values={result.hypotheses} empty="No hypotheses." tone="info" icon={<LightbulbOutlinedIcon />} /><SignalCard title="Missing information" values={result.missingInformation} empty="No major missing fields detected." tone="warning" icon={<SearchOffOutlinedIcon />} /><SignalCard title="Concerns" values={result.concerns} empty="No hard concerns detected." tone="error" icon={<ReportProblemOutlinedIcon />} /></Box></Box>}
 
           {!!result?.factors.length && <Section title="Fit factors"><Stack divider={<Box sx={{ borderTop: 1, borderColor: 'divider' }} />}>{result.factors.map(factor => <FactorScore key={factor.key} factorKey={factor.key} label={factor.label} score={factor.score} explanation={factor.explanation} evidencePassageId={factor.evidencePassageId} />)}</Stack></Section>}
 
           {!!result?.checks?.length && <Section title="Evaluation checks"><Stack spacing={1.25}>{result.checks.map(check => <Alert key={check.key} severity={check.severity === 'Block' ? 'error' : check.severity === 'Review' ? 'warning' : 'info'}><Typography sx={{ fontWeight: 800 }}><HelpText label={formatCamelKey(check.key)} help={checkHelpFor(check.key)}>{formatCamelKey(check.key)}</HelpText></Typography><Typography variant="body2">{check.explanation}</Typography>{check.evidencePassageId !== 'none' && <Link href={`#passage-${check.evidencePassageId}`} variant="caption" sx={{ display: 'inline-block', mt: 0.75 }}>View {check.evidencePassageId}</Link>}</Alert>)}</Stack></Section>}
 
-          {/* Reference: imported facts and a human's own notes - useful context, but not AI evidence, so it sits below the group above. */}
-          {!isActiveProject && item.businessProspect && <Section title="Business details"><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', md: 'repeat(3, minmax(0, 1fr))' }, gap: 2 }}><DetailMetric label="Website" value={item.businessProspect.websiteUrl ? <Link href={item.businessProspect.websiteUrl} target="_blank" rel="noopener noreferrer">Visit website</Link> : 'No website found'} /><DetailMetric label="Geography" value={item.businessProspect.geography ?? 'Unknown'} /><DetailMetric label="Industry" value={item.businessProspect.industry ?? 'Unknown'} /></Box></Section>}
-
-          {isActiveProject && item.activeProject && (item.activeProject.budget || item.activeProject.competition) && <Section title="Project details"><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))', md: 'repeat(3, minmax(0, 1fr))' }, gap: 2 }}>
-            <DetailMetric label="Budget" value={item.activeProject.budget ?? 'Not supplied'} />
-            <DetailMetric label="Proposals" value={item.activeProject.competition?.proposals ?? 'Unknown'} />
-            <DetailMetric label="Interviewing / hires" value={item.activeProject.competition ? `${item.activeProject.competition.interviewing ?? 'Unknown'} / ${item.activeProject.competition.hires ?? 'Unknown'}` : 'Unknown'} />
-          </Box></Section>}
-
-          {(fitValue || secondaryAssessmentValue || riskValue) && <Section title="Sourcing agent assessment"><Stack spacing={2}>
-            {fitValue && <AssessmentBlock label="Fit" value={fitValue} />}
-            {secondaryAssessmentValue && <AssessmentBlock label={secondaryAssessmentLabel} value={secondaryAssessmentValue} />}
-            {riskValue && <AssessmentBlock label="Risk" value={riskValue} tone="warning" />}
-          </Stack></Section>}
-
-          {!isActiveProject && item.businessProspect && <Section title="Evaluation agreement"><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)' }, gap: 2 }}>
-            <DetailMetric label="Imported type" value={item.businessProspect.importedProspectType ? formatProspectType(item.businessProspect.importedProspectType) : 'Not supplied'} />
-            <DetailMetric label="Imported research confidence" value={item.researchConfidence ?? 'Not supplied'} />
-            <DetailMetric label="Research confidence reason" value={item.researchConfidenceReason ?? 'Not supplied'} />
-            <DetailMetric label="Research agent" value={item.researchAgent ?? 'Not supplied'} />
-            <DetailMetric label="Jev type" value={evaluation?.evaluatedProspectType ? formatProspectType(evaluation.evaluatedProspectType) : 'Not evaluated'} />
-            <DetailMetric label="Jev confidence" value={evaluation?.jevConfidence == null ? 'Not evaluated' : `${Math.round(evaluation.jevConfidence * 100)}%`} />
-            <Box><Typography variant="overline" sx={{ color: 'text.secondary' }}>Human override</Typography><Select inputProps={{ 'aria-label': 'Human override' }} size="small" fullWidth value={item.businessProspect.prospectTypeOverride ?? ''} disabled={busy || !evaluation} onChange={event => setTypeOverride(event.target.value as BusinessProspectType | '')} sx={{ mt: 0.5 }}><MenuItem value="">No override</MenuItem>{(['OperationalPain', 'DigitalPresence', 'Hybrid', 'Unknown'] as BusinessProspectType[]).map(value => <MenuItem key={value} value={value}>{formatProspectType(value)}</MenuItem>)}</Select></Box>
-            <DetailMetric label="Agreement" value={agreementLabel(item)} />
-          </Box></Section>}
-
           {/* Collapsed reference material: rarely opened, so it stays out of the way until someone wants it. */}
-          <SupportingSection key="source" title="Original source" subtitle="The complete imported description and source metadata."><Paper variant="outlined" sx={{ p: 2.5, bgcolor: SURFACE_SUBTLE, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{item.description}</Paper>{(item.sourceDate || item.externalId) && <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1.5 }}>{item.sourceDate && `Source date: ${new Date(item.sourceDate).toLocaleDateString()}`}{item.sourceDate && item.externalId && ' | '}{item.externalId && `External ID: ${item.externalId}`}</Typography>}</SupportingSection>
-
-          <SupportingSection key="evidence" expanded={evidenceOpen} onExpandedChange={setEvidenceOpen} title="Stored evidence" subtitle="Quoted passages come directly from the stored source text."><Stack spacing={1.25}>{item.passages.map(passage => <Paper id={`passage-${passage.id}`} tabIndex={-1} key={passage.id} variant="outlined" sx={{ p: 2, scrollMarginTop: 96, borderColor: evidenceIds.has(passage.id) ? 'primary.main' : 'divider', bgcolor: evidenceIds.has(passage.id) ? 'primary.light' : 'background.paper', transition: 'box-shadow .2s ease', '&:target': { boxShadow: '0 0 0 3px rgba(37,99,235,.25)' } }}><Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center' }}><Typography variant="overline" sx={{ color: 'text.secondary' }}>{passage.id}</Typography>{passage.category && <Chip size="small" variant="outlined" label={formatCamelKey(passage.category)} />}{passage.source && <Typography variant="caption" sx={{ color: 'text.secondary' }}>Source: {passage.source}</Typography>}{passage.date && <Typography variant="caption" sx={{ color: 'text.secondary' }}>{new Date(passage.date).toLocaleDateString()}</Typography>}</Stack><Typography sx={{ whiteSpace: 'pre-wrap' }}>{passage.text}</Typography></Paper>)}</Stack></SupportingSection>
-
           {evaluation && <SupportingSection key="scoring-profile" title="Scoring profile" subtitle="The relative weights this evaluation used. Only changes when screening preferences are edited."><Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2, mb: 2 }}><DetailMetric label="Rubric version" value={evaluation.rubricVersion} /><DetailMetric label="Origin" value={evaluation.origin === 'LocalRecompose' ? 'Locally recomposed from stored Jev judgments' : 'Jev provider run'} /></Box><Stack spacing={1}>{Object.entries(evaluation.effectiveWeights ?? {}).map(([key, value]) => <Stack key={key} direction="row" sx={{ justifyContent: 'space-between', gap: 2 }}><Typography variant="body2">{formatCamelKey(key)}</Typography><Typography variant="body2" sx={{ fontWeight: 800 }}>{Number(value).toFixed(2)}%</Typography></Stack>)}</Stack></SupportingSection>}
         </Stack>
 
@@ -335,8 +359,8 @@ export function OpportunityDetailPage() {
   </Box>;
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 3 }}><Typography variant="h6" sx={{ mb: 2 }}>{title}</Typography>{children}</Paper>;
+function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+  return <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 3 }}><Typography variant="h6" sx={{ mb: subtitle ? 0.5 : 2 }}>{title}</Typography>{subtitle && <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>{subtitle}</Typography>}{children}</Paper>;
 }
 
 function DetailMetric({ label, value }: { label: string; value: React.ReactNode }) {

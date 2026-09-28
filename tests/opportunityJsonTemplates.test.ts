@@ -18,6 +18,7 @@ test('Active Project schema carries its own worked example and field rules', () 
   const exampleItem = example.items[0];
   assert.equal(exampleItem.sourceType, 'ExplicitDemand');
   assert.equal(exampleItem.confidence.level, 'High');
+  assert.equal(exampleItem.opportunityRating, 'High');
   assert.ok(exampleItem.competition && typeof exampleItem.competition === 'object');
 
   assert.ok(!/OperationalSignal/.test(schema.description), 'Active Project schema should not offer OperationalSignal');
@@ -28,7 +29,7 @@ test('Active Project schema carries its own worked example and field rules', () 
   assert.match(schema.description, /mirror or repost of the same project/);
 
   const project = schema.$defs.activeProject;
-  assert.deepEqual(project.required.sort(), ['confidence', 'request', 'sourceType', 'sourceUrl', 'title']);
+  assert.deepEqual(project.required.sort(), ['confidence', 'opportunityRating', 'request', 'sourceType', 'sourceUrl', 'title']);
   assert.equal(project.additionalProperties, false);
   assert.equal(project.properties.request.minLength, 20);
   assert.equal(project.properties.request.maxLength, 4000);
@@ -50,6 +51,8 @@ test('Active Project schema carries its own worked example and field rules', () 
   assert.deepEqual(project.properties.confidence.properties.level.enum, ['Low', 'Medium', 'High']);
   assert.match(project.properties.confidence.description, /Normally exclude Low-confidence candidates/);
   assert.match(project.properties.confidence.properties.level.description, /stale, incomplete, indirect, or difficult to verify/);
+  assert.deepEqual(project.properties.opportunityRating.enum, ['Low', 'Medium', 'High']);
+  assert.match(project.properties.opportunityRating.description, /not how good the opportunity is/);
 });
 
 test('Business Prospect schema carries its own worked example and field rules', () => {
@@ -63,6 +66,7 @@ test('Business Prospect schema carries its own worked example and field rules', 
   assert.ok(Array.isArray(schema.examples) && schema.examples.length === 1, 'the schema embeds its own example instance');
   const exampleItem = schema.examples[0].items[0];
   assert.equal(exampleItem.prospectType, 'DigitalPresence');
+  assert.equal(exampleItem.opportunityRating, 'Medium');
   assert.ok(Array.isArray(exampleItem.evidence) && exampleItem.evidence.length >= 1);
   assert.equal(exampleItem.evidence[0].source, 'https://example.com/about');
   assert.ok(!('date' in exampleItem.evidence[1]), 'an evidence entry with no known date omits the property rather than using null');
@@ -72,7 +76,7 @@ test('Business Prospect schema carries its own worked example and field rules', 
   assert.match(schema.description, /empty items array/);
 
   const prospect = schema.$defs.businessProspect;
-  assert.deepEqual(prospect.required.sort(), ['businessName', 'confidence', 'evidence', 'prospectType']);
+  assert.deepEqual(prospect.required.sort(), ['businessName', 'confidence', 'evidence', 'opportunityRating', 'prospectType']);
   assert.equal(prospect.additionalProperties, false);
   assert.ok(!prospect.required.includes('externalId'), 'externalId stays optional');
   assert.equal(prospect.properties.evidence.minItems, 1);
@@ -91,6 +95,8 @@ test('Business Prospect schema carries its own worked example and field rules', 
   assert.deepEqual(prospect.properties.confidence.required.sort(), ['level', 'reason']);
   assert.equal(prospect.properties.confidence.additionalProperties, false);
   assert.match(prospect.properties.confidence.description, /not the prospect's value, HSL fit, or likelihood of becoming a customer/);
+  assert.deepEqual(prospect.properties.opportunityRating.enum, ['Low', 'Medium', 'High']);
+  assert.match(prospect.properties.opportunityRating.description, /not how good the opportunity is/);
 });
 
 test('JSON Schemas follow the repository punctuation rule', () => {

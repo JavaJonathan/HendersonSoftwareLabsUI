@@ -31,6 +31,8 @@ export interface OpportunitySummary {
   sourceType: OpportunitySourceType | null;
   recommendation: OpportunityRecommendation | null;
   priorityBand: PriorityBand | null;
+  opportunityRating: PriorityBand | null;
+  researchConfidence: ResearchConfidence | null;
   budgetStatus: BudgetStatus | null;
   summary: string | null;
   evaluationStatus: 'Ready' | 'Failed' | 'Stale' | null;
@@ -108,6 +110,9 @@ export function confidenceCaption(item: Pick<OpportunitySummary, 'jevConfidence'
 /** The chip-color families above, as hex, for places that need a raw color rather than an MUI Chip `color` prop (row accent bars, the legend dots). */
 export const TONE_HEX = { success: '#16a34a', warning: '#d97706', default: '#94a3b8' } as const;
 
+/** Colors the sourcing agent's Opportunity rating chip, parallel to how RECOMMENDATION_META colors Jev's chip. */
+export const RATING_TONE: Record<PriorityBand, 'success' | 'warning' | 'default'> = { High: 'success', Medium: 'warning', Low: 'default' };
+
 export interface OpportunityList { items: OpportunitySummary[]; total: number; page: number; pageSize: number }
 
 export interface RadarPassage { id: string; text: string; source: string | null; date: string | null; category: string | null }
@@ -138,6 +143,7 @@ export interface OpportunityDetail {
   sourceUrl: string | null;
   sourceDate: string | null;
   externalId: string | null;
+  opportunityRating: PriorityBand | null;
   researchConfidence: ResearchConfidence | null;
   researchConfidenceReason: string | null;
   researchAgent: string | null;
@@ -228,13 +234,13 @@ export interface ImportActiveProjectRequest {
   title: string; request: string; sourceType: OpportunitySourceType;
   sourceName?: string; sourceUrl?: string; sourceDate?: string; externalId?: string;
   budget?: string; competition?: { proposals?: string; interviewing?: number; hires?: number };
-  fit?: string; proposalAngle?: string; risk?: string; confidence?: ConfidenceInfo; researchAgent?: string;
+  fit?: string; proposalAngle?: string; risk?: string; opportunityRating?: PriorityBand; confidence?: ConfidenceInfo; researchAgent?: string;
 }
 
 export interface ImportBusinessProspectRequest {
   businessName: string; evidence: EvidenceFact[]; websiteUrl?: string; geography?: string; industry?: string;
   externalId?: string; prospectType?: BusinessProspectType;
-  fit?: string; entryOffer?: string; risk?: string; confidence?: ConfidenceInfo; researchAgent?: string;
+  fit?: string; entryOffer?: string; risk?: string; opportunityRating?: PriorityBand; confidence?: ConfidenceInfo; researchAgent?: string;
 }
 
 

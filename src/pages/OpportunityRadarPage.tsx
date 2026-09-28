@@ -30,7 +30,7 @@ import {
   importActiveProject, importActiveProjectsBatch, importBusinessProspect, importBusinessProspectsBatch,
   loadOpportunitySamples, updateRadarPreferences, SOURCE_TYPE_LABELS, formatProspectType,
   type OpportunityEntityType, type OpportunityList, type ImportActiveProjectRequest, type ImportBusinessProspectRequest,
-  type BusinessProspectType, type OpportunitySourceType, type RadarPreferences, type RadarProviderStatus, type ResearchConfidence,
+  type BusinessProspectType, type OpportunitySourceType, type PriorityBand, type RadarPreferences, type RadarProviderStatus, type ResearchConfidence,
 } from '../api/opportunities';
 import { getApiErrorMessage } from '../api/client';
 import { getOpportunityJsonTemplate } from './opportunityJsonTemplates';
@@ -246,6 +246,7 @@ function ImportDialog({ open, fullScreen, entityType, onClose, onImported }: { o
   const [proposalAngle, setProposalAngle] = useState('');
   const [entryOffer, setEntryOffer] = useState('');
   const [risk, setRisk] = useState('');
+  const [opportunityRating, setOpportunityRating] = useState<PriorityBand | ''>('');
   const [confidenceLevel, setConfidenceLevel] = useState<ResearchConfidence | ''>('');
   const [confidenceReason, setConfidenceReason] = useState('');
   const [researchAgent, setResearchAgent] = useState('');
@@ -259,7 +260,7 @@ function ImportDialog({ open, fullScreen, entityType, onClose, onImported }: { o
     setMode('paste'); setTitle(''); setRequest(''); setSourceType('ExplicitDemand'); setSourceUrl('');
     setBudget(''); setCompetitionProposals(''); setCompetitionInterviewing(''); setCompetitionHires('');
     setEvidence([EMPTY_EVIDENCE_ROW]); setWebsiteUrl(''); setGeography(''); setIndustry(''); setProspectType('');
-    setFit(''); setProposalAngle(''); setEntryOffer(''); setRisk(''); setConfidenceLevel(''); setConfidenceReason('');
+    setFit(''); setProposalAngle(''); setEntryOffer(''); setRisk(''); setOpportunityRating(''); setConfidenceLevel(''); setConfidenceReason('');
     setResearchAgent(''); setFile(null); setError(''); setCopyStatus('idle');
   }, [open]);
 
@@ -279,7 +280,8 @@ function ImportDialog({ open, fullScreen, entityType, onClose, onImported }: { o
             : undefined;
           const result = await importActiveProject({
             title, request, sourceType, sourceUrl: sourceUrl || undefined, budget: budget || undefined, competition,
-            fit: fit || undefined, proposalAngle: proposalAngle || undefined, risk: risk || undefined, confidence, researchAgent: researchAgent || undefined,
+            fit: fit || undefined, proposalAngle: proposalAngle || undefined, risk: risk || undefined,
+            opportunityRating: opportunityRating || undefined, confidence, researchAgent: researchAgent || undefined,
           });
           onImported(result.updated ? 'An existing Active Project was updated. Its review decision was preserved.' : 'Active Project imported. Evaluate it when you are ready.');
         } else {
@@ -290,7 +292,7 @@ function ImportDialog({ open, fullScreen, entityType, onClose, onImported }: { o
           const result = await importBusinessProspect({
             businessName: title, evidence: cleanedEvidence, websiteUrl: websiteUrl || undefined, geography: geography || undefined,
             industry: industry || undefined, prospectType: prospectType || undefined, fit: fit || undefined, entryOffer: entryOffer || undefined,
-            risk: risk || undefined, confidence, researchAgent: researchAgent || undefined,
+            risk: risk || undefined, opportunityRating: opportunityRating || undefined, confidence, researchAgent: researchAgent || undefined,
           });
           onImported(result.updated ? 'An existing Business Prospect was updated. Its review decision was preserved.' : 'Business Prospect imported. Evaluate it when you are ready.');
         }
@@ -353,6 +355,7 @@ function ImportDialog({ open, fullScreen, entityType, onClose, onImported }: { o
           <TextField label="Entry offer (optional)" value={entryOffer} onChange={event => setEntryOffer(event.target.value)} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 1000 } }} />
         </>}
         <TextField label="Risk (optional)" value={risk} onChange={event => setRisk(event.target.value)} multiline minRows={2} slotProps={{ htmlInput: { maxLength: 1000 } }} />
+        <FormControl><InputLabel>Opportunity rating (optional)</InputLabel><Select label="Opportunity rating (optional)" value={opportunityRating} onChange={event => setOpportunityRating(event.target.value as PriorityBand | '')}><MenuItem value="">Not supplied</MenuItem>{(['Low', 'Medium', 'High'] as PriorityBand[]).map(value => <MenuItem key={value} value={value}>{value}</MenuItem>)}</Select></FormControl>
         <FormControl><InputLabel>Confidence (optional)</InputLabel><Select label="Confidence (optional)" value={confidenceLevel} onChange={event => setConfidenceLevel(event.target.value as ResearchConfidence | '')}><MenuItem value="">Not supplied</MenuItem>{(['Low', 'Medium', 'High'] as ResearchConfidence[]).map(value => <MenuItem key={value} value={value}>{value}</MenuItem>)}</Select></FormControl>
         <TextField label="Confidence reason (optional)" value={confidenceReason} onChange={event => setConfidenceReason(event.target.value)} slotProps={{ htmlInput: { maxLength: 500 } }} />
         <TextField label="Research agent (optional)" value={researchAgent} onChange={event => setResearchAgent(event.target.value)} slotProps={{ htmlInput: { maxLength: 100 } }} />
