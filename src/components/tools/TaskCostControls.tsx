@@ -1,24 +1,19 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Paper from '@mui/material/Paper';
 import Chip from '@mui/material/Chip';
-import Collapse from '@mui/material/Collapse';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
-import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
 import Slider from '@mui/material/Slider';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Button from '@mui/material/Button';
 import RestartAltRoundedIcon from '@mui/icons-material/RestartAltRounded';
-import ExpandMoreRoundedIcon from '@mui/icons-material/ExpandMoreRounded';
-import { useReducedMotion } from 'framer-motion';
+import { SectionLabel, NumericField, MoreToggle } from './TaskCostControlFields';
 import { DurationField } from './DurationField';
 import { Expandable } from './Expandable';
 import { SliderField } from './SliderField';
-import { sanitizeNumeric } from '../../pages/tools/parseInput';
 import { formatDuration, formatMoney } from '../../pages/tools/taskCostFormat';
 import type { FormErrors, FormState } from '../../pages/tools/taskCostForm';
 import {
@@ -47,124 +42,9 @@ const SCHEDULE_NOTE: Record<Frequency, string> = {
     'Runs per year = runs per month x 12. Neither setting below applies, a monthly rate always uses 12 months.',
 };
 
-function SectionLabel({ children }: { children: ReactNode }) {
-  return (
-    <Typography
-      variant="overline"
-      sx={{ display: 'block', color: 'primary.main', fontWeight: 700, letterSpacing: 1, mb: 1.5 }}
-    >
-      {children}
-    </Typography>
-  );
-}
-
-function NumericField({
-  label,
-  value,
-  onChange,
-  error,
-  helperText,
-  startAdornment,
-  width = '100%',
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  error: string | null;
-  helperText?: string;
-  startAdornment?: ReactNode;
-  width?: number | string;
-}) {
-  return (
-    <TextField
-      label={label}
-      value={value}
-      onChange={(e) => onChange(sanitizeNumeric(e.target.value))}
-      size="small"
-      error={Boolean(error)}
-      helperText={error ?? helperText}
-      slotProps={{
-        htmlInput: { inputMode: 'decimal', maxLength: 12 },
-        input: startAdornment
-          ? { startAdornment: <InputAdornment position="start">{startAdornment}</InputAdornment> }
-          : undefined,
-      }}
-      sx={{ width }}
-    />
-  );
-}
-
 /** "2 changed" for a collapsed panel, or null when everything in it is still default. */
 function changeBadge(count: number): string | null {
   return count > 0 ? `${count} changed` : null;
-}
-
-/**
- * A lightweight disclosure nested *inside* an already-open `Expandable` panel, for the
- * handful of inputs most visitors never need to touch (rework, value realization, payback
- * timing). Deliberately not a second `Expandable`: a bordered box inside a bordered box
- * reads as clutter, so this is just a text button over a `Collapse`.
- */
-function MoreToggle({
-  label,
-  badge,
-  open,
-  onToggle,
-  children,
-}: {
-  label: string;
-  badge: string | null;
-  open: boolean;
-  onToggle: () => void;
-  children: ReactNode;
-}) {
-  const reduce = useReducedMotion() ?? false;
-
-  return (
-    <Box>
-      <Button
-        variant="text"
-        size="small"
-        onClick={onToggle}
-        aria-expanded={open}
-        endIcon={
-          <ExpandMoreRoundedIcon
-            sx={{
-              fontSize: 18,
-              transition: reduce ? 'none' : 'transform 0.2s ease',
-              transform: open ? 'rotate(180deg)' : 'none',
-            }}
-          />
-        }
-        sx={{ px: 0.5, fontWeight: 700, justifyContent: 'flex-start' }}
-      >
-        {label}
-        {badge && (
-          <Box
-            component="span"
-            sx={{
-              ml: 1,
-              px: 0.9,
-              py: 0.15,
-              borderRadius: 9999,
-              bgcolor: 'primary.main',
-              color: 'primary.contrastText',
-              fontSize: 11,
-              fontWeight: 700,
-              lineHeight: 1.6,
-            }}
-          >
-            {badge}
-          </Box>
-        )}
-      </Button>
-      <Collapse in={open} timeout={reduce ? 0 : 'auto'}>
-        <Stack spacing={2.75} sx={{ mt: 2 }}>
-          {children}
-        </Stack>
-      </Collapse>
-    </Box>
-  );
 }
 
 export function TaskCostControls({
