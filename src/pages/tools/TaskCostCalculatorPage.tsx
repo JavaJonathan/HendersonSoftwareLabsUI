@@ -21,7 +21,6 @@ import { buildCsv, buildSummaryText, slugify } from './taskCostExport';
 import { useTaskCostScenario } from '../../components/tools/useTaskCostScenario';
 import { formatMoney, formatQuantity, hoursUnit } from './taskCostFormat';
 
-const CONTACT_HREF = 'mailto:jonathan@HendersonSoftwareLabs.com?subject=Improving%20a%20workflow';
 const CANONICAL = 'https://hendersonsoftwarelabs.com/tools/task-cost-calculator';
 const META_DESCRIPTION =
   'Work out what a repetitive task costs your team per year, what fixing it is worth, and how long it takes to pay for itself. Free, runs entirely in your browser, and every result has a shareable link.';
@@ -332,7 +331,8 @@ export function TaskCostCalculatorPage() {
               variant="contained"
               size="large"
               endIcon={<ArrowForwardIcon />}
-              href={CONTACT_HREF}
+              component={RouterLink}
+              to="/contact"
               sx={{ mt: 2.5 }}
             >
               What’s slowing you down?

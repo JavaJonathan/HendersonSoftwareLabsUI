@@ -15,11 +15,33 @@ import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import hslIcon from '../../assets/branding/icon-dark.webp';
 import { useScrolled } from '../../hooks/useScrolled';
+import { BUSINESS_PHONE, BUSINESS_PHONE_HREF } from '../../lib/contact';
 
 const NAV_LINKS = [
   { label: 'Services', href: '/#what-we-do' },
   { label: 'How It Works', href: '/#how-it-works' },
 ];
+
+// One look for every text link in the desktop bar (page links, Client Login, phone number):
+// no underline at rest, a blue underline that draws in from the left on hover.
+const NAV_LINK_SX = {
+  fontSize: 15,
+  fontWeight: 500,
+  whiteSpace: 'nowrap',
+  position: 'relative',
+  '&::after': {
+    content: '""',
+    position: 'absolute',
+    left: 0,
+    bottom: -4,
+    height: 2,
+    width: 0,
+    bgcolor: 'primary.main',
+    borderRadius: 1,
+    transition: 'width 0.25s ease',
+  },
+  '&:hover::after': { width: '100%' },
+} as const;
 
 export function NavBar() {
   const scrolled = useScrolled();
@@ -64,35 +86,25 @@ export function NavBar() {
             </Typography>
           </Stack>
 
-          <Stack direction="row" spacing={4} sx={{ display: { xs: 'none', md: 'flex' }, mr: 4, alignItems: 'center' }}>
+          <Stack direction="row" spacing={3} sx={{ display: { xs: 'none', md: 'flex' }, mr: 3, alignItems: 'center' }}>
             {NAV_LINKS.map((link) => (
-              <Link
-                key={link.label}
-                href={link.href}
-                underline="none"
-                color="text.primary"
-                sx={{
-                  fontSize: 15,
-                  fontWeight: 500,
-                  position: 'relative',
-                  '&::after': {
-                    content: '""',
-                    position: 'absolute',
-                    left: 0,
-                    bottom: -4,
-                    height: 2,
-                    width: 0,
-                    bgcolor: 'primary.main',
-                    borderRadius: 1,
-                    transition: 'width 0.25s ease',
-                  },
-                  '&:hover::after': { width: '100%' },
-                }}
-              >
+              <Link key={link.label} href={link.href} underline="none" color="text.primary" sx={NAV_LINK_SX}>
                 {link.label}
               </Link>
             ))}
+            <Link component={RouterLink} to="/login" underline="none" color="text.primary" sx={NAV_LINK_SX}>
+              Client Login
+            </Link>
           </Stack>
+
+          <Link
+            href={BUSINESS_PHONE_HREF}
+            underline="none"
+            color="text.primary"
+            sx={[NAV_LINK_SX, { display: { xs: 'none', lg: 'inline-flex' }, mr: 3 }]}
+          >
+            {BUSINESS_PHONE}
+          </Link>
 
           <IconButton
             aria-label="Open menu"
@@ -104,12 +116,12 @@ export function NavBar() {
 
           <Button
             component={RouterLink}
-            to="/login"
+            to="/contact"
             variant="contained"
             color="primary"
             sx={{ display: { xs: 'none', md: 'inline-flex' } }}
           >
-            Client Login
+            Contact
           </Button>
         </Toolbar>
       </Container>
@@ -139,16 +151,37 @@ export function NavBar() {
             </Link>
           ))}
           <Divider sx={{ my: 1.5 }} />
-          <Button
+          <Stack spacing={1.5}>
+            <Button
+              component={RouterLink}
+              to="/contact"
+              variant="contained"
+              color="primary"
+              fullWidth
+              onClick={() => setMobileOpen(false)}
+            >
+              Contact
+            </Button>
+            <Button
+              href={BUSINESS_PHONE_HREF}
+              variant="outlined"
+              color="primary"
+              fullWidth
+              onClick={() => setMobileOpen(false)}
+            >
+              Call {BUSINESS_PHONE}
+            </Button>
+          </Stack>
+          <Link
             component={RouterLink}
             to="/login"
-            variant="contained"
-            color="primary"
-            fullWidth
+            underline="none"
+            color="text.primary"
             onClick={() => setMobileOpen(false)}
+            sx={{ py: 1.5, fontSize: 16, fontWeight: 600, alignSelf: 'flex-start' }}
           >
             Client Login
-          </Button>
+          </Link>
         </Stack>
       </Drawer>
     </AppBar>

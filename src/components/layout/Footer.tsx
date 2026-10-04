@@ -13,6 +13,7 @@ import BoltRoundedIcon from '@mui/icons-material/BoltRounded';
 import { motion, useInView, useReducedMotion } from 'framer-motion';
 import wordmark from '../../assets/branding/wordmark-light.webp';
 import { copyToClipboard } from '../../lib/clipboard';
+import { BUSINESS_PHONE, BUSINESS_PHONE_HREF } from '../../lib/contact';
 import { SURFACE_DARK } from '../../theme';
 import { GradientBackdrop } from '../motion/GradientBackdrop';
 
@@ -126,6 +127,13 @@ export function Footer() {
             <ColHeading>Get in touch</ColHeading>
             <Stack spacing={1.5} sx={{ mt: 2 }}>
               <CopyEmail />
+              <Box
+                component="a"
+                href={BUSINESS_PHONE_HREF}
+                sx={{ alignSelf: 'flex-start', color: 'rgba(255,255,255,0.7)', fontSize: 14, textDecoration: 'none', '&:hover': { color: '#ffffff' }, '&:focus-visible': { outline: '2px solid rgba(147, 197, 253, 0.6)', outlineOffset: 3, borderRadius: 1 } }}
+              >
+                {BUSINESS_PHONE}
+              </Box>
               <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.55)' }}>
                 Maryland, USA
               </Typography>

@@ -1,3 +1,4 @@
+import { Link as RouterLink } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
@@ -30,8 +31,6 @@ import { useLineExperience } from './line/useLineExperience';
  *
  * One kind is never automated. Some work is judgement.
  */
-
-const CONTACT_HREF = 'mailto:jonathan@HendersonSoftwareLabs.com?subject=Booking%20a%20Call';
 
 export function TheLine() {
   const {
@@ -241,7 +240,7 @@ export function TheLine() {
                   is the one we build for real.
                 </Typography>
               </Box>
-              <Button variant="contained" href={CONTACT_HREF} endIcon={<ArrowForwardIcon />} sx={{ flexShrink: 0 }}>
+              <Button component={RouterLink} to="/contact" variant="contained" endIcon={<ArrowForwardIcon />} sx={{ flexShrink: 0 }}>
                 Tell me what backs up in your week
               </Button>
             </Box>
